@@ -1,0 +1,160 @@
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel>=0.38.0", "setuptools-scm[toml]>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enrichmcp"
+description = "Transform Your Data Model into an MCP API"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Simba Khadder", email = "simba@featureform.com"},
+]
+maintainers = [
+    {name = "Featureform Team", email = "team@featureform.com"},
+]
+keywords = [
+    "mcp",
+    "ai",
+    "agents",
+    "llm",
+    "model-context-protocol",
+    "pydantic",
+    "api",
+    "data-model",
+    "orm",
+    "agentic",
+    "enrichment",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0,<3.0.0",
+    "mcp-python>=0.1.0",
+    "typing-extensions>=4.5.0,<5.0.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/featureform/enrichmcp"
+Documentation = "https://featureform.com/enrichmcp"
+Repository = "https://github.com/featureform/enrichmcp"
+Issues = "https://github.com/featureform/enrichmcp/issues"
+Discussions = "https://github.com/featureform/enrichmcp/discussions"
+Changelog = "https://github.com/featureform/enrichmcp/releases"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.8.0",
+    "pyright>=1.1.400",
+    "pre-commit>=3.5.0",
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+enrichmcp = ["py.typed"]
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+
+# Ruff configuration
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "RUF", # ruff-specific rules
+]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore import errors in documentation code snippets
+"docs/**/*.py" = ["F401", "F403", "E402"]
+"*.md" = ["F401", "F403", "E402"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = 72  # Shorter for docs readability
+
+# Pyright configuration
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__", "**/.mypy_cache", "build", "dist"]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+pythonVersion = "3.11"
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+branch = true
+source = ["src/enrichmcp"]
+omit = [
+    "*/tests/*",
+    "*/_version.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "Protocol",
+    "@abstractmethod",
+]
+show_missing = true
+skip_covered = false

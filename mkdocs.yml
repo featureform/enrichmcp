@@ -1,0 +1,86 @@
+site_name: enrich(mcp)
+site_description: Transform Your Data Model into an MCP API
+repo_url: https://github.com/featureform/enrichmcp
+site_url: https://featureform.github.io/enrichmcp
+site_author: Featureform, Inc.
+copyright: Copyright &copy; 2025 Featureform, Inc.
+
+theme:
+  name: material
+  # logo: assets/logo.png  # Uncomment when logo is ready
+  # favicon: assets/favicon.ico  # Uncomment when favicon is ready
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+
+plugins:
+  - search
+  - autorefs
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Core Concepts: concepts.md
+  - Examples: examples.md
+  - API Reference:
+    - Overview: api.md
+    - EnrichMCP: api/app.md
+    - Entities: api/entity.md
+    - Relationships: api/relationship.md
+    - Context: api/context.md
+    - Errors: api/errors.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/featureform/enrichmcp
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/featureform
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+
+extra_css:
+  - stylesheets/extra.css

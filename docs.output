@@ -1,0 +1,73 @@
+INFO    -  Building documentation...
+INFO    -  Cleaning site directory
+[33mWARNING -  [0mDoc file 'getting-started.md' contains a relative link 'advanced.md', but the target is not found among documentation files.
+[33mWARNING -  [0mDoc file 'getting-started.md' contains a relative link 'context.md', but the target is not found among documentation files.
+[33mWARNING -  [0mDoc file 'getting-started.md' contains a relative link 'errors.md', but the target is not found among documentation files.
+[31mERROR   -  [0mError reading page 'api/app.md': No module named 'griffe.collections'
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocs/__main__.py", line 361, in <module>
+    cli()
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/click/core.py", line 1442, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/click/core.py", line 1363, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/click/core.py", line 1830, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/click/core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/click/core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocs/__main__.py", line 270, in serve_command
+    serve.serve(**kwargs)
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocs/commands/serve.py", line 86, in serve
+    builder(config)
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocs/commands/serve.py", line 67, in builder
+    build(config, live_server=None if is_clean else server, dirty=is_dirty)
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocs/commands/build.py", line 322, in build
+    _populate_page(file.page, config, files, dirty)
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocs/commands/build.py", line 175, in _populate_page
+    page.render(config, files)
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocs/structure/pages.py", line 271, in render
+    self.content = md.convert(self.markdown)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/markdown/core.py", line 357, in convert
+    root = self.parser.parseDocument(self.lines).getroot()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/markdown/blockparser.py", line 117, in parseDocument
+    self.parseChunk(self.root, '\n'.join(lines))
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/markdown/blockparser.py", line 136, in parseChunk
+    self.parseBlocks(parent, text.split('\n\n'))
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/markdown/blockparser.py", line 158, in parseBlocks
+    if processor.run(parent, blocks) is not False:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocstrings/extension.py", line 124, in run
+    html, handler, data = self._process_block(identifier, block, heading_level)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocstrings/extension.py", line 195, in _process_block
+    handler = self._handlers.get_handler(handler_name, handler_config)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocstrings/handlers/base.py", line 459, in get_handler
+    module = importlib.import_module(f"mkdocstrings_handlers.{name}")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/simba/.pyenv/versions/3.12.3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocstrings_handlers/python/__init__.py", line 3, in <module>
+    from mkdocstrings_handlers.python.handler import get_handler
+  File "/Users/simba/featureform/enrich/.venv/lib/python3.12/site-packages/mkdocstrings_handlers/python/handler.py", line 14, in <module>
+    from griffe.collections import LinesCollection, ModulesCollection
+ModuleNotFoundError: No module named 'griffe.collections'
+make: *** [docs] Error 1
