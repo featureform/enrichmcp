@@ -14,7 +14,7 @@ from typing import Any
 
 from pydantic import Field
 
-from enrichmcp import EnrichContext, EnrichMCP, EnrichModel, Relationship
+from enrichmcp import CursorResult, EnrichContext, EnrichMCP, EnrichModel, Relationship
 
 
 # Database helper class
@@ -226,17 +226,63 @@ class Database:
         cursor.execute("SELECT * FROM products")
         return [dict(row) for row in cursor.fetchall()]
 
-    async def get_all_orders(self, status: str | None = None) -> list[dict]:
-        """Get all orders, optionally filtered by status."""
+    async def get_all_orders(
+        self, status: str | None = None, cursor: str | None = None, limit: int = 50
+    ) -> tuple[list[dict], str | None]:
+        """Get orders with cursor pagination, optionally filtered by status."""
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
-        if status:
-            cursor.execute("SELECT * FROM orders WHERE status = ?", (status,))
+        db_cursor = self.conn.cursor()
+
+        if cursor is None:
+            # First page
+            if status:
+                db_cursor.execute(
+                    """SELECT * FROM orders WHERE status = ?
+                       ORDER BY created_at DESC, id DESC LIMIT ?""",
+                    (status, limit + 1),
+                )
+            else:
+                db_cursor.execute(
+                    "SELECT * FROM orders ORDER BY created_at DESC, id DESC LIMIT ?", (limit + 1,)
+                )
         else:
-            cursor.execute("SELECT * FROM orders")
-        return [dict(row) for row in cursor.fetchall()]
+            # Parse cursor (timestamp:id format)
+            try:
+                timestamp, last_id = cursor.split(":")
+                if status:
+                    db_cursor.execute(
+                        """SELECT * FROM orders
+                           WHERE status = ? AND (created_at, id) < (?, ?)
+                           ORDER BY created_at DESC, id DESC
+                           LIMIT ?""",
+                        (status, timestamp, int(last_id), limit + 1),
+                    )
+                else:
+                    db_cursor.execute(
+                        """SELECT * FROM orders
+                           WHERE (created_at, id) < (?, ?)
+                           ORDER BY created_at DESC, id DESC
+                           LIMIT ?""",
+                        (timestamp, int(last_id), limit + 1),
+                    )
+            except (ValueError, IndexError):
+                return [], None
+
+        rows = db_cursor.fetchall()
+        orders = [dict(row) for row in rows]
+
+        # Check if there are more results
+        has_more = len(orders) > limit
+        if has_more:
+            orders = orders[:-1]  # Remove the extra item
+            last_order = orders[-1]
+            next_cursor = f"{last_order['created_at']}:{last_order['id']}"
+        else:
+            next_cursor = None
+
+        return orders, next_cursor
 
 
 # Lifespan context manager
@@ -479,11 +525,13 @@ async def list_products(ctx: EnrichContext) -> list[Product]:
 
 
 @app.resource
-async def list_orders(ctx: EnrichContext, status: str | None = None) -> list[Order]:
-    """List all orders, optionally filtered by status."""
+async def list_orders(
+    ctx: EnrichContext, status: str | None = None, cursor: str | None = None, limit: int = 10
+) -> CursorResult[Order]:
+    """List orders, optionally filtered by status."""
     db: Database = ctx.request_context.lifespan_context["db"]
 
-    order_rows = await db.get_all_orders(status)
+    order_rows, next_cursor = await db.get_all_orders(status, cursor, limit)
 
     orders = []
     for row in order_rows:
@@ -499,24 +547,10 @@ async def list_orders(ctx: EnrichContext, status: str | None = None) -> list[Ord
             )
         )
 
-    return orders
+    return CursorResult.create(items=orders, next_cursor=next_cursor, page_size=limit)
 
 
 # Run the server
 if __name__ == "__main__":
     print("Starting E-Commerce Shop API with SQLite...")
-    import inspect
-    import typing
-
-    from mcp.server.fastmcp.server import Context
-
-    sig = inspect.signature(list_users)
-    ann = sig.parameters["ctx"].annotation
-    print("RAW :", ann, "   (type:", type(ann).__name__, ")")
-    print("origin:", typing.get_origin(ann))
-    try:
-        print("issubclass?:", issubclass(ann, Context))
-    except TypeError as e:
-        print("issubclass raised:", e)
-
     app.run()

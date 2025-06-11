@@ -10,7 +10,7 @@ from datetime import datetime
 
 from pydantic import Field
 
-from enrichmcp import EnrichMCP, EnrichModel, Relationship
+from enrichmcp import EnrichMCP, EnrichModel, PageResult, Relationship
 
 # Create the application
 app = EnrichMCP(
@@ -496,8 +496,10 @@ async def list_products() -> list[Product]:
 
 
 @app.resource
-async def list_orders(status: str | None = None) -> list[Order]:
-    """List all orders, optionally filtered by status.
+async def list_orders(
+    status: str | None = None, page: int = 1, page_size: int = 10
+) -> PageResult[Order]:
+    """List orders, optionally filtered by status.
 
     Returns orders from the system. Can be filtered by status
     to find specific types of orders (e.g., 'flagged' for
@@ -505,17 +507,35 @@ async def list_orders(status: str | None = None) -> list[Order]:
 
     Args:
         status: Optional status filter (delivered, shipped, pending, cancelled, flagged)
+        page: Page number (1-indexed)
+        page_size: Number of orders per page
 
     Returns:
-        List of Order objects matching the criteria
+        PageResult with Order objects matching the criteria
     """
-    orders = []
+    # Filter by status first
+    filtered_orders = []
     for order_data in ORDERS:
         if status is None or order_data["status"] == status:
-            # Create Order object without product_ids
             order_dict = {k: v for k, v in order_data.items() if k != "product_ids"}
-            orders.append(Order(**order_dict))
-    return orders
+            filtered_orders.append(Order(**order_dict))
+
+    # Sort by creation date (most recent first)
+    filtered_orders.sort(key=lambda x: x.created_at, reverse=True)
+
+    # Apply pagination
+    total_items = len(filtered_orders)
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    page_orders = filtered_orders[start_idx:end_idx]
+
+    return PageResult.create(
+        items=page_orders,
+        page=page,
+        page_size=page_size,
+        has_next=end_idx < total_items,
+        total_items=total_items,
+    )
 
 
 # Run the server
