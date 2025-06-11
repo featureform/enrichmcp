@@ -151,8 +151,48 @@ if __name__ == "__main__":
     app.run()
 ```
 
+## Using Context
+
+EnrichMCP provides automatic context injection for accessing logging, progress reporting, and lifespan resources:
+
+```python
+from contextlib import asynccontextmanager
+from enrichmcp import EnrichContext
+
+
+# Set up lifespan for database connection
+@asynccontextmanager
+async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
+    db = await Database.connect()
+    try:
+        yield {"db": db}  # Available in context
+    finally:
+        await db.disconnect()
+
+
+# Create app with lifespan
+app = EnrichMCP("My API", "Description", lifespan=lifespan)
+
+
+# Use context in resources and resolvers
+@app.resource
+async def get_user(user_id: int, ctx: EnrichContext) -> User:
+    # Logging
+    await ctx.info(f"Fetching user {user_id}")
+
+    # Access database from lifespan
+    db = ctx.request_context.lifespan_context["db"]
+
+    # Report progress
+    await ctx.report_progress(50, 100, "Loading user data")
+
+    return await db.get_user(user_id)
+```
+
+Context is automatically injected when you add a parameter typed as `EnrichContext`.
+
 ## Next Steps
 
-- Explore more [Examples](examples.md)
+- Explore more [Examples](examples.md) including the [SQLite example](https://github.com/featureform/enrichmcp/tree/main/examples/shop_api_sqlite)
 - Read about [Core Concepts](concepts.md)
 - Check the [API Reference](api.md)

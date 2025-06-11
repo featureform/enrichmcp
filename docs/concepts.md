@@ -246,6 +246,77 @@ async def create_customer(
     ...
 ```
 
+## Context and Lifespan Management
+
+EnrichMCP extends FastMCP's context system to provide automatic injection of logging, progress reporting, and shared resources:
+
+### Context Injection
+
+Any resource or resolver can receive context by adding a parameter typed as `EnrichContext`:
+
+```python
+@app.resource
+async def my_resource(param: str, ctx: EnrichContext) -> Result:
+    # Context is automatically injected
+    await ctx.info("Processing request")
+    await ctx.report_progress(50, 100)
+    return result
+```
+
+### Lifespan Pattern
+
+Use the lifespan pattern for managing resources like database connections:
+
+```python
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
+    # Startup: Initialize resources
+    db = await create_connection()
+    cache = await Redis.connect()
+
+    try:
+        # Yield context dict - available via ctx.request_context.lifespan_context
+        yield {
+            "db": db,
+            "cache": cache,
+        }
+    finally:
+        # Shutdown: Clean up resources
+        await db.close()
+        await cache.close()
+
+
+# Pass lifespan to app
+app = EnrichMCP("My API", "Description", lifespan=lifespan)
+```
+
+### Accessing Lifespan Resources
+
+Access lifespan resources through the context:
+
+```python
+@User.orders.resolver
+async def get_user_orders(user_id: int, ctx: EnrichContext) -> list[Order]:
+    # Get database from lifespan context
+    db = ctx.request_context.lifespan_context["db"]
+
+    # Use it
+    return await db.fetch_orders(user_id)
+```
+
+### Context Features
+
+The context provides:
+
+1. **Logging**: `await ctx.info()`, `debug()`, `warning()`, `error()`
+2. **Progress**: `await ctx.report_progress(current, total, message)`
+3. **Resource Reading**: `await ctx.read_resource(uri)`
+4. **Request Info**: `ctx.request_id`, `ctx.client_id`
+5. **Lifespan Access**: `ctx.request_context.lifespan_context`
+
 ## Error Handling
 
 Use semantic errors that AI agents understand:

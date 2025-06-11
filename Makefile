@@ -1,4 +1,4 @@
-.PHONY: setup format lint test build clean docs install dev venv ci-setup ci-lint ci-test
+.PHONY: setup format lint test build clean docs docs-format install dev venv ci-setup ci-lint ci-test
 
 # Local development (uses venv)
 VENV_PYTHON = .venv/bin/python
@@ -29,8 +29,11 @@ venv:
 	@echo "Virtual environment created at .venv/"
 	@echo "Activate with: $(VENV_ACTIVATE)"
 
-format:
+format: docs-format
 	$(PYTHON_CMD) -m ruff format .
+
+docs-format:
+	$(PYTHON_CMD) scripts/format_docs.py
 
 lint:
 	$(PYTHON_CMD) -m ruff check --fix .
@@ -82,7 +85,8 @@ help:
 	@echo "Local development:"
 	@echo "  setup       - Create venv and install dependencies and pre-commit hooks"
 	@echo "  venv        - Create a project-specific virtual environment"
-	@echo "  format      - Format code with ruff"
+	@echo "  format      - Format code with ruff and docs with docs-format"
+	@echo "  docs-format - Format Python code blocks in markdown files"
 	@echo "  lint        - Run linters (ruff, pyright) with auto-fixing"
 	@echo "  lint-check  - Run linters in check-only mode (no fixes)"
 	@echo "  test        - Run tests with pytest"
