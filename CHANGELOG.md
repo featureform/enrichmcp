@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-01-15
+### Added
+- Context support
+- Lifespan support
+
+## [0.2.0] - 2025-01-15
 
 ### Added
 - Initial release of enrichmcp
@@ -24,4 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed decorator patterns to work with and without parentheses
 
 [Unreleased]: https://github.com/featureform/enrichmcp/compare/main...HEAD
-[0.1.0]: https://github.com/featureform/enrichmcp/releases/tag/v0.1.0
+[0.2.0]: https://github.com/featureform/enrichmcp/releases/tag/v0.2.0

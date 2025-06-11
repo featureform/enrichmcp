@@ -1,21 +1,30 @@
 """
 Context module for enrichmcp.
 
-Provides the context object for request handling.
+Provides a thin wrapper over FastMCP's Context for request handling.
 """
 
+from mcp.server.fastmcp import Context  # pyright: ignore[reportMissingTypeArgument]
 
-class EnrichContext:
+
+class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
     """
-    Context object for request handling.
+    Thin wrapper over FastMCP's Context.
 
-    This object is passed to resource functions and provides
-    access to shared resources like database connections and
-    authentication information.
+    This context is automatically injected into resource and resolver functions
+    that have a parameter typed with EnrichContext. It provides access to:
+    - Logging methods (info, debug, warning, error)
+    - Progress reporting
+    - Resource reading
+    - Request metadata
+    - Lifespan context (e.g., database connections)
+
+    Example:
+        @app.resource
+        async def get_user(user_id: int, ctx: EnrichContext) -> User:
+            ctx.info(f"Fetching user {user_id}")
+            db = ctx.request_context.lifespan_context["db"]
+            return await db.get_user(user_id)
     """
 
-    def __init__(self):
-        """
-        Initialize the context.
-        """
-        pass
+    pass

@@ -38,17 +38,18 @@ class EnrichMCP:
     with entity support.
     """
 
-    def __init__(self, title: str, description: str):
+    def __init__(self, title: str, description: str, *, lifespan: Any = None):
         """
         Initialize the EnrichMCP application.
 
         Args:
             title: API title shown in documentation
             description: Description of the API
+            lifespan: Optional async context manager for startup/shutdown lifecycle
         """
         self.title = title
         self.description = description
-        self.mcp = FastMCP(title, description=description)
+        self.mcp = FastMCP(title, description=description, lifespan=lifespan)
         self.name = title  # Required for mcp install
 
         # Registries
@@ -312,7 +313,6 @@ class EnrichMCP:
 
             # Store the resource for testing
             self.resources[resource_name] = fn
-
             # Create and apply the MCP tool decorator
             mcp_tool = self.mcp.tool(name=resource_name, description=resource_desc)
             return mcp_tool(fn)

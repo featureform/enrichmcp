@@ -14,9 +14,9 @@ try:
 except ImportError:
     try:
         # During development/editable installs
-        from setuptools_scm import get_version
+        from setuptools_scm import get_version  # pyright: ignore[reportMissingImports]
 
-        __version__ = get_version(root="../..", relative_to=__file__)
+        __version__ = get_version(root="../..", relative_to=__file__)  # pyright: ignore[reportUnknownVariableType]
     except (ImportError, LookupError):
         # Fallback
         __version__ = "0.0.0+unknown"
