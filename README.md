@@ -220,16 +220,53 @@ async def get_customer(customer_id: int) -> Customer:
     return customer
 ```
 
-### Pagination (Coming Soon)
+### Pagination
 
-Handle large datasets efficiently:
+Handle large datasets efficiently with built-in pagination support:
 
 ```python
+from enrichmcp import PageResult, CursorResult
+
+
+# Page-based pagination (ideal for UIs)
+@app.resource
+async def list_customers(page: int = 1, page_size: int = 50) -> PageResult[Customer]:
+    """List customers with page-based pagination."""
+    customers, total = await db.get_customers_page(page, page_size)
+    return PageResult.create(
+        items=customers,
+        page=page,
+        page_size=page_size,
+        has_next=page * page_size < total,
+        total_items=total,
+    )
+
+
+# Cursor-based pagination (ideal for real-time feeds)
+@app.resource
+async def stream_orders(cursor: str | None = None, limit: int = 20) -> CursorResult[Order]:
+    """Stream orders with cursor-based pagination."""
+    orders, next_cursor = await db.get_orders_cursor(cursor, limit)
+    return CursorResult.create(items=orders, next_cursor=next_cursor, page_size=limit)
+
+
+# Paginated relationships
 @Customer.orders.resolver
-async def get_orders(customer_id: int, limit: int = 10, offset: int = 0) -> list[Order]:
-    """Paginated order retrieval."""
-    return await db.get_orders(customer_id, limit=limit, offset=offset)
+async def get_customer_orders(
+    customer_id: int, page: int = 1, page_size: int = 10
+) -> PageResult[Order]:
+    """Get customer orders with pagination."""
+    orders, total = await db.get_customer_orders_page(customer_id, page, page_size)
+    return PageResult.create(
+        items=orders,
+        page=page,
+        page_size=page_size,
+        has_next=page * page_size < total,
+        total_items=total,
+    )
 ```
+
+See the [Pagination Guide](docs/pagination.md) for comprehensive examples and best practices.
 
 ## Development
 

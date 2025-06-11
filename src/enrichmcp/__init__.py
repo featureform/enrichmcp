@@ -25,14 +25,20 @@ except ImportError:
 from .app import EnrichMCP
 from .context import EnrichContext
 from .entity import EnrichModel
+from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult, PaginationParams
 from .relationship import (
     Relationship,
 )
 
 __all__ = [
+    "CursorParams",
+    "CursorResult",
     "EnrichContext",
     "EnrichMCP",
     "EnrichModel",
+    "PageResult",
+    "PaginatedResult",
+    "PaginationParams",
     "Relationship",
     "__version__",
 ]
