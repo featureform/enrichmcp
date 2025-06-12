@@ -120,6 +120,8 @@ exclude = ["**/__pycache__", "**/.mypy_cache", "build", "dist"]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 pythonVersion = "3.11"
+venvPath = "."
+venv = ".venv"
 
 # pytest configuration
 [tool.pytest.ini_options]
