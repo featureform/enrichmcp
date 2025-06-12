@@ -20,6 +20,7 @@ mkdocs-autorefs>=0.5.0
 # SQLAlchemy support
 sqlalchemy>=2.0.0
 sqlalchemy2-stubs>=0.0.2a5
+aiosqlite>=0.19.0
 
 # Build tools
 build>=1.0.0
