@@ -25,18 +25,20 @@ except ImportError:
 from .app import EnrichMCP
 from .context import EnrichContext
 from .entity import EnrichModel
+from .lifespan import combine_lifespans
 from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult, PaginationParams
 from .relationship import (
     Relationship,
 )
 
 # Optional SQLAlchemy integration
-try:
-    from .sqlalchemy import EnrichSQLAlchemyMixin  # noqa: F401
-
-    HAS_SQLALCHEMY = True  # pyright: ignore[reportConstantRedefinition]
-except ImportError:
-    HAS_SQLALCHEMY = False  # pyright: ignore[reportConstantRedefinition]
+has_sqlalchemy: bool = False
+try:  # pragma: no cover - optional dependency
+    from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan  # noqa: F401
+except ImportError:  # pragma: no cover - optional dependency
+    pass
+else:
+    has_sqlalchemy = True
 
 __all__ = [
     "CursorParams",
@@ -49,8 +51,9 @@ __all__ = [
     "PaginationParams",
     "Relationship",
     "__version__",
+    "combine_lifespans",
 ]
 
 # Add SQLAlchemy to exports if available
-if HAS_SQLALCHEMY:
-    __all__.append("EnrichSQLAlchemyMixin")
+if has_sqlalchemy:
+    __all__.extend(["EnrichSQLAlchemyMixin", "sqlalchemy_lifespan"])

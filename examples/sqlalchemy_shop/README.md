@@ -46,6 +46,9 @@ The app will:
 - Seed sample data on first run
 - Start the MCP server
 
+The lifecycle is managed using the `sqlalchemy_lifespan` helper from
+`enrichmcp.sqlalchemy`, which provides a session factory to all resources.
+
 ## Current Limitations
 
 This example currently includes manual implementations of:
