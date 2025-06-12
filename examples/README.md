@@ -51,12 +51,32 @@ This example demonstrates:
 
 Both shop examples include the same core functionality but demonstrate different pagination strategies - page-based for in-memory data and cursor-based for database queries.
 
+## SQLAlchemy Shop API
+
+A version of the shop example built with SQLAlchemy ORM models. All entities are
+declared using SQLAlchemy and registered through `include_sqlalchemy_models`,
+which automatically creates CRUD endpoints and relationship resolvers. The
+`sqlalchemy_lifespan` helper manages the async engine and seeds the SQLite
+database on first run.
+
+To run this example:
+
+```bash
+cd sqlalchemy_shop
+pip install -r requirements.txt
+python app.py
+```
+
+This example demonstrates:
+- Automatic conversion of SQLAlchemy models to EnrichMCP entities
+- Auto-generated CRUD resources and relationship resolvers
+- Async database access via SQLAlchemy
+- Database seeding and pagination using the generated endpoints
+
 ## Shop API Gateway
 
 A version of the shop API that forwards all requests to a separate FastAPI
 backend. This demonstrates using EnrichMCP as a lightweight API gateway.
-
-To run this example:
 
 ```bash
 cd shop_api_gateway
