@@ -32,12 +32,13 @@ from .relationship import (
 )
 
 # Optional SQLAlchemy integration
+has_sqlalchemy: bool = False
 try:  # pragma: no cover - optional dependency
     from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan  # noqa: F401
 except ImportError:  # pragma: no cover - optional dependency
-    _HAS_SQLALCHEMY = False
+    pass
 else:
-    _HAS_SQLALCHEMY = True
+    has_sqlalchemy = True
 
 __all__ = [
     "CursorParams",
@@ -54,5 +55,5 @@ __all__ = [
 ]
 
 # Add SQLAlchemy to exports if available
-if _HAS_SQLALCHEMY:
+if has_sqlalchemy:
     __all__.extend(["EnrichSQLAlchemyMixin", "sqlalchemy_lifespan"])
