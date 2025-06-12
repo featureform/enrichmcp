@@ -1,0 +1,2 @@
+enrichmcp[sqlalchemy]
+aiosqlite>=0.19.0

@@ -22,13 +22,28 @@ except ImportError:
         __version__ = "0.0.0+unknown"
 
 # Public exports
+from typing import TYPE_CHECKING
+
 from .app import EnrichMCP
 from .context import EnrichContext
 from .entity import EnrichModel
+from .lifespan import combine_lifespans
 from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult, PaginationParams
 from .relationship import (
     Relationship,
 )
+
+if TYPE_CHECKING:  # pragma: no cover - optional dependency
+    from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan
+
+# Optional SQLAlchemy integration
+has_sqlalchemy: bool = False
+try:  # pragma: no cover - optional dependency
+    from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan  # noqa: F401
+except ImportError:  # pragma: no cover - optional dependency
+    pass
+else:
+    has_sqlalchemy = True
 
 __all__ = [
     "CursorParams",
@@ -41,4 +56,9 @@ __all__ = [
     "PaginationParams",
     "Relationship",
     "__version__",
+    "combine_lifespans",
 ]
+
+# Add SQLAlchemy to exports if available
+if has_sqlalchemy:
+    __all__.extend(["EnrichSQLAlchemyMixin", "sqlalchemy_lifespan"])

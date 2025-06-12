@@ -191,8 +191,64 @@ async def get_user(user_id: int, ctx: EnrichContext) -> User:
 
 Context is automatically injected when you add a parameter typed as `EnrichContext`.
 
+## Using Existing SQLAlchemy Models
+
+Have a project full of SQLAlchemy models already? You can expose them as an MCP
+API in minutes:
+
+```python
+from sqlalchemy import ForeignKey
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from enrichmcp.sqlalchemy import (
+    EnrichSQLAlchemyMixin,
+    include_sqlalchemy_models,
+    sqlalchemy_lifespan,
+)
+
+engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/db")
+
+
+class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(unique=True)
+    orders: Mapped[list["Order"]] = relationship(back_populates="user")
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    total: Mapped[float] = mapped_column()
+    user: Mapped[User] = relationship(back_populates="orders")
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
+    price: Mapped[float] = mapped_column()
+
+
+lifespan = sqlalchemy_lifespan(Base, engine)
+app = EnrichMCP("My ORM API", lifespan=lifespan)
+include_sqlalchemy_models(app, Base)
+app.run()
+```
+
+`sqlalchemy_lifespan` works with any async engine and seeding data is optional.
+
 ## Next Steps
 
-- Explore more [Examples](examples.md) including the [SQLite example](https://github.com/featureform/enrichmcp/tree/main/examples/shop_api_sqlite)
+- Explore more [Examples](examples.md) including the [SQLite example](https://github.com/featureform/enrichmcp/tree/main/examples/shop_api_sqlite) and the [API gateway example](https://github.com/featureform/enrichmcp/tree/main/examples/shop_api_gateway)
 - Read about [Core Concepts](concepts.md)
 - Check the [API Reference](api.md)

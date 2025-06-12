@@ -129,6 +129,61 @@ if __name__ == "__main__":
     app.run()
 ```
 
+## Turn SQLAlchemy Models into an API
+
+Already have ORM models? Convert them into a full MCP server with just a few lines:
+
+```python
+from sqlalchemy import ForeignKey
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from enrichmcp.sqlalchemy import (
+    EnrichSQLAlchemyMixin,
+    include_sqlalchemy_models,
+    sqlalchemy_lifespan,
+)
+
+engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/db")
+
+
+class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(unique=True)
+    orders: Mapped[list["Order"]] = relationship(back_populates="user")
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    total: Mapped[float] = mapped_column()
+    user: Mapped[User] = relationship(back_populates="orders")
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
+    price: Mapped[float] = mapped_column()
+
+
+lifespan = sqlalchemy_lifespan(Base, engine)  # seed function optional
+app = EnrichMCP("SQLAlchemy API", lifespan=lifespan)
+include_sqlalchemy_models(app, Base)
+app.run()
+```
+
+`sqlalchemy_lifespan` works with any async SQLAlchemy engine (Postgres, MySQL, SQLite, etc.) and the `seed` parameter is optional.
+
 ## How AI Agents Use Your API
 
 When an AI agent connects to your EnrichMCP API, it can:
@@ -267,6 +322,70 @@ async def get_customer_orders(
 ```
 
 See the [Pagination Guide](docs/pagination.md) for comprehensive examples and best practices.
+
+### SQLAlchemy Auto-Resolvers
+
+EnrichMCP can introspect SQLAlchemy models and automatically create
+resources and relationship resolvers. After defining your models with
+`EnrichSQLAlchemyMixin`, register them using `include_sqlalchemy_models`:
+
+```python
+from enrichmcp import EnrichMCP
+from enrichmcp.sqlalchemy import (
+    EnrichSQLAlchemyMixin,
+    include_sqlalchemy_models,
+    sqlalchemy_lifespan,
+)
+from sqlalchemy import ForeignKey
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+engine = create_async_engine("sqlite+aiosqlite:///shop.db")
+
+
+class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(unique=True)
+    orders: Mapped[list["Order"]] = relationship(back_populates="user")
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    total: Mapped[float] = mapped_column()
+    user: Mapped[User] = relationship(back_populates="orders")
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
+    price: Mapped[float] = mapped_column()
+
+
+lifespan = sqlalchemy_lifespan(Base, engine)
+app = EnrichMCP("Shop API", lifespan=lifespan)
+include_sqlalchemy_models(app, Base)
+```
+
+This generates `list_<model>` and `get_<model>` resources along with
+relationship resolvers based on your SQLAlchemy `relationship()`
+definitions.
+## Examples
+
+See the [examples directory](examples/README.md) for runnable projects, including:
+- `shop_api_sqlite` for a database-backed API
+- `shop_api_gateway` which wraps a FastAPI backend as an API gateway
+
 
 ## Development
 
