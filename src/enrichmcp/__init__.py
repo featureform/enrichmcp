@@ -30,6 +30,13 @@ from .relationship import (
     Relationship,
 )
 
+# Optional SQLAlchemy integration
+try:
+    from .sqlalchemy import EnrichSQLAlchemyMixin
+    _HAS_SQLALCHEMY = True
+except ImportError:
+    _HAS_SQLALCHEMY = False
+
 __all__ = [
     "CursorParams",
     "CursorResult",
@@ -42,3 +49,7 @@ __all__ = [
     "Relationship",
     "__version__",
 ]
+
+# Add SQLAlchemy to exports if available
+if _HAS_SQLALCHEMY:
+    __all__.append("EnrichSQLAlchemyMixin")
