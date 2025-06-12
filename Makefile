@@ -1,6 +1,6 @@
 .PHONY: setup format lint test build clean docs docs-format install dev venv ci-setup ci-lint ci-test
 
-# Local development (uses venv)
+# Local development (uses uv)
 VENV_PYTHON = .venv/bin/python
 VENV_ACTIVATE = source .venv/bin/activate
 
@@ -16,16 +16,15 @@ endif
 
 # Local development commands
 setup: venv
-	$(VENV_PYTHON) -m pip install -r requirements-dev.txt
-	$(VENV_PYTHON) -m pip install -e .
+	uv pip sync uv.lock -p $(VENV_PYTHON)
+	uv pip install -p $(VENV_PYTHON) -e .
 	$(VENV_PYTHON) -m pre_commit install
 	@echo "Setup complete!"
 	@echo "Your virtual environment is ready at .venv/"
 	@echo "You can activate it with: $(VENV_ACTIVATE)"
 
 venv:
-	python -m venv .venv
-	$(VENV_PYTHON) -m pip install --upgrade pip
+	uv venv .venv
 	@echo "Virtual environment created at .venv/"
 	@echo "Activate with: $(VENV_ACTIVATE)"
 
@@ -51,9 +50,8 @@ build:
 
 # CI-specific commands (explicit, no guessing)
 ci-setup:
-	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install -r requirements-dev.txt
-	$(PYTHON) -m pip install -e .
+	uv pip sync uv.lock --system
+	uv pip install --system -e .
 
 ci-lint:
 	$(PYTHON) -m ruff check .
@@ -83,8 +81,8 @@ dev:
 help:
 	@echo "Available commands:"
 	@echo "Local development:"
-	@echo "  setup       - Create venv and install dependencies and pre-commit hooks"
-	@echo "  venv        - Create a project-specific virtual environment"
+	@echo "  setup       - Create uv env and install dependencies and pre-commit hooks"
+	@echo "  venv        - Create a project-specific uv virtual environment"
 	@echo "  format      - Format code with ruff and docs with docs-format"
 	@echo "  docs-format - Format Python code blocks in markdown files"
 	@echo "  lint        - Run linters (ruff, pyright) with auto-fixing"

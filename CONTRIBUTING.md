@@ -28,10 +28,10 @@ We use GitHub to host code, to track issues and feature requests, as well as acc
 ## Development Setup
 
 ```bash
-# Setup development environment
+# Setup development environment (uses uv and uv.lock)
 make setup
 
-# Create a virtual environment (optional)
+# Create a virtual environment manually (optional)
 make venv
 source .venv/bin/activate  # On Unix/macOS
 
