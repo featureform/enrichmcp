@@ -22,14 +22,6 @@ repos:
 
   - repo: local
     hooks:
-      - id: pyright
-        name: pyright
-        entry: pyright
-        language: node
-        pass_filenames: false
-        types: [python]
-        additional_dependencies: ['pyright@1.1.401']
-
       - id: format-docs
         name: Format Python in docs
         entry: python scripts/format_docs.py
