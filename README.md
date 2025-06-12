@@ -256,6 +256,8 @@ async def list_orders(
     )
 ```
 
+See the [Pagination Guide](https://featureform.github.io/enrichmcp/pagination) for more examples.
+
 ### 🔐 Context & Authentication
 
 Pass auth, database connections, or any context:
@@ -284,9 +286,11 @@ The result: AI agents can work with your data as naturally as a developer using 
 
 Check out the [examples directory](examples/README.md):
 
-- [shop_api_sqlite](examples/shop_api_sqlite) - SQLAlchemy-based e-commerce API
-- [shop_api_gateway](examples/shop_api_gateway) - REST API gateway pattern
-- [analytics_platform](examples/analytics_platform) - Custom logic with ML models
+- [hello_world](examples/hello_world) - The smallest possible EnrichMCP app
+- [shop_api](examples/shop_api) - In-memory shop API with pagination and filters
+- [shop_api_sqlite](examples/shop_api_sqlite) - SQLite-backed version
+- [shop_api_gateway](examples/shop_api_gateway) - EnrichMCP as a gateway in front of FastAPI
+- [sqlalchemy_shop](examples/sqlalchemy_shop) - Auto-generated API from SQLAlchemy models
 
 ## Documentation
 
