@@ -50,8 +50,8 @@ build:
 
 # CI-specific commands (explicit, no guessing)
 ci-setup:
-	uv pip sync uv.lock --system
-	uv pip install --system -e .
+	uv pip sync uv.lock --system --break-system-packages
+	uv pip install --system --break-system-packages -e .
 
 ci-lint:
 	$(PYTHON) -m ruff check .

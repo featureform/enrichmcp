@@ -28,6 +28,9 @@ jobs:
             requirements.txt
             requirements-dev.txt
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Install dependencies
         run: make ci-setup
 
