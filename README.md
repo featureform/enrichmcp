@@ -268,6 +268,35 @@ async def get_customer_orders(
 
 See the [Pagination Guide](docs/pagination.md) for comprehensive examples and best practices.
 
+### SQLAlchemy Auto-Resolvers
+
+EnrichMCP can introspect SQLAlchemy models and automatically create
+resources and relationship resolvers. After defining your models with
+`EnrichSQLAlchemyMixin`, register them using `include_sqlalchemy_models`:
+
+```python
+from enrichmcp import EnrichMCP
+from enrichmcp.sqlalchemy import (
+    EnrichSQLAlchemyMixin,
+    include_sqlalchemy_models,
+    sqlalchemy_lifespan,
+)
+from sqlalchemy.ext.asyncio import create_async_engine
+
+engine = create_async_engine("sqlite+aiosqlite:///shop.db")
+
+class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
+    pass
+
+lifespan = sqlalchemy_lifespan(Base, engine)
+app = EnrichMCP("Shop API", lifespan=lifespan)
+include_sqlalchemy_models(app, Base)
+```
+
+This generates `list_<model>` and `get_<model>` resources along with
+relationship resolvers based on your SQLAlchemy `relationship()`
+definitions.
+
 ## Development
 
 ```bash

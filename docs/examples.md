@@ -464,3 +464,8 @@ These examples demonstrate:
 - Filtering and searching patterns
 
 All using only the features that enrichmcp actually provides!
+
+## SQLAlchemy Auto-Generation
+
+The `examples/sqlalchemy_shop` project shows how `include_sqlalchemy_models`
+can generate entities and resolvers directly from SQLAlchemy models.

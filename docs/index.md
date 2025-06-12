@@ -107,6 +107,7 @@ pip install enrichmcp
 - Learn about [Core Concepts](concepts.md)
 - Explore the [API Reference](api.md)
 - Check out [Examples](https://github.com/featureform/enrichmcp/tree/main/examples)
+- Learn about [SQLAlchemy integration](sqlalchemy.md)
 
 ## Support
 
