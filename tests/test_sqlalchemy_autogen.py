@@ -72,7 +72,7 @@ async def test_auto_resources_and_resolvers():
         assert single.name == "Alice"
 
         # Relationship resolver
-        get_orders = app.resources["get_user_orders"]
+        get_orders = app.resources["get_userenrichmodel_orders"]
         rel = await get_orders(user_id=1, ctx=mock_ctx)
         assert len(rel) == 1
         assert rel[0].id == 1

@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func, inspect, select
 
-if TYPE_CHECKING:  # pragma: no cover - type checking imports
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from sqlalchemy.orm import DeclarativeBase
 
 from enrichmcp import EnrichContext, EnrichMCP, PageResult
@@ -43,7 +45,7 @@ def _register_default_resources(
         ctx: EnrichContext, page: int = 1, page_size: int = 20
     ) -> PageResult[enrich_model]:  # type: ignore[name-defined]
         session_factory = ctx.request_context.lifespan_context[session_key]
-        async with session_factory() as session:  # type: AsyncSession
+        async with session_factory() as session:
             total = await session.scalar(select(func.count()).select_from(sa_model))
             result = await session.execute(
                 select(sa_model).offset((page - 1) * page_size).limit(page_size)
@@ -62,7 +64,7 @@ def _register_default_resources(
     async def get_resource(ctx: EnrichContext, **kwargs: int) -> enrich_model | None:  # type: ignore[name-defined]
         entity_id = kwargs[param_name]
         session_factory = ctx.request_context.lifespan_context[session_key]
-        async with session_factory() as session:  # type: AsyncSession
+        async with session_factory() as session:
             obj = await session.get(sa_model, entity_id)
             return _sa_to_enrich(obj, enrich_model) if obj else None
 
@@ -79,6 +81,7 @@ def _register_relationship_resolvers(
         if rel.info.get("exclude"):
             continue
         field_name = rel.key
+        param_name = f"{sa_model.__name__.lower()}_id"
         if field_name not in enrich_model.model_fields:
             continue
         relationship = enrich_model.model_fields[field_name].default
@@ -87,10 +90,16 @@ def _register_relationship_resolvers(
 
         if rel.uselist:
 
-            def _create_resolver(f_name=field_name, model=sa_model, target=target_model):
-                async def func(entity_id: int, ctx: EnrichContext) -> list[Any]:
+            def _create_list_resolver(
+                f_name: str = field_name,
+                model: type = sa_model,
+                target: type = target_model,
+                param: str = param_name,
+            ) -> Callable[..., Awaitable[list[Any]]]:
+                async def func(ctx: EnrichContext, **kwargs: int) -> list[Any]:
+                    entity_id = kwargs[param]
                     session_factory = ctx.request_context.lifespan_context[session_key]
-                    async with session_factory() as session:  # type: AsyncSession
+                    async with session_factory() as session:
                         obj = await session.get(model, entity_id)
                         if not obj:
                             return []
@@ -100,13 +109,19 @@ def _register_relationship_resolvers(
 
                 return func
 
-            resolver = _create_resolver()
+            resolver = _create_list_resolver()
         else:
 
-            def _create_resolver(f_name=field_name, model=sa_model, target=target_model):
-                async def func(entity_id: int, ctx: EnrichContext) -> Any | None:
+            def _create_single_resolver(
+                f_name: str = field_name,
+                model: type = sa_model,
+                target: type = target_model,
+                param: str = param_name,
+            ) -> Callable[..., Awaitable[Any | None]]:
+                async def func(ctx: EnrichContext, **kwargs: int) -> Any | None:
+                    entity_id = kwargs[param]
                     session_factory = ctx.request_context.lifespan_context[session_key]
-                    async with session_factory() as session:  # type: AsyncSession
+                    async with session_factory() as session:
                         obj = await session.get(model, entity_id)
                         if not obj:
                             return None
@@ -116,7 +131,7 @@ def _register_relationship_resolvers(
 
                 return func
 
-            resolver = _create_resolver()
+            resolver = _create_single_resolver()
 
         resolver.__name__ = f"get_{sa_model.__name__.lower()}_{field_name}"
         resolver.__doc__ = description
