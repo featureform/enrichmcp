@@ -14,8 +14,10 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 engine = create_async_engine("sqlite+aiosqlite:///shop.db")
 
+
 class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
     pass
+
 
 # define SQLAlchemy models inheriting from Base
 
