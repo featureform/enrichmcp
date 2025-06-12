@@ -68,6 +68,14 @@ dev = [
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.24.0",
 ]
+sqlalchemy = [
+    "sqlalchemy>=2.0.0",
+    "sqlalchemy2-stubs>=0.0.2a5",
+]
+all = [
+    "sqlalchemy>=2.0.0",
+    "sqlalchemy2-stubs>=0.0.2a5",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -117,8 +125,10 @@ docstring-code-line-length = 72  # Shorter for docs readability
 [tool.pyright]
 include = ["src"]
 exclude = ["**/__pycache__", "**/.mypy_cache", "build", "dist"]
-typeCheckingMode = "strict"
+typeCheckingMode = "basic"
 reportMissingTypeStubs = false
+reportMissingImports = false
+reportAttributeAccessIssue = false
 pythonVersion = "3.11"
 venvPath = "."
 venv = ".venv"

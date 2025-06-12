@@ -17,6 +17,10 @@ mkdocs-material>=9.5.0
 mkdocstrings[python]>=0.24.0
 mkdocs-autorefs>=0.5.0
 
+# SQLAlchemy support
+sqlalchemy>=2.0.0
+sqlalchemy2-stubs>=0.0.2a5
+
 # Build tools
 build>=1.0.0
 twine>=5.0.0

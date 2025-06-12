@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Callable
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
 from typing import Any
 
 from .app import EnrichMCP
 
-Lifespan = Callable[[EnrichMCP], AsyncIterator[dict[str, Any]]]
+Lifespan = Callable[[EnrichMCP], AbstractAsyncContextManager[dict[str, Any]]]
 
 
 def combine_lifespans(*lifespans: Lifespan) -> Lifespan:
@@ -24,7 +24,7 @@ def combine_lifespans(*lifespans: Lifespan) -> Lifespan:
         async with AsyncExitStack() as stack:
             merged: dict[str, Any] = {}
             for ls in lifespans:
-                ctx = await stack.enter_async_context(ls(app))
+                ctx: dict[str, Any] = await stack.enter_async_context(ls(app))
                 if isinstance(ctx, dict):
                     merged.update(ctx)
             yield merged

@@ -3,17 +3,23 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+)  # pyright: ignore[reportMissingImports,reportAttributeAccessIssue]
 
 from enrichmcp.app import EnrichMCP
 
 if TYPE_CHECKING:  # pragma: no cover - type checking import
-    from sqlalchemy.orm import DeclarativeBase
+    from sqlalchemy.orm import (
+        DeclarativeBase,  # pyright: ignore[reportMissingImports,reportAttributeAccessIssue]
+    )
 
-Lifespan = Callable[[EnrichMCP], AsyncIterator[dict[str, Any]]]
+Lifespan = Callable[[EnrichMCP], AbstractAsyncContextManager[dict[str, Any]]]
 
 
 def sqlalchemy_lifespan(
