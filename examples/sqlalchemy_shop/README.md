@@ -7,9 +7,8 @@ This example demonstrates how to use EnrichMCP with SQLAlchemy ORM models. It's 
 - SQLAlchemy model definitions with EnrichMCP integration
 - Automatic conversion of SQLAlchemy models to EnrichModel representations
 - Async SQLAlchemy with SQLite
-- Manual implementation of resources and resolvers (auto-generation coming soon)
-- Pagination examples (both page-based and cursor-based)
-- Relationship handling between entities
+- Automatic creation of CRUD resources and relationship resolvers
+- Pagination examples using the generated list endpoints
 
 ## Models
 
@@ -49,18 +48,8 @@ The app will:
 The lifecycle is managed using the `sqlalchemy_lifespan` helper from
 `enrichmcp.sqlalchemy`, which provides a session factory to all resources.
 
-## Current Limitations
+## Automatic Endpoints
 
-This example currently includes manual implementations of:
-- Resource methods (`list_users`, `get_user`, etc.)
-- Relationship resolvers (`@UserEntity.orders.resolver`)
-
-In future versions, these will be auto-generated based on SQLAlchemy metadata with configuration options in the column `info` dictionary.
-
-## Next Steps
-
-The SQLAlchemy integration will be enhanced to support:
-- Auto-generated CRUD resources based on primary keys
-- Automatic relationship resolvers using SQLAlchemy's relationship definitions
-- Filtering and sorting based on column metadata
-- Advanced pagination with SQLAlchemy query optimization
+All CRUD resources (`list_*` and `get_*`) along with relationship resolvers are
+created automatically via `include_sqlalchemy_models`. The column `info`
+dictionary supplies descriptions for the generated endpoints.
