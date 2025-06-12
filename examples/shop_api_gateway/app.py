@@ -76,6 +76,7 @@ async def _client(ctx: EnrichContext) -> httpx.AsyncClient:
 
 @app.resource
 async def list_users(ctx: EnrichContext) -> list[User]:
+    """Fetch all users from the backend service."""
     client = await _client(ctx)
     resp = await client.get("/users")
     resp.raise_for_status()
@@ -84,6 +85,7 @@ async def list_users(ctx: EnrichContext) -> list[User]:
 
 @app.resource
 async def get_user(user_id: int, ctx: EnrichContext) -> User:
+    """Return a single user by ID."""
     client = await _client(ctx)
     resp = await client.get(f"/users/{user_id}")
     resp.raise_for_status()
@@ -92,6 +94,7 @@ async def get_user(user_id: int, ctx: EnrichContext) -> User:
 
 @app.resource
 async def list_products(ctx: EnrichContext) -> list[Product]:
+    """Retrieve all products available for sale."""
     client = await _client(ctx)
     resp = await client.get("/products")
     resp.raise_for_status()
@@ -100,6 +103,7 @@ async def list_products(ctx: EnrichContext) -> list[Product]:
 
 @app.resource
 async def get_product(product_id: int, ctx: EnrichContext) -> Product:
+    """Get a single product by ID."""
     client = await _client(ctx)
     resp = await client.get(f"/products/{product_id}")
     resp.raise_for_status()
@@ -111,6 +115,7 @@ async def list_orders(
     user_id: int | None = None,
     ctx: EnrichContext | None = None,
 ) -> list[Order]:
+    """List orders optionally filtered by user."""
     if ctx is None:
         raise RuntimeError("Context required")
     client = await _client(ctx)
@@ -122,6 +127,7 @@ async def list_orders(
 
 @app.resource
 async def get_order(order_id: int, ctx: EnrichContext) -> Order:
+    """Retrieve a specific order."""
     client = await _client(ctx)
     resp = await client.get(f"/orders/{order_id}")
     resp.raise_for_status()
@@ -129,12 +135,12 @@ async def get_order(order_id: int, ctx: EnrichContext) -> Order:
 
 
 @User.orders.resolver
-async def get_orders_for_user(user_id: int, ctx: EnrichContext) -> list[Order]:
+async def get_orders_for_user(user_id: int, ctx: EnrichContext) -> list["Order"]:
     return await list_orders(user_id=user_id, ctx=ctx)
 
 
 @Order.user.resolver
-async def get_order_user(user_id: int, ctx: EnrichContext) -> User:
+async def get_order_user(user_id: int, ctx: EnrichContext) -> "User":
     return await get_user(user_id=user_id, ctx=ctx)
 
 
@@ -154,4 +160,4 @@ async def get_order_products(order_id: int, ctx: EnrichContext) -> list[Product]
 
 if __name__ == "__main__":
     print("Starting Shop API Gateway...")
-    app.run(port=8000)
+    app.run()
