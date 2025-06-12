@@ -55,6 +55,9 @@ async def get_customer(customer_id: int) -> Customer:
 app.run()
 ```
 
+Already using SQLAlchemy? See how to
+[turn existing models into an API](sqlalchemy.md) with just a few lines.
+
 ## Why enrichmcp?
 
 ### 🤖 Built for AI Agents

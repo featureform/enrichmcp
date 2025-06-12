@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- SQLAlchemy integration with `EnrichSQLAlchemyMixin`,
+  `include_sqlalchemy_models` and `sqlalchemy_lifespan`
+- Automatic generation of resources and relationship resolvers from
+  SQLAlchemy models
+- Example project `examples/sqlalchemy_shop`
+
+### Changed
+- Development setup now uses `uv`
+
 ## [0.3.0] - 2025-06-11
 
 ### Added
