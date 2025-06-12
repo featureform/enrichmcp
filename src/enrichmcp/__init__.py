@@ -22,6 +22,8 @@ except ImportError:
         __version__ = "0.0.0+unknown"
 
 # Public exports
+from typing import TYPE_CHECKING
+
 from .app import EnrichMCP
 from .context import EnrichContext
 from .entity import EnrichModel
@@ -30,6 +32,9 @@ from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult,
 from .relationship import (
     Relationship,
 )
+
+if TYPE_CHECKING:  # pragma: no cover - optional dependency
+    from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan
 
 # Optional SQLAlchemy integration
 has_sqlalchemy: bool = False

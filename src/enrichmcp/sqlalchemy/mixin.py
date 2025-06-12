@@ -4,12 +4,12 @@ SQLAlchemy mixin for EnrichMCP integration.
 Provides functionality to convert SQLAlchemy models to EnrichModel representations.
 """
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import Field, create_model
-from sqlalchemy import inspect
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.sql.type_api import TypeEngine
+from sqlalchemy import inspect  # pyright: ignore[reportMissingImports]
+from sqlalchemy.orm import DeclarativeBase  # pyright: ignore[reportMissingImports]
+from sqlalchemy.sql.type_api import TypeEngine  # pyright: ignore[reportMissingImports]
 
 from enrichmcp import EnrichModel, Relationship
 
@@ -119,7 +119,7 @@ class EnrichSQLAlchemyMixin:
         return enrich_model_class
 
 
-def _sqlalchemy_type_to_python(sa_type: TypeEngine) -> type:
+def _sqlalchemy_type_to_python(sa_type: TypeEngine) -> type[Any]:
     """
     Convert SQLAlchemy type to Python type.
 
@@ -169,4 +169,4 @@ def _sqlalchemy_type_to_python(sa_type: TypeEngine) -> type:
             return py_type
 
     # Default to Any for unknown types
-    return Any
+    return cast("type[Any]", Any)
