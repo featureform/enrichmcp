@@ -2,17 +2,12 @@
 Tests for SQLAlchemy integration with EnrichMCP.
 """
 
-<<<<<<< HEAD
 # ruff: noqa: N806,E721
 
+import types
 from datetime import date, datetime
 from typing import Union, get_args, get_origin
 
-=======
-from datetime import date, datetime
-from typing import Union, get_args, get_origin
-
->>>>>>> feature/sqlalchemy-support/simba
 import pytest
 from sqlalchemy import (
     Boolean,
@@ -49,7 +44,6 @@ class TestBasicModel:
             username: Mapped[str] = mapped_column(info={"description": "Username"})
             email: Mapped[str] = mapped_column(info={"description": "Email address"})
             is_active: Mapped[bool] = mapped_column(
-<<<<<<< HEAD
                 default=True, info={"description": "Active status"}
             )
 
@@ -58,37 +52,19 @@ class TestBasicModel:
 
         # Check that it's a proper EnrichModel subclass
         assert issubclass(UserEnrichModel, EnrichModel)
-=======
-                default=True,
-                info={"description": "Active status"},
-            )
-
-        # Convert to EnrichModel
-        user_enrich_model = User.__enrich_model__()
-
-        # Check that it's a proper EnrichModel subclass
-        assert issubclass(user_enrich_model, EnrichModel)
->>>>>>> feature/sqlalchemy-support/simba
 
         # Check fields exist
-        fields = user_enrich_model.model_fields
+        fields = UserEnrichModel.model_fields
         assert "id" in fields
         assert "username" in fields
         assert "email" in fields
         assert "is_active" in fields
 
         # Check field types
-<<<<<<< HEAD
         assert fields["id"].annotation == int
         assert fields["username"].annotation == str
         assert fields["email"].annotation == str
         assert fields["is_active"].annotation == bool
-=======
-        assert fields["id"].annotation is int
-        assert fields["username"].annotation is str
-        assert fields["email"].annotation is str
-        assert fields["is_active"].annotation is bool
->>>>>>> feature/sqlalchemy-support/simba
 
         # Check descriptions
         assert fields["id"].description == "User ID"
@@ -108,7 +84,6 @@ class TestBasicModel:
             id: Mapped[int] = mapped_column(primary_key=True)
             name: Mapped[str] = mapped_column(nullable=False)
             description: Mapped[str | None] = mapped_column(
-<<<<<<< HEAD
                 nullable=True, info={"description": "Product description"}
             )
             price: Mapped[float | None] = mapped_column(nullable=True)
@@ -119,19 +94,6 @@ class TestBasicModel:
         # Non-nullable fields should not be Optional
         assert fields["id"].annotation == int
         assert fields["name"].annotation == str
-=======
-                nullable=True,
-                info={"description": "Product description"},
-            )
-            price: Mapped[float | None] = mapped_column(nullable=True)
-
-        product_enrich_model = Product.__enrich_model__()
-        fields = product_enrich_model.model_fields
-
-        # Non-nullable fields should not be Optional
-        assert fields["id"].annotation is int
-        assert fields["name"].annotation is str
->>>>>>> feature/sqlalchemy-support/simba
 
         # Nullable fields should be Optional
         # Check if it's Optional by looking at the annotation
@@ -139,11 +101,11 @@ class TestBasicModel:
         price_type = fields["price"].annotation
 
         # In Python 3.10+, Optional[X] is Union[X, None]
-        assert get_origin(desc_type) is Union
+        assert get_origin(desc_type) in {Union, types.UnionType}
         assert type(None) in get_args(desc_type)
         assert str in get_args(desc_type)
 
-        assert get_origin(price_type) is Union
+        assert get_origin(price_type) in {Union, types.UnionType}
         assert type(None) in get_args(price_type)
         assert float in get_args(price_type)
 
@@ -160,19 +122,11 @@ class TestBasicModel:
             username: Mapped[str] = mapped_column()
             password_hash: Mapped[str] = mapped_column(info={"exclude": True})
             secret_token: Mapped[str] = mapped_column(
-<<<<<<< HEAD
                 info={"exclude": True, "description": "Should not appear"}
             )
 
         UserEnrichModel = User.__enrich_model__()
         fields = UserEnrichModel.model_fields
-=======
-                info={"exclude": True, "description": "Should not appear"},
-            )
-
-        user_enrich_model = User.__enrich_model__()
-        fields = user_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
         # Check included fields
         assert "id" in fields
@@ -199,27 +153,18 @@ class TestBasicModel:
             created_at: Mapped[datetime] = mapped_column(DateTime)
             birth_date: Mapped[date] = mapped_column(Date)
 
-<<<<<<< HEAD
         DataTypesEnrichModel = DataTypes.__enrich_model__()
         fields = DataTypesEnrichModel.model_fields
-=======
-        data_types_enrich_model = DataTypes.__enrich_model__()
-        fields = data_types_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
         # Check type conversions
-        assert fields["id"].annotation is int
-        assert fields["name"].annotation is str
-        assert fields["description"].annotation is str
-        assert fields["is_active"].annotation is bool
-        assert fields["price"].annotation is float
-        assert fields["created_at"].annotation is datetime
+        assert fields["id"].annotation == int
+        assert fields["name"].annotation == str
+        assert fields["description"].annotation == str
+        assert fields["is_active"].annotation == bool
+        assert fields["price"].annotation == float
+        assert fields["created_at"].annotation == datetime
         # Date type should be converted properly
-<<<<<<< HEAD
         assert fields["birth_date"].annotation == date
-=======
-        assert fields["birth_date"].annotation is date
->>>>>>> feature/sqlalchemy-support/simba
 
     def test_model_documentation(self):
         """Test that model docstring is preserved."""
@@ -235,13 +180,8 @@ class TestBasicModel:
             id: Mapped[int] = mapped_column(primary_key=True)
             total: Mapped[float] = mapped_column()
 
-<<<<<<< HEAD
         OrderEnrichModel = Order.__enrich_model__()
         assert OrderEnrichModel.__doc__ == "Order represents a customer purchase."
-=======
-        order_enrich_model = Order.__enrich_model__()
-        assert order_enrich_model.__doc__ == "Order represents a customer purchase."
->>>>>>> feature/sqlalchemy-support/simba
 
     def test_default_descriptions(self):
         """Test that fields without descriptions get default ones."""
@@ -255,13 +195,8 @@ class TestBasicModel:
             id: Mapped[int] = mapped_column(primary_key=True)
             name: Mapped[str] = mapped_column()  # No description in info
 
-<<<<<<< HEAD
         ItemEnrichModel = Item.__enrich_model__()
         fields = ItemEnrichModel.model_fields
-=======
-        item_enrich_model = Item.__enrich_model__()
-        fields = item_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
         # Should have default descriptions
         assert fields["id"].description == "id field"
@@ -296,22 +231,17 @@ class TestRelationships:
             )
 
         # Convert to EnrichModel
-<<<<<<< HEAD
         UserEnrichModel = User.__enrich_model__()
         fields = UserEnrichModel.model_fields
-=======
-        user_enrich_model = User.__enrich_model__()
-        fields = user_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
         # Check that orders field exists and is a Relationship
         assert "orders" in fields
         assert isinstance(fields["orders"].default, Relationship)
         assert fields["orders"].default.description == "User's orders"
 
-        # Check the type annotation (should be List["OrderEnrichModel"])
+        # Check the type annotation (should be list["OrderEnrichModel"])
         # The annotation will be a string forward reference
-        assert "List" in str(fields["orders"].annotation)
+        assert "list" in str(fields["orders"].annotation)
         assert "OrderEnrichModel" in str(fields["orders"].annotation)
 
     def test_many_to_one_relationship(self):
@@ -335,13 +265,8 @@ class TestRelationships:
             id: Mapped[int] = mapped_column(primary_key=True)
             username: Mapped[str] = mapped_column()
 
-<<<<<<< HEAD
         OrderEnrichModel = Order.__enrich_model__()
         fields = OrderEnrichModel.model_fields
-=======
-        order_enrich_model = Order.__enrich_model__()
-        fields = order_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
         # Check that user field exists and is a Relationship
         assert "user" in fields
@@ -375,13 +300,8 @@ class TestRelationships:
             id: Mapped[int] = mapped_column(primary_key=True)
             user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-<<<<<<< HEAD
         UserEnrichModel = User.__enrich_model__()
         fields = UserEnrichModel.model_fields
-=======
-        user_enrich_model = User.__enrich_model__()
-        fields = user_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
         # Check that excluded relationship is not included
         assert "secret_orders" not in fields
@@ -405,13 +325,8 @@ class TestRelationships:
             id: Mapped[int] = mapped_column(primary_key=True)
             user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-<<<<<<< HEAD
         UserEnrichModel = User.__enrich_model__()
         fields = UserEnrichModel.model_fields
-=======
-        user_enrich_model = User.__enrich_model__()
-        fields = user_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
         assert "posts" in fields
         assert isinstance(fields["posts"].default, Relationship)
@@ -444,13 +359,8 @@ class TestEdgeCases:
             __tablename__ = "no_doc"
             id: Mapped[int] = mapped_column(primary_key=True)
 
-<<<<<<< HEAD
         NoDocEnrichModel = NoDoc.__enrich_model__()
         assert NoDocEnrichModel.__doc__ == "NoDoc entity"
-=======
-        no_doc_enrich_model = NoDoc.__enrich_model__()
-        assert no_doc_enrich_model.__doc__ == "NoDoc entity"
->>>>>>> feature/sqlalchemy-support/simba
 
     def test_async_attrs_compatibility(self):
         """Test that the mixin works with AsyncAttrs."""
@@ -467,17 +377,10 @@ class TestEdgeCases:
             username: Mapped[str] = mapped_column()
 
         # Should work without issues
-<<<<<<< HEAD
         AsyncUserEnrichModel = AsyncUser.__enrich_model__()
         assert issubclass(AsyncUserEnrichModel, EnrichModel)
         assert "id" in AsyncUserEnrichModel.model_fields
         assert "username" in AsyncUserEnrichModel.model_fields
-=======
-        async_user_enrich_model = AsyncUser.__enrich_model__()
-        assert issubclass(async_user_enrich_model, EnrichModel)
-        assert "id" in async_user_enrich_model.model_fields
-        assert "username" in async_user_enrich_model.model_fields
->>>>>>> feature/sqlalchemy-support/simba
 
     def test_generated_model_name(self):
         """Test that generated EnrichModel has correct name."""
@@ -489,13 +392,8 @@ class TestEdgeCases:
             __tablename__ = "customers"
             id: Mapped[int] = mapped_column(primary_key=True)
 
-<<<<<<< HEAD
         CustomerEnrichModel = Customer.__enrich_model__()
         assert CustomerEnrichModel.__name__ == "CustomerEnrichModel"
-=======
-        customer_enrich_model = Customer.__enrich_model__()
-        assert customer_enrich_model.__name__ == "CustomerEnrichModel"
->>>>>>> feature/sqlalchemy-support/simba
 
     def test_model_inheritance(self):
         """Test that the EnrichModel properly inherits from EnrichModel base."""
@@ -508,7 +406,6 @@ class TestEdgeCases:
             id: Mapped[int] = mapped_column(primary_key=True)
             name: Mapped[str] = mapped_column()
 
-<<<<<<< HEAD
         ProductEnrichModel = Product.__enrich_model__()
 
         # Should be a proper EnrichModel with all its methods
@@ -516,15 +413,6 @@ class TestEdgeCases:
         assert hasattr(ProductEnrichModel, "model_dump_json")
         assert hasattr(ProductEnrichModel, "relationship_fields")
         assert hasattr(ProductEnrichModel, "describe")
-=======
-        product_enrich_model = Product.__enrich_model__()
-
-        # Should be a proper EnrichModel with all its methods
-        assert hasattr(product_enrich_model, "model_dump")
-        assert hasattr(product_enrich_model, "model_dump_json")
-        assert hasattr(product_enrich_model, "relationship_fields")
-        assert hasattr(product_enrich_model, "describe")
->>>>>>> feature/sqlalchemy-support/simba
 
     def test_sqlalchemy_model_reference_stored(self):
         """Test that reference to original SQLAlchemy model is stored."""
@@ -536,15 +424,9 @@ class TestEdgeCases:
             __tablename__ = "orders"
             id: Mapped[int] = mapped_column(primary_key=True)
 
-<<<<<<< HEAD
         OrderEnrichModel = Order.__enrich_model__()
         assert hasattr(OrderEnrichModel, "_sqlalchemy_model")
         assert OrderEnrichModel._sqlalchemy_model is Order
-=======
-        order_enrich_model = Order.__enrich_model__()
-        assert hasattr(order_enrich_model, "_sqlalchemy_model")
-        assert order_enrich_model._sqlalchemy_model is Order
->>>>>>> feature/sqlalchemy-support/simba
 
 
 class TestComplexScenarios:
@@ -566,18 +448,10 @@ class TestComplexScenarios:
             username: Mapped[str] = mapped_column(info={"description": "Display name"})
             password_hash: Mapped[str] = mapped_column(info={"exclude": True})
             created_at: Mapped[datetime] = mapped_column(
-<<<<<<< HEAD
                 info={"description": "Account creation time"}
             )
             is_active: Mapped[bool] = mapped_column(
                 default=True, info={"description": "Account status"}
-=======
-                info={"description": "Account creation time"},
-            )
-            is_active: Mapped[bool] = mapped_column(
-                default=True,
-                info={"description": "Account status"},
->>>>>>> feature/sqlalchemy-support/simba
             )
 
             orders: Mapped[list["Order"]] = relationship(
@@ -636,20 +510,13 @@ class TestComplexScenarios:
             product: Mapped[Product] = relationship(back_populates="reviews")
 
         # Convert all models
-<<<<<<< HEAD
         UserEnrichModel = User.__enrich_model__()
         ProductEnrichModel = Product.__enrich_model__()
         OrderEnrichModel = Order.__enrich_model__()
         ReviewEnrichModel = Review.__enrich_model__()
-=======
-        user_enrich_model = User.__enrich_model__()
-        product_enrich_model = Product.__enrich_model__()
-        order_enrich_model = Order.__enrich_model__()
-        review_enrich_model = Review.__enrich_model__()
->>>>>>> feature/sqlalchemy-support/simba
 
         # Verify User model
-        user_fields = user_enrich_model.model_fields
+        user_fields = UserEnrichModel.model_fields
         assert "id" in user_fields
         assert "email" in user_fields
         assert "username" in user_fields
@@ -664,15 +531,10 @@ class TestComplexScenarios:
         assert isinstance(user_fields["reviews"].default, Relationship)
 
         # Verify Order model
-        order_fields = order_enrich_model.model_fields
+        order_fields = OrderEnrichModel.model_fields
         assert "user" in order_fields
         assert isinstance(order_fields["user"].default, Relationship)
 
         # Verify all models are proper EnrichModels
-        for model in [
-            user_enrich_model,
-            product_enrich_model,
-            order_enrich_model,
-            review_enrich_model,
-        ]:
+        for model in [UserEnrichModel, ProductEnrichModel, OrderEnrichModel, ReviewEnrichModel]:
             assert issubclass(model, EnrichModel)
