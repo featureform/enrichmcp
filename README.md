@@ -275,7 +275,7 @@ See the [Pagination Guide](docs/pagination.md) for comprehensive examples and be
 git clone https://github.com/featureform/enrichmcp
 cd enrichmcp
 
-# Set up development environment
+# Set up development environment (uses uv and uv.lock)
 make setup
 
 # Run tests
