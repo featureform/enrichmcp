@@ -471,3 +471,5 @@ The `examples/sqlalchemy_shop` project shows how `include_sqlalchemy_models`
 can generate entities and resolvers directly from SQLAlchemy models. It works
 with any async database backend supported by SQLAlchemy (for example
 PostgreSQL with `asyncpg`).
+
+The `examples/shop_api_gateway` project shows how EnrichMCP can act as a simple API gateway in front of another FastAPI service.

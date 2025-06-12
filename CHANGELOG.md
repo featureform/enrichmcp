@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added shop_api_gateway example showing EnrichMCP as an API gateway
 - SQLAlchemy integration with `EnrichSQLAlchemyMixin`,
   `include_sqlalchemy_models` and `sqlalchemy_lifespan`
 - Automatic generation of resources and relationship resolvers from
