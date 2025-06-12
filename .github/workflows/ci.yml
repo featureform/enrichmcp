@@ -41,7 +41,7 @@ jobs:
         run: make ci-test
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.11'  # Only upload once
+        if: matrix.python-version == '3.11' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
