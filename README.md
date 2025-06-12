@@ -380,6 +380,12 @@ include_sqlalchemy_models(app, Base)
 This generates `list_<model>` and `get_<model>` resources along with
 relationship resolvers based on your SQLAlchemy `relationship()`
 definitions.
+## Examples
+
+See the [examples directory](examples/README.md) for runnable projects, including:
+- `shop_api_sqlite` for a database-backed API
+- `shop_api_gateway` which wraps a FastAPI backend as an API gateway
+
 
 ## Development
 

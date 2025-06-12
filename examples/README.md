@@ -72,3 +72,17 @@ This example demonstrates:
 - Auto-generated CRUD resources and relationship resolvers
 - Async database access via SQLAlchemy
 - Database seeding and pagination using the generated endpoints
+
+## Shop API Gateway
+
+A version of the shop API that forwards all requests to a separate FastAPI
+backend. This demonstrates using EnrichMCP as a lightweight API gateway.
+
+```bash
+cd shop_api_gateway
+uvicorn server:app --port 8001 &
+python app.py
+```
+
+Stop the background server when finished. The gateway listens on port 8000 and
+provides the same schema-driven interface as the other examples.

@@ -249,6 +249,6 @@ app.run()
 
 ## Next Steps
 
-- Explore more [Examples](examples.md) including the [SQLite example](https://github.com/featureform/enrichmcp/tree/main/examples/shop_api_sqlite)
+- Explore more [Examples](examples.md) including the [SQLite example](https://github.com/featureform/enrichmcp/tree/main/examples/shop_api_sqlite) and the [API gateway example](https://github.com/featureform/enrichmcp/tree/main/examples/shop_api_gateway)
 - Read about [Core Concepts](concepts.md)
 - Check the [API Reference](api.md)
