@@ -1,163 +1,59 @@
-# enrichmcp
+# EnrichMCP
 
-**Transform Your Data Model into an MCP API**
-
-EnrichMCP (by [Featureform](https://featureform.com)) brings the power of type-safe, relationship-aware data models to AI agents. Built on top of FastMCP, it provides the missing data layer that enables **Agentic Enrichment** - giving AI agents the ability to discover, understand, and navigate your data through intelligent schema introspection and automatic tool generation.
+**The ORM for AI Agents - Turn your data model into a semantic MCP layer**
 
 [![CI](https://github.com/featureform/enrichmcp/actions/workflows/ci.yml/badge.svg)](https://github.com/featureform/enrichmcp/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/featureform/enrichmcp/branch/main/graph/badge.svg)](https://codecov.io/gh/featureform/enrichmcp)
-[![Documentation](https://img.shields.io/badge/docs-github%20pages-blue.svg)](https://featureform.github.io/enrichmcp)
+[![PyPI](https://img.shields.io/pypi/v/enrichmcp.svg)](https://pypi.org/project/enrichmcp/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/featureform/enrichmcp/blob/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/enrichmcp.svg)](https://pypi.org/project/enrichmcp/)
 
-## What is Agentic Enrichment?
+EnrichMCP is a Python framework that helps AI agents understand and navigate your data. Built on MCP (Model Context Protocol), it adds a semantic layer that turns your data model into typed, discoverable tools - like an ORM for AI.
 
-Traditional APIs require extensive documentation and hand-holding for AI agents to use effectively. Agentic Enrichment flips this model - instead of teaching AI about your API, your API teaches itself to AI. Through intelligent schema introspection, relationship mapping, and automatic tool generation, AI agents can naturally discover and navigate your data model as if they inherently understand your domain.
+## What is EnrichMCP?
 
-## Why EnrichMCP?
+Think of it as SQLAlchemy for AI agents. EnrichMCP automatically:
 
-While FastMCP provides the protocol layer for AI-tool communication, real-world applications need more:
-
-- **🔍 Schema Introspection**: AI agents can explore your entire data model through a single `explore_data_model()` call
-- **🔗 Relationship Intelligence**: GraphQL-inspired traversal with automatic resolver generation
-- **🛡️ Type Safety**: Full Pydantic validation with rich field descriptions
-- **🚀 Zero Boilerplate**: Decorators handle all the MCP protocol details
-- **📖 Self-Documenting**: Every entity, field, and relationship includes descriptions that AI agents can understand
-
-### EnrichMCP vs FastMCP
-
-| Feature | FastMCP | EnrichMCP |
-|---------|---------|-----------|
-| Protocol Implementation | ✅ | ✅ (via FastMCP) |
-| Type Safety | Basic | Full Pydantic Models |
-| Relationships | Manual | Automatic with Resolvers |
-| Schema Discovery | Manual | Automatic Introspection |
-| Tool Generation | Manual | Automatic from Models |
-| Data Focus | Generic | Data Model Optimized |
+- **Generates typed tools** from your data models
+- **Handles relationships** between entities (users → orders → products)
+- **Provides schema discovery** so AI agents understand your data structure
+- **Validates all inputs/outputs** with Pydantic models
+- **Works with any backend** - databases, APIs, or custom logic
 
 ## Installation
 
 ```bash
 pip install enrichmcp
+
+# With SQLAlchemy support
+pip install enrichmcp[sqlalchemy]
 ```
 
-## Quick Start
+## Show Me Code
+
+### Option 1: I Have SQLAlchemy Models (30 seconds)
+
+Transform your existing SQLAlchemy models into an AI-navigable API:
 
 ```python
-from enrichmcp import EnrichMCP, EnrichModel, Relationship
-from pydantic import Field
-
-# Create your MCP application
-app = EnrichMCP(title="Customer API", description="Customer data model for AI agents")
-
-
-# Define your data model with rich descriptions
-@app.entity
-class Customer(EnrichModel):
-    """Represents a customer in our system.
-
-    Contains core customer information and relationships to their orders.
-    Used for customer service, analytics, and order processing.
-    """
-
-    id: int = Field(description="Unique customer identifier")
-    name: str = Field(description="Customer's full name")
-    email: str = Field(description="Primary contact email")
-    status: str = Field(description="Account status: active, suspended, or churned")
-    created_at: datetime = Field(description="When the customer joined")
-
-    # Define relationships that AI can traverse
-    orders: list["Order"] = Relationship(description="All orders placed by this customer")
-
-
-@app.entity
-class Order(EnrichModel):
-    """Represents a customer order.
-
-    Tracks order details, status, and relationships to customers and products.
-    """
-
-    id: int = Field(description="Unique order identifier")
-    customer_id: int = Field(description="Customer who placed this order")
-    total: float = Field(description="Total order amount in USD")
-    status: str = Field(description="Order status: pending, shipped, delivered")
-    created_at: datetime = Field(description="When the order was placed")
-
-    # Relationships
-    customer: Customer = Relationship(description="Customer who placed this order")
-    items: list["OrderItem"] = Relationship(description="Individual items in this order")
-
-
-# Define how relationships are resolved
-@Customer.orders.resolver
-async def get_customer_orders(customer_id: int) -> list[Order]:
-    """Fetch all orders for a customer from the database."""
-    # Your database logic here
-    return await db.get_orders_by_customer(customer_id)
-
-
-@Order.customer.resolver
-async def get_order_customer(order_id: int) -> Customer:
-    """Fetch the customer who placed an order."""
-    # Your database logic here
-    return await db.get_customer_by_order(order_id)
-
-
-# Define root access points for AI agents
-@app.resource
-async def get_customer(customer_id: int) -> Customer:
-    """Retrieve a specific customer by ID.
-
-    This is a primary entry point for AI agents to access customer data.
-    From here, they can traverse to related orders and other data.
-    """
-    return await db.get_customer(customer_id)
-
-
-@app.resource
-async def list_customers(status: str | None = None) -> list[Customer]:
-    """List all customers, optionally filtered by status.
-
-    Useful for AI agents to discover customers and analyze patterns.
-    """
-    return await db.list_customers(status=status)
-
-
-# Run the server
-if __name__ == "__main__":
-    app.run()
-```
-
-## Turn SQLAlchemy Models into an API
-
-Already have ORM models? Convert them into a full MCP server with just a few lines:
-
-```python
-from sqlalchemy import ForeignKey
+from enrichmcp import EnrichMCP
+from enrichmcp.sqlalchemy import include_sqlalchemy_models, sqlalchemy_lifespan, EnrichSQLAlchemyMixin
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from enrichmcp.sqlalchemy import (
-    EnrichSQLAlchemyMixin,
-    include_sqlalchemy_models,
-    sqlalchemy_lifespan,
-)
-
 engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/db")
 
-
+# Add the mixin to your declarative base
 class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
     pass
-
 
 class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(unique=True)
+    email: Mapped[str] = mapped_column(unique=True)
+    status: Mapped[str] = mapped_column(default="active")
     orders: Mapped[list["Order"]] = relationship(back_populates="user")
-
 
 class Order(Base):
     __tablename__ = "orders"
@@ -167,262 +63,245 @@ class Order(Base):
     total: Mapped[float] = mapped_column()
     user: Mapped[User] = relationship(back_populates="orders")
 
-
-class Product(Base):
-    __tablename__ = "products"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column()
-    price: Mapped[float] = mapped_column()
-
-
-lifespan = sqlalchemy_lifespan(Base, engine)  # seed function optional
-app = EnrichMCP("SQLAlchemy API", lifespan=lifespan)
+# That's it! Create your MCP app
+app = EnrichMCP("E-commerce Data", lifespan=sqlalchemy_lifespan(Base, engine))
 include_sqlalchemy_models(app, Base)
+
+if __name__ == "__main__":
+    app.run()
+```
+
+AI agents can now:
+- `explore_data_model()` - understand your entire schema
+- `list_users(status='active')` - query with filters
+- `get_user(id=123)` - fetch specific records
+- Navigate relationships: `user.orders` → `order.user`
+
+### Option 2: I Have REST APIs (2 minutes)
+
+Wrap your existing APIs with semantic understanding:
+
+```python
+from enrichmcp import EnrichMCP, EnrichModel, Relationship
+from pydantic import Field
+
+app = EnrichMCP("API Gateway")
+
+@app.entity
+class Customer(EnrichModel):
+    """Customer in our CRM system."""
+
+    id: int = Field(description="Unique customer ID")
+    email: str = Field(description="Primary contact email")
+    tier: str = Field(description="Subscription tier: free, pro, enterprise")
+
+    # Define navigable relationships
+    orders: list["Order"] = Relationship(description="Customer's purchase history")
+
+@app.entity
+class Order(EnrichModel):
+    """Customer order from our e-commerce platform."""
+
+    id: int = Field(description="Order ID")
+    customer_id: int = Field(description="Associated customer")
+    total: float = Field(description="Order total in USD")
+    status: str = Field(description="Order status: pending, shipped, delivered")
+
+    customer: Customer = Relationship(description="Customer who placed this order")
+
+# Define how to fetch data
+@app.resource
+async def get_customer(customer_id: int) -> Customer:
+    """Fetch customer from CRM API."""
+    response = await http.get(f"/api/customers/{customer_id}")
+    return Customer(**response.json())
+
+# Define relationship resolvers
+@Customer.orders.resolver
+async def get_customer_orders(customer_id: int) -> list[Order]:
+    """Fetch orders for a customer."""
+    response = await http.get(f"/api/customers/{customer_id}/orders")
+    return [Order(**order) for order in response.json()]
+
 app.run()
 ```
 
-`sqlalchemy_lifespan` works with any async SQLAlchemy engine (Postgres, MySQL, SQLite, etc.) and the `seed` parameter is optional.
+### Option 3: I Want Full Control (5 minutes)
 
-## How AI Agents Use Your API
+Build a complete data layer with custom logic:
 
-When an AI agent connects to your EnrichMCP API, it can:
+```python
+from enrichmcp import EnrichMCP, EnrichModel, Relationship, EnrichContext
+from datetime import datetime
+from decimal import Decimal
 
-1. **Discover the Model**: Call `explore_data_model()` to understand all entities and relationships
-2. **Navigate Relationships**: Follow relationships between entities naturally
-3. **Access Data**: Use generated tools with full type safety and validation
+app = EnrichMCP("Analytics Platform")
 
-Example AI agent interaction:
-```
-AI: "Show me all active customers and their recent orders"
+@app.entity
+class User(EnrichModel):
+    """User with computed analytics fields."""
 
-1. AI calls explore_data_model() - discovers Customer and Order entities
-2. AI calls list_customers(status="active") - gets active customers
-3. AI calls Customer.orders resolver for each customer - gets their orders
-4. AI presents the organized data to the user
+    id: int = Field(description="User ID")
+    email: str = Field(description="Contact email")
+    created_at: datetime = Field(description="Registration date")
+
+    # Computed fields
+    lifetime_value: Decimal = Field(description="Total revenue from user")
+    churn_risk: float = Field(description="ML-predicted churn probability 0-1")
+
+    # Relationships
+    orders: list["Order"] = Relationship(description="Purchase history")
+    segments: list["Segment"] = Relationship(description="Marketing segments")
+
+@app.entity
+class Segment(EnrichModel):
+    """Dynamic user segment for marketing."""
+
+    name: str = Field(description="Segment name")
+    criteria: dict = Field(description="Segment criteria")
+    users: list[User] = Relationship(description="Users in this segment")
+
+# Complex resource with business logic
+@app.resource
+async def find_high_value_at_risk_users(
+    lifetime_value_min: Decimal = 1000,
+    churn_risk_min: float = 0.7,
+    limit: int = 100
+) -> list[User]:
+    """Find valuable customers likely to churn."""
+    users = await db.query(
+        """
+        SELECT * FROM users
+        WHERE lifetime_value >= ? AND churn_risk >= ?
+        ORDER BY lifetime_value DESC
+        LIMIT ?
+        """,
+        lifetime_value_min, churn_risk_min, limit
+    )
+    return [User(**u) for u in users]
+
+# Async computed field resolver
+@User.lifetime_value.resolver
+async def calculate_lifetime_value(user_id: int) -> Decimal:
+    """Calculate total revenue from user's orders."""
+    total = await db.query_single(
+        "SELECT SUM(total) FROM orders WHERE user_id = ?",
+        user_id
+    )
+    return Decimal(str(total or 0))
+
+# ML-powered field
+@User.churn_risk.resolver
+async def predict_churn_risk(user_id: int, context: EnrichContext) -> float:
+    """Run churn prediction model."""
+    features = await gather_user_features(user_id)
+    model = context.get("ml_models")["churn"]
+    return float(model.predict_proba(features)[0][1])
+
+app.run()
 ```
 
 ## Key Features
 
 ### 🔍 Automatic Schema Discovery
 
-AI agents can explore your entire data model:
+AI agents explore your entire data model with one call:
 
 ```python
-# AI agents automatically get a tool called `explore_data_model()`
-model_info = await explore_data_model()
-# Returns complete schema with entities, fields, relationships, and descriptions
+schema = await explore_data_model()
+# Returns complete schema with entities, fields, types, and relationships
 ```
 
-### 🔗 Relationship Traversal
+### 🔗 Relationship Navigation
 
-Define relationships once, AI agents navigate naturally:
+Define relationships once, AI agents traverse naturally:
 
 ```python
-@Customer.orders.resolver
-async def get_orders(customer_id: int) -> list[Order]:
-    """AI agents can call this to get customer orders"""
-    return await fetch_orders(customer_id)
+# AI can navigate: user → orders → products → categories
+user = await get_user(123)
+orders = await user.orders()  # Automatic resolver
+products = await orders[0].products()
 ```
 
 ### 🛡️ Type Safety & Validation
 
-Full Pydantic validation on all inputs and outputs:
+Full Pydantic validation on every interaction:
 
 ```python
-# AI provides invalid data? Automatic validation errors
-# AI receives data? Guaranteed to match your schema
+@app.entity
+class Order(EnrichModel):
+    total: float = Field(ge=0, description="Must be positive")
+    email: EmailStr = Field(description="Customer email")
+    status: Literal["pending", "shipped", "delivered"]
 ```
 
-### 📖 Rich Descriptions
+### 📄 Pagination Built-in
 
-Every element includes descriptions for AI understanding:
-
-```python
-email: str = Field(description="Customer's primary email for communications")
-# AI knows exactly what this field represents
-```
-
-## Advanced Features
-
-### Context Management
-
-Pass database connections and auth through context:
+Handle large datasets elegantly:
 
 ```python
-from enrichmcp import EnrichContext
-
-
-@app.resource
-async def get_customer(customer_id: int, context: EnrichContext) -> Customer:
-    """Access database through context."""
-    return await context.db.get_customer(customer_id)
-```
-
-### Error Handling
-
-Built-in error types that AI agents understand:
-
-```python
-from enrichmcp.errors import NotFoundError, ValidationError
-
+from enrichmcp import PageResult
 
 @app.resource
-async def get_customer(customer_id: int) -> Customer:
-    customer = await db.get_customer(customer_id)
-    if not customer:
-        raise NotFoundError(f"Customer {customer_id} not found")
-    return customer
-```
-
-### Pagination
-
-Handle large datasets efficiently with built-in pagination support:
-
-```python
-from enrichmcp import PageResult, CursorResult
-
-
-# Page-based pagination (ideal for UIs)
-@app.resource
-async def list_customers(page: int = 1, page_size: int = 50) -> PageResult[Customer]:
-    """List customers with page-based pagination."""
-    customers, total = await db.get_customers_page(page, page_size)
-    return PageResult.create(
-        items=customers,
-        page=page,
-        page_size=page_size,
-        has_next=page * page_size < total,
-        total_items=total,
-    )
-
-
-# Cursor-based pagination (ideal for real-time feeds)
-@app.resource
-async def stream_orders(cursor: str | None = None, limit: int = 20) -> CursorResult[Order]:
-    """Stream orders with cursor-based pagination."""
-    orders, next_cursor = await db.get_orders_cursor(cursor, limit)
-    return CursorResult.create(items=orders, next_cursor=next_cursor, page_size=limit)
-
-
-# Paginated relationships
-@Customer.orders.resolver
-async def get_customer_orders(
-    customer_id: int, page: int = 1, page_size: int = 10
+async def list_orders(
+    page: int = 1,
+    page_size: int = 50
 ) -> PageResult[Order]:
-    """Get customer orders with pagination."""
-    orders, total = await db.get_customer_orders_page(customer_id, page, page_size)
+    orders, total = await db.get_orders_page(page, page_size)
     return PageResult.create(
         items=orders,
         page=page,
         page_size=page_size,
-        has_next=page * page_size < total,
-        total_items=total,
+        total_items=total
     )
 ```
 
-See the [Pagination Guide](docs/pagination.md) for comprehensive examples and best practices.
+### 🔐 Context & Authentication
 
-### SQLAlchemy Auto-Resolvers
-
-EnrichMCP can introspect SQLAlchemy models and automatically create
-resources and relationship resolvers. After defining your models with
-`EnrichSQLAlchemyMixin`, register them using `include_sqlalchemy_models`:
+Pass auth, database connections, or any context:
 
 ```python
-from enrichmcp import EnrichMCP
-from enrichmcp.sqlalchemy import (
-    EnrichSQLAlchemyMixin,
-    include_sqlalchemy_models,
-    sqlalchemy_lifespan,
-)
-from sqlalchemy import ForeignKey
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
-engine = create_async_engine("sqlite+aiosqlite:///shop.db")
-
-
-class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
-    pass
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(unique=True)
-    orders: Mapped[list["Order"]] = relationship(back_populates="user")
-
-
-class Order(Base):
-    __tablename__ = "orders"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    total: Mapped[float] = mapped_column()
-    user: Mapped[User] = relationship(back_populates="orders")
-
-
-class Product(Base):
-    __tablename__ = "products"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column()
-    price: Mapped[float] = mapped_column()
-
-
-lifespan = sqlalchemy_lifespan(Base, engine)
-app = EnrichMCP("Shop API", lifespan=lifespan)
-include_sqlalchemy_models(app, Base)
+@app.resource
+async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
+    # Access context provided by MCP client
+    auth_user = context.get("authenticated_user_id")
+    if auth_user != user_id:
+        raise PermissionError("Can only access your own profile")
+    return await db.get_profile(user_id)
 ```
 
-This generates `list_<model>` and `get_<model>` resources along with
-relationship resolvers based on your SQLAlchemy `relationship()`
-definitions.
+## Why EnrichMCP?
+
+EnrichMCP adds three critical layers on top of MCP:
+
+1. **Semantic Layer** - AI agents understand what your data means, not just its structure
+2. **Data Layer** - Type-safe models with validation and relationships
+3. **Control Layer** - Authentication, pagination, and business logic
+
+The result: AI agents can work with your data as naturally as a developer using an ORM.
+
 ## Examples
 
-See the [examples directory](examples/README.md) for runnable projects, including:
-- `shop_api_sqlite` for a database-backed API
-- `shop_api_gateway` which wraps a FastAPI backend as an API gateway
+Check out the [examples directory](examples/README.md):
 
+- [shop_api_sqlite](examples/shop_api_sqlite) - SQLAlchemy-based e-commerce API
+- [shop_api_gateway](examples/shop_api_gateway) - REST API gateway pattern
+- [analytics_platform](examples/analytics_platform) - Custom logic with ML models
 
-## Development
+## Documentation
 
-```bash
-# Clone the repository
-git clone https://github.com/featureform/enrichmcp
-cd enrichmcp
-
-# Set up development environment (uses uv and uv.lock)
-make setup
-
-# Run tests
-make test
-
-# Format code
-make format
-
-# Run linters
-make lint
-```
+- 📖 [Full Documentation](https://featureform.github.io/enrichmcp)
+- 🚀 [Getting Started Guide](https://featureform.github.io/enrichmcp/getting-started)
+- 🔧 [API Reference](https://featureform.github.io/enrichmcp/api)
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-## Support
-
-- 📖 [Documentation](https://featureform.github.io/enrichmcp)
-- 🐛 [Issue Tracker](https://github.com/featureform/enrichmcp/issues)
-- 💬 [Discussions](https://github.com/featureform/enrichmcp/discussions)
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
-EnrichMCP is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
+Apache 2.0 - See [LICENSE](LICENSE)
 
 ---
 
-Built with ❤️ by [Featureform](https://featureform.com)
-
-⭐ If you find EnrichMCP useful, please star this repository!
+Built by [Featureform](https://featureform.com) • [MCP Protocol](https://modelcontextprotocol.io)
