@@ -5,13 +5,13 @@ This example demonstrates using EnrichMCP with a real SQLite database,
 showing how to use context injection and lifespan management.
 """
 
-import sqlite3
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import aiosqlite
 from pydantic import Field
 
 from enrichmcp import CursorResult, EnrichContext, EnrichMCP, EnrichModel, Relationship
@@ -23,28 +23,29 @@ class Database:
 
     def __init__(self, db_path: str):
         self.db_path = db_path
-        self.conn: sqlite3.Connection | None = None
+        self.conn: aiosqlite.Connection | None = None
 
     async def connect(self):
         """Connect to the database."""
-        self.conn = sqlite3.connect(self.db_path)
-        self.conn.row_factory = sqlite3.Row
+        self.conn = await aiosqlite.connect(self.db_path)
+        self.conn.row_factory = aiosqlite.Row
         await self.init_schema()
 
     async def close(self):
         """Close the database connection."""
         if self.conn:
-            self.conn.close()
+            await self.conn.close()
 
     async def init_schema(self):
         """Initialize the database schema."""
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = await self.conn.cursor()
 
         # Create tables
-        cursor.execute("""
+        await cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
@@ -54,9 +55,11 @@ class Database:
                 is_verified BOOLEAN DEFAULT 0,
                 risk_score REAL DEFAULT 0.0
             )
-        """)
+            """
+        )
 
-        cursor.execute("""
+        await cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS products (
                 id INTEGER PRIMARY KEY,
                 sku TEXT UNIQUE NOT NULL,
@@ -66,9 +69,11 @@ class Database:
                 stock INTEGER DEFAULT 0,
                 fraud_risk TEXT DEFAULT 'low'
             )
-        """)
+            """
+        )
 
-        cursor.execute("""
+        await cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY,
                 order_number TEXT UNIQUE NOT NULL,
@@ -79,9 +84,11 @@ class Database:
                 risk_score REAL DEFAULT 0.0,
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
-        """)
+            """
+        )
 
-        cursor.execute("""
+        await cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS order_products (
                 order_id INTEGER NOT NULL,
                 product_id INTEGER NOT NULL,
@@ -90,13 +97,15 @@ class Database:
                 FOREIGN KEY (order_id) REFERENCES orders (id),
                 FOREIGN KEY (product_id) REFERENCES products (id)
             )
-        """)
+            """
+        )
 
-        self.conn.commit()
+        await self.conn.commit()
 
         # Insert sample data if tables are empty
-        cursor.execute("SELECT COUNT(*) FROM users")
-        if cursor.fetchone()[0] == 0:
+        await cursor.execute("SELECT COUNT(*) FROM users")
+        row = await cursor.fetchone()
+        if row[0] == 0:
             await self._insert_sample_data()
 
     async def _insert_sample_data(self):
@@ -104,7 +113,7 @@ class Database:
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = await self.conn.cursor()
 
         # Insert users
         users = [
@@ -112,7 +121,7 @@ class Database:
             ("jane_smith", "jane@example.com", "Jane Smith", 1, 0.05),
             ("suspicious_user", "suspicious@example.com", "Suspicious User", 0, 0.85),
         ]
-        cursor.executemany(
+        await cursor.executemany(
             "INSERT INTO users (username, email, full_name, is_verified, risk_score) "
             "VALUES (?, ?, ?, ?, ?)",
             users,
@@ -124,7 +133,7 @@ class Database:
             ("LAPTOP-001", "Business Laptop", "Professional laptop", 1299.99, 23, "high"),
             ("HDPHONE-001", "Wireless Headphones", "Noise-canceling", 299.99, 67, "medium"),
         ]
-        cursor.executemany(
+        await cursor.executemany(
             "INSERT INTO products (sku, name, description, price, stock, fraud_risk) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             products,
@@ -136,7 +145,7 @@ class Database:
             ("ORD-2023-1002", 2, "delivered", 1449.98, 0.05),
             ("ORD-2024-1003", 3, "flagged", 4299.99, 0.95),
         ]
-        cursor.executemany(
+        await cursor.executemany(
             "INSERT INTO orders (order_number, user_id, status, total_amount, risk_score) "
             "VALUES (?, ?, ?, ?, ?)",
             orders,
@@ -149,21 +158,20 @@ class Database:
             (3, 1, 1),  # Order 3: phone
             (3, 2, 1),  # Order 3: laptop
         ]
-        cursor.executemany(
+        await cursor.executemany(
             "INSERT INTO order_products (order_id, product_id, quantity) VALUES (?, ?, ?)",
             order_products,
         )
 
-        self.conn.commit()
+        await self.conn.commit()
 
     async def get_user(self, user_id: int) -> dict | None:
         """Get a user by ID."""
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-        row = cursor.fetchone()
+        cursor = await self.conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        row = await cursor.fetchone()
         return dict(row) if row else None
 
     async def get_all_users(self) -> list[dict]:
@@ -171,26 +179,28 @@ class Database:
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM users")
-        return [dict(row) for row in cursor.fetchall()]
+        cursor = await self.conn.execute("SELECT * FROM users")
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
 
     async def get_user_orders(self, user_id: int) -> list[dict]:
         """Get all orders for a user."""
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at", (user_id,))
-        return [dict(row) for row in cursor.fetchall()]
+        cursor = await self.conn.execute(
+            "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at",
+            (user_id,),
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
 
     async def get_order_user(self, order_id: int) -> dict | None:
         """Get the user who placed an order."""
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
-        cursor.execute(
+        cursor = await self.conn.execute(
             """
             SELECT u.* FROM users u
             JOIN orders o ON u.id = o.user_id
@@ -198,7 +208,7 @@ class Database:
         """,
             (order_id,),
         )
-        row = cursor.fetchone()
+        row = await cursor.fetchone()
         return dict(row) if row else None
 
     async def get_order_products(self, order_id: int) -> list[dict]:
@@ -206,8 +216,7 @@ class Database:
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
-        cursor.execute(
+        cursor = await self.conn.execute(
             """
             SELECT p.* FROM products p
             JOIN order_products op ON p.id = op.product_id
@@ -215,16 +224,17 @@ class Database:
         """,
             (order_id,),
         )
-        return [dict(row) for row in cursor.fetchall()]
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
 
     async def get_all_products(self) -> list[dict]:
         """Get all products."""
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM products")
-        return [dict(row) for row in cursor.fetchall()]
+        cursor = await self.conn.execute("SELECT * FROM products")
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
 
     async def get_all_orders(
         self, status: str | None = None, cursor: str | None = None, limit: int = 50
@@ -233,18 +243,18 @@ class Database:
         if not self.conn:
             raise RuntimeError("Database not connected")
 
-        db_cursor = self.conn.cursor()
+        db_cursor = await self.conn.cursor()
 
         if cursor is None:
             # First page
             if status:
-                db_cursor.execute(
+                await db_cursor.execute(
                     """SELECT * FROM orders WHERE status = ?
                        ORDER BY created_at DESC, id DESC LIMIT ?""",
                     (status, limit + 1),
                 )
             else:
-                db_cursor.execute(
+                await db_cursor.execute(
                     "SELECT * FROM orders ORDER BY created_at DESC, id DESC LIMIT ?", (limit + 1,)
                 )
         else:
@@ -252,7 +262,7 @@ class Database:
             try:
                 timestamp, last_id = cursor.split(":")
                 if status:
-                    db_cursor.execute(
+                    await db_cursor.execute(
                         """SELECT * FROM orders
                            WHERE status = ? AND (created_at, id) < (?, ?)
                            ORDER BY created_at DESC, id DESC
@@ -260,7 +270,7 @@ class Database:
                         (status, timestamp, int(last_id), limit + 1),
                     )
                 else:
-                    db_cursor.execute(
+                    await db_cursor.execute(
                         """SELECT * FROM orders
                            WHERE (created_at, id) < (?, ?)
                            ORDER BY created_at DESC, id DESC
@@ -270,7 +280,7 @@ class Database:
             except (ValueError, IndexError):
                 return [], None
 
-        rows = db_cursor.fetchall()
+        rows = await db_cursor.fetchall()
         orders = [dict(row) for row in rows]
 
         # Check if there are more results
