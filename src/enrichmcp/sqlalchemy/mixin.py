@@ -8,13 +8,7 @@ from typing import Any
 
 from pydantic import Field, create_model
 from sqlalchemy import inspect
-<<<<<<< HEAD
 from sqlalchemy.orm import DeclarativeBase
-=======
-from sqlalchemy.orm import (
-    DeclarativeBase,  # pyright: ignore[reportMissingModuleSource, reportAttributeAccessIssue, reportUnknownVariableType]
-)
->>>>>>> feature/sqlalchemy-support/simba
 from sqlalchemy.sql.type_api import TypeEngine
 
 from enrichmcp import EnrichModel, Relationship
@@ -87,12 +81,7 @@ class EnrichSQLAlchemyMixin:
 
             # Get description
             description = rel_info.get(
-<<<<<<< HEAD
                 "description", f"Relationship to {rel_prop.mapper.class_.__name__}EnrichModel"
-=======
-                "description",
-                f"Relationship to {rel_prop.mapper.class_.__name__}EnrichModel",
->>>>>>> feature/sqlalchemy-support/simba
             )
 
             # Determine relationship type
@@ -125,20 +114,12 @@ class EnrichSQLAlchemyMixin:
 
         # Store reference to original SQLAlchemy model
         # Use setattr to ensure it's properly set on the class
-<<<<<<< HEAD
         enrich_model_class._sqlalchemy_model = cls
-=======
-        enrich_model_class._sqlalchemy_model = cls  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
->>>>>>> feature/sqlalchemy-support/simba
 
         return enrich_model_class
 
 
-<<<<<<< HEAD
 def _sqlalchemy_type_to_python(sa_type: TypeEngine) -> type:
-=======
-def _sqlalchemy_type_to_python(sa_type: TypeEngine[Any]) -> type[Any]:
->>>>>>> feature/sqlalchemy-support/simba
     """
     Convert SQLAlchemy type to Python type.
 
@@ -188,4 +169,4 @@ def _sqlalchemy_type_to_python(sa_type: TypeEngine[Any]) -> type[Any]:
             return py_type
 
     # Default to Any for unknown types
-    return Any  # pyright: ignore[reportReturnType]
+    return Any

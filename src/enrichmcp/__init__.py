@@ -32,7 +32,6 @@ from .relationship import (
 )
 
 # Optional SQLAlchemy integration
-<<<<<<< HEAD
 has_sqlalchemy: bool = False
 try:  # pragma: no cover - optional dependency
     from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan  # noqa: F401
@@ -40,14 +39,6 @@ except ImportError:  # pragma: no cover - optional dependency
     pass
 else:
     has_sqlalchemy = True
-=======
-try:
-    from .sqlalchemy import EnrichSQLAlchemyMixin  # noqa: F401
-
-    HAS_SQLALCHEMY = True  # pyright: ignore[reportConstantRedefinition]
-except ImportError:
-    HAS_SQLALCHEMY = False  # pyright: ignore[reportConstantRedefinition]
->>>>>>> feature/sqlalchemy-support/simba
 
 __all__ = [
     "CursorParams",
@@ -64,10 +55,5 @@ __all__ = [
 ]
 
 # Add SQLAlchemy to exports if available
-<<<<<<< HEAD
 if has_sqlalchemy:
     __all__.extend(["EnrichSQLAlchemyMixin", "sqlalchemy_lifespan"])
-=======
-if HAS_SQLALCHEMY:
-    __all__.append("EnrichSQLAlchemyMixin")
->>>>>>> feature/sqlalchemy-support/simba
