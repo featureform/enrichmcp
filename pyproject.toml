@@ -67,14 +67,17 @@ dev = [
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.24.0",
+    "aiosqlite>=0.19.0",
 ]
 sqlalchemy = [
     "sqlalchemy>=2.0.0",
     "sqlalchemy2-stubs>=0.0.2a5",
+    "aiosqlite>=0.19.0",
 ]
 all = [
     "sqlalchemy>=2.0.0",
     "sqlalchemy2-stubs>=0.0.2a5",
+    "aiosqlite>=0.19.0",
 ]
 
 [tool.setuptools.packages.find]
