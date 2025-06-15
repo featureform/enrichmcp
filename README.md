@@ -64,7 +64,10 @@ class Order(Base):
     user: Mapped[User] = relationship(back_populates="orders")
 
 # That's it! Create your MCP app
-app = EnrichMCP("E-commerce Data", lifespan=sqlalchemy_lifespan(Base, engine))
+app = EnrichMCP(
+    "E-commerce Data",
+    lifespan=sqlalchemy_lifespan(Base, engine, cleanup_db_file=True),
+)
 include_sqlalchemy_models(app, Base)
 
 if __name__ == "__main__":

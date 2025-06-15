@@ -47,6 +47,8 @@ The app will:
 
 The lifecycle is managed using the `sqlalchemy_lifespan` helper from
 `enrichmcp.sqlalchemy`, which provides a session factory to all resources.
+Passing `cleanup_db_file=True` removes the `shop.db` file when the app shuts
+down.
 
 ## Automatic Endpoints
 
