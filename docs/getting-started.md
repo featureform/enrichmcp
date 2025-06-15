@@ -239,7 +239,7 @@ class Product(Base):
     price: Mapped[float] = mapped_column()
 
 
-lifespan = sqlalchemy_lifespan(Base, engine)
+lifespan = sqlalchemy_lifespan(Base, engine, cleanup_db_file=True)
 app = EnrichMCP("My ORM API", lifespan=lifespan)
 include_sqlalchemy_models(app, Base)
 app.run()

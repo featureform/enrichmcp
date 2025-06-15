@@ -56,8 +56,9 @@ Both shop examples include the same core functionality but demonstrate different
 A version of the shop example built with SQLAlchemy ORM models. All entities are
 declared using SQLAlchemy and registered through `include_sqlalchemy_models`,
 which automatically creates CRUD endpoints and relationship resolvers. The
-`sqlalchemy_lifespan` helper manages the async engine and seeds the SQLite
-database on first run.
+`sqlalchemy_lifespan` helper manages the async engine, seeds the SQLite
+database on first run, and removes the file on shutdown when using
+`cleanup_db_file=True`.
 
 To run this example:
 

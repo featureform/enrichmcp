@@ -28,6 +28,7 @@ def sqlalchemy_lifespan(
     *,
     seed: Callable[[AsyncSession], Awaitable[None]] | None = None,
     session_kwargs: dict[str, Any] | None = None,
+    cleanup_db_file: bool = False,
 ) -> Lifespan:
     """Create a lifespan that sets up tables and yields a session factory."""
 
@@ -48,5 +49,14 @@ def sqlalchemy_lifespan(
             yield {"session_factory": session_factory}
         finally:
             await engine.dispose()
+            if (
+                cleanup_db_file
+                and engine.url.database
+                and engine.url.drivername.startswith("sqlite")
+            ):
+                import os
+
+                if os.path.exists(engine.url.database):
+                    os.remove(engine.url.database)
 
     return _lifespan

@@ -262,7 +262,8 @@ async def seed_database(session: AsyncSession) -> None:
 
 # Application instance will be created after defining the lifespan
 
-lifespan = sqlalchemy_lifespan(Base, engine, seed=seed_database)
+lifespan = sqlalchemy_lifespan(Base, engine, seed=seed_database, cleanup_db_file=True)
+
 
 app = EnrichMCP(
     title="Shop API (SQLAlchemy)",
