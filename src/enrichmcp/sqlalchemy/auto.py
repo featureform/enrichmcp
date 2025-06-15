@@ -40,7 +40,6 @@ def _register_default_resources(
     list_description = f"List {sa_model.__name__} records"
     get_description = f"Get a single {sa_model.__name__} by ID"
 
-    @app.resource(name=list_name, description=list_description)
     async def list_resource(
         ctx: EnrichContext, page: int = 1, page_size: int = 20
     ) -> PageResult[enrich_model]:  # type: ignore[name-defined]
@@ -60,13 +59,22 @@ def _register_default_resources(
                 has_next=has_next,
             )
 
-    @app.resource(name=get_name, description=get_description)
+    # Ensure ctx annotation is an actual class for FastMCP before decorating
+    list_resource.__annotations__["ctx"] = EnrichContext
+
+    list_resource = app.resource(name=list_name, description=list_description)(list_resource)
+
     async def get_resource(ctx: EnrichContext, **kwargs: int) -> enrich_model | None:  # type: ignore[name-defined]
         entity_id = kwargs[param_name]
         session_factory = ctx.request_context.lifespan_context[session_key]
         async with session_factory() as session:
             obj = await session.get(sa_model, entity_id)
             return _sa_to_enrich(obj, enrich_model) if obj else None
+
+    # Ensure ctx annotation is an actual class for FastMCP before decorating
+    get_resource.__annotations__["ctx"] = EnrichContext
+
+    get_resource = app.resource(name=get_name, description=get_description)(get_resource)
 
 
 def _register_relationship_resolvers(
@@ -110,6 +118,7 @@ def _register_relationship_resolvers(
                 return func
 
             resolver = _create_list_resolver()
+            resolver.__annotations__["ctx"] = EnrichContext
         else:
 
             def _create_single_resolver(
@@ -132,6 +141,7 @@ def _register_relationship_resolvers(
                 return func
 
             resolver = _create_single_resolver()
+            resolver.__annotations__["ctx"] = EnrichContext
 
         resolver.__name__ = f"get_{sa_model.__name__.lower()}_{field_name}"
         resolver.__doc__ = description
