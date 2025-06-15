@@ -3,7 +3,7 @@
 **The ORM for AI Agents - Turn your data model into a semantic MCP layer**
 
 [![CI](https://github.com/featureform/enrichmcp/actions/workflows/ci.yml/badge.svg)](https://github.com/featureform/enrichmcp/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/featureform/enrichmcp/branch/main/graph/badge.svg)](https://codecov.io/gh/featureform/enrichmcp)
+[![Coverage](https://codecov.io/github/featureform/enrichmcp/coverage.svg?branch=main)](https://codecov.io/gh/featureform/enrichmcp)
 [![PyPI](https://img.shields.io/pypi/v/enrichmcp.svg)](https://pypi.org/project/enrichmcp/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/featureform/enrichmcp/blob/main/LICENSE)
