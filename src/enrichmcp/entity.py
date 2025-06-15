@@ -55,6 +55,15 @@ class EnrichModel(BaseModel):
         # If we get here, it's a type we don't handle
         raise TypeError(f"Cannot combine fields with exclude of type {type(original).__name__}.")
 
+    @override
+    def model_post_init(self, __context: Any) -> None:
+        """Remove relationship defaults after initialization."""
+        super().model_post_init(__context)
+
+        for field in self.__class__.relationship_fields():
+            if field in self.__dict__:
+                del self.__dict__[field]
+
     def describe(self) -> str:
         """
         Generate a human-readable description of this model.

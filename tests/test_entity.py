@@ -179,3 +179,16 @@ def test_model_with_invalid_exclude_type():
 
     # Check that the error message is helpful
     assert "Cannot combine fields with exclude of type dict" in str(exc_info.value)
+
+
+def test_relationship_not_set_on_instance():
+    """Relationship defaults should be removed after initialization."""
+    user = User(id=1, name="John Doe", email="john@example.com")
+
+    # Relationship field should not be stored in the instance dict
+    assert "address" not in user.__dict__
+
+    # Attribute shouldn't exist on the instance
+    assert not hasattr(user, "address")
+    with pytest.raises(AttributeError):
+        _ = user.address
