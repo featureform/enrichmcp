@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import (
 
 from enrichmcp.app import EnrichMCP
 
-if TYPE_CHECKING:  # pragma: no cover - type checking import
+if TYPE_CHECKING:
     from sqlalchemy.orm import (
         DeclarativeBase,  # pyright: ignore[reportMissingImports,reportAttributeAccessIssue]
     )
