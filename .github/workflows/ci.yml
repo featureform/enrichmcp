@@ -39,6 +39,12 @@ jobs:
 
       - name: Test with pytest
         run: make ci-test
+        env:
+          PYTEST_ADDOPTS: "-m 'not examples'"
+
+      - name: Run example tests
+        if: matrix.python-version == '3.11'
+        run: pytest tests/test_examples.py -m examples
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11' && github.event_name == 'push' && github.ref == 'refs/heads/main'
