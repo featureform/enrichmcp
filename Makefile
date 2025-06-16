@@ -1,4 +1,4 @@
-.PHONY: setup format lint test build clean docs docs-format install dev venv ci-setup ci-lint ci-test
+.PHONY: setup format lint test examples-test build clean docs docs-format install dev venv ci-setup ci-lint ci-test
 
 # Local development (uses uv)
 VENV_PYTHON = .venv/bin/python
@@ -45,6 +45,10 @@ lint-check:
 test:
 	$(PYTHON_CMD) -m pytest --cov-branch --cov-report=term --cov-report=html --cov=src/enrichmcp
 
+# Run only example tests
+examples-test:
+	$(PYTHON_CMD) -m pytest -o addopts='' -p no:cov tests/test_examples.py -m examples
+
 build:
 	$(PYTHON_CMD) -m build --no-isolation
 
@@ -88,6 +92,7 @@ help:
 	@echo "  lint        - Run linters (ruff, pyright) with auto-fixing"
 	@echo "  lint-check  - Run linters in check-only mode (no fixes)"
 	@echo "  test        - Run tests with pytest"
+	@echo "  examples-test - Run example smoke tests"
 	@echo "  build       - Build the package"
 	@echo "  clean       - Remove build artifacts"
 	@echo "  docs        - Serve documentation locally"
