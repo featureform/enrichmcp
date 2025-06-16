@@ -67,3 +67,5 @@ Pagination parameters `page` and `page_size` are available on the generated
 `sqlalchemy_lifespan` automatically creates tables on startup and yields a
 `session_factory` that resolvers can use. Providing a `seed` function is
 optional and useful only for loading sample data during development or tests.
+If you are using a temporary SQLite file and want it removed on shutdown,
+pass `cleanup_db_file=True`.

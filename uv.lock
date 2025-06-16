@@ -12,8 +12,6 @@ anyio==4.9.0
     #   starlette
 babel==2.17.0
     # via mkdocs-material
-backports-tarfile==1.2.0
-    # via jaraco-context
 backrefs==5.8
     # via mkdocs-material
 build==1.2.2.post1
@@ -72,8 +70,6 @@ idna==3.10
     #   anyio
     #   httpx
     #   requests
-importlib-metadata==8.7.0
-    # via keyring
 iniconfig==2.1.0
     # via pytest
 jaraco-classes==3.4.0
@@ -284,5 +280,3 @@ watchdog==6.0.0
     # via mkdocs
 wheel==0.45.1
     # via -r requirements-dev.txt
-zipp==3.23.0
-    # via importlib-metadata

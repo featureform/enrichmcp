@@ -17,7 +17,7 @@ endif
 # Local development commands
 setup: venv
 	uv pip sync uv.lock -p $(VENV_PYTHON)
-	uv pip install -p $(VENV_PYTHON) -e .
+	uv pip install -p $(VENV_PYTHON) -e .[dev]
 	$(VENV_PYTHON) -m pre_commit install
 	@echo "Setup complete!"
 	@echo "Your virtual environment is ready at .venv/"
@@ -51,7 +51,7 @@ build:
 # CI-specific commands (explicit, no guessing)
 ci-setup:
 	uv pip sync uv.lock --system --break-system-packages
-	uv pip install --system --break-system-packages -e .
+	uv pip install --system --break-system-packages -e .[dev]
 
 ci-lint:
 	$(PYTHON) -m ruff check .

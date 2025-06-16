@@ -47,7 +47,14 @@ Both shop examples provide the same functionality but showcase different paginat
 
 ## SQLAlchemy Shop API
 
-A variant that uses SQLAlchemy models. All entities are declared using SQLAlchemy and registered through `include_sqlalchemy_models`.
+A version of the shop example built with SQLAlchemy ORM models. All entities are
+declared using SQLAlchemy and registered through `include_sqlalchemy_models`,
+which automatically creates CRUD endpoints and relationship resolvers. The
+`sqlalchemy_lifespan` helper manages the async engine, seeds the SQLite
+database on first run, and removes the file on shutdown when using
+`cleanup_db_file=True`.
+
+To run this example:
 
 ```bash
 cd sqlalchemy_shop
@@ -70,6 +77,9 @@ cd shop_api_gateway
 uvicorn server:app --port 8001 &
 python app.py
 ```
+
+Stop the background server when finished. The gateway listens on port 8000 and
+provides the same schema-driven interface as the other examples.
 
 Stop the background server when finished. The gateway listens on port 8000 and provides the same schema-driven interface as the other examples.
 
