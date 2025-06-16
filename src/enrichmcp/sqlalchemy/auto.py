@@ -64,8 +64,11 @@ def _register_default_resources(
 
     list_resource = app.resource(name=list_name, description=list_description)(list_resource)
 
-    async def get_resource(ctx: EnrichContext, **kwargs: int) -> enrich_model | None:  # type: ignore[name-defined]
-        entity_id = kwargs[param_name]
+    async def get_resource(ctx: EnrichContext, **kwargs: Any) -> enrich_model | None:  # type: ignore[name-defined]
+        entity_id = kwargs.get(param_name)
+        if entity_id is None:
+            return None
+
         session_factory = ctx.request_context.lifespan_context[session_key]
         async with session_factory() as session:
             obj = await session.get(sa_model, entity_id)
@@ -94,7 +97,11 @@ def _register_relationship_resolvers(
             continue
         relationship = enrich_model.model_fields[field_name].default
         target_model = models[rel.mapper.class_.__name__]
-        description = rel.info.get("description", f"Get {field_name} for {sa_model.__name__}")
+        description = rel.info.get(
+            "description",
+            f"Fetches the '{field_name}' for a '{sa_model.__name__}'. "
+            f"Provide ID of parent '{sa_model.__name__}' via param key '{param_name}'.",
+        )
 
         if rel.uselist:
 
@@ -104,8 +111,11 @@ def _register_relationship_resolvers(
                 target: type = target_model,
                 param: str = param_name,
             ) -> Callable[..., Awaitable[list[Any]]]:
-                async def func(ctx: EnrichContext, **kwargs: int) -> list[Any]:
-                    entity_id = kwargs[param]
+                async def func(ctx: EnrichContext, **kwargs: Any) -> list[Any]:
+                    entity_id = kwargs.get(param)
+                    if entity_id is None:
+                        return []
+
                     session_factory = ctx.request_context.lifespan_context[session_key]
                     async with session_factory() as session:
                         obj = await session.get(model, entity_id)
@@ -127,8 +137,11 @@ def _register_relationship_resolvers(
                 target: type = target_model,
                 param: str = param_name,
             ) -> Callable[..., Awaitable[Any | None]]:
-                async def func(ctx: EnrichContext, **kwargs: int) -> Any | None:
-                    entity_id = kwargs[param]
+                async def func(ctx: EnrichContext, **kwargs: Any) -> Any | None:
+                    entity_id = kwargs.get(param)
+                    if entity_id is None:
+                        return None
+
                     session_factory = ctx.request_context.lifespan_context[session_key]
                     async with session_factory() as session:
                         obj = await session.get(model, entity_id)
