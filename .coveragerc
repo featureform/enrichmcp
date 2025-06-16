@@ -6,7 +6,11 @@ relative_files = True
 exclude_lines =
     pragma: no cover
     def __repr__
+    raise AssertionError
     raise NotImplementedError
-    if __name__ == .__main__.:
+    if __name__ == .__main__.
     pass
+    if TYPE_CHECKING:
+    Protocol
+    @abstractmethod
     raise ImportError

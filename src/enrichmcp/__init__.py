@@ -33,7 +33,7 @@ from .relationship import (
     Relationship,
 )
 
-if TYPE_CHECKING:  # pragma: no cover - optional dependency
+if TYPE_CHECKING:
     from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan
 
 # Optional SQLAlchemy integration
