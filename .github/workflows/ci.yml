@@ -44,7 +44,7 @@ jobs:
 
       - name: Run example tests
         if: matrix.python-version == '3.11'
-        run: pytest tests/test_examples.py -m examples
+        run: make examples-test
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11' && github.event_name == 'push' && github.ref == 'refs/heads/main'
