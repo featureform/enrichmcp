@@ -90,12 +90,16 @@ via MCP and lets you talk to it with either OpenAI or a local Ollama model.
 
 ```bash
 cd openai_chat_agent
-# install dependencies for the agent
-pip install -r requirements.txt
+# install dependencies for the agent using uv
+uv pip install -r requirements.txt
 # copy the sample environment and optionally set OPENAI_API_KEY
 cp .env.example .env
-python app.py
+# run the chat agent
+uv run app.py
 ```
+
+Run the above commands from the `openai_chat_agent` directory so that
+`config.json` resolves the relative path to the `hello_world` example.
 
 If `OPENAI_API_KEY` is not set the agent defaults to a local Ollama model defined
 by `OLLAMA_MODEL` (defaults to `llama3`).

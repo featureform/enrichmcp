@@ -2,7 +2,7 @@
   "mcpServers": {
     "hello_world": {
       "command": "python",
-      "args": ["examples/hello_world/app.py"]
+      "args": ["../hello_world/app.py"]
     }
   }
 }
