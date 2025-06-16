@@ -90,6 +90,8 @@ via MCP and lets you talk to it with either OpenAI or a local Ollama model.
 
 ```bash
 cd openai_chat_agent
+# install dependencies for the agent
+pip install -r requirements.txt
 # copy the sample environment and optionally set OPENAI_API_KEY
 cp .env.example .env
 python app.py

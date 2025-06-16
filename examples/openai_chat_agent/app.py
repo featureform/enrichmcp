@@ -10,7 +10,7 @@ import asyncio
 import os
 
 from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from mcp_use import MCPAgent, MCPClient
 
@@ -59,9 +59,9 @@ async def run_memory_chat() -> None:
                 continue
 
             if command == "history":
-                for msg in agent.conversation_history:
-                    role = msg.get("role", "assistant").capitalize()
-                    print(f"{role}: {msg['content']}")
+                for msg in agent.get_conversation_history():
+                    role = getattr(msg, "type", "assistant").capitalize()
+                    print(f"{role}: {msg.content}")
                 continue
 
             print("\nAssistant: ", end="", flush=True)
