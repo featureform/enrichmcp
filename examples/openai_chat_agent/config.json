@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hello_world": {
+      "command": "python",
+      "args": ["../hello_world/app.py"]
+    }
+  }
+}
