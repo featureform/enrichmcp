@@ -134,6 +134,7 @@ def _sqlalchemy_type_to_python(sa_type: TypeEngine) -> type[Any]:
 
     from sqlalchemy import (
         JSON,
+        BigInteger,
         Boolean,
         Date,
         DateTime,
@@ -156,6 +157,7 @@ def _sqlalchemy_type_to_python(sa_type: TypeEngine) -> type[Any]:
         Time: time,
         JSON: dict,
         LargeBinary: bytes,
+        BigInteger: int,
     }
 
     # Check for exact type matches first
