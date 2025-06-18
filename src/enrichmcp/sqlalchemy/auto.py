@@ -11,13 +11,9 @@ if TYPE_CHECKING:
 
     from sqlalchemy.orm import DeclarativeBase
 
-import logging
-
 from enrichmcp import EnrichContext, EnrichMCP, PageResult
 
 from .mixin import EnrichSQLAlchemyMixin
-
-logger = logging.getLogger(__name__)
 
 
 def _sa_to_enrich(instance: Any, model_cls: type) -> Any:
@@ -69,40 +65,23 @@ def _register_default_resources(
     list_resource = app.resource(name=list_name, description=list_description)(list_resource)
 
     async def get_resource(ctx: EnrichContext, **kwargs: Any) -> enrich_model | None:  # type: ignore[name-defined]
-        logger.debug(f"Received raw kwargs for get_resource: {kwargs}")
-
-        # Determine where the actual parameters are located
         actual_params = kwargs
-        # Check if param_name is directly in kwargs or if it's nested under a 'kwargs' key.
-        # The latter happens if the MCP call is structured like func_name(kwargs={...}).
         if param_name not in kwargs and "kwargs" in kwargs and isinstance(kwargs["kwargs"], dict):
             actual_params = kwargs["kwargs"]
-        else:  # Param not in kwargs and also not in a nested 'kwargs' dict.
-            logger.debug(f"Param '{param_name}' not found directly or in nested 'kwargs'.")
-            # actual_params remains kwargs, entity_id will be None in the next step
 
-        logger.debug(f"Using '{param_name}' for ID from processed: {actual_params}")
         entity_id = actual_params.get(param_name)
 
         if entity_id is None:
-            logger.warning(f"Param '{param_name}' not processed (raw: {kwargs}). Ret None.")
             return None
 
-        logger.debug(f"Extracted entity_id: {entity_id} for model {sa_model.__name__}")
-
         session_factory = ctx.request_context.lifespan_context[session_key]
-        logger.debug(f"Using session_key: '{session_key}'")
 
         async with session_factory() as session:
-            logger.debug(f"Attempting to fetch {sa_model.__name__} with id: {entity_id}")
             obj = await session.get(sa_model, entity_id)
             if obj:
-                logger.debug(f"Found object: {obj}")
                 enriched_obj = _sa_to_enrich(obj, enrich_model)
-                logger.debug(f"Enriched object: {enriched_obj}")
                 return enriched_obj
             else:
-                logger.debug(f"No object found for {sa_model.__name__} with id: {entity_id}")
                 return None
 
     # Ensure ctx annotation is an actual class for FastMCP before decorating
@@ -141,38 +120,62 @@ def _register_relationship_resolvers(
                 model: type = sa_model,
                 target: type = target_model,
                 param: str = param_name,
-            ) -> Callable[..., Awaitable[list[Any]]]:
+            ) -> Callable[..., Awaitable[PageResult[Any]]]:
+                """Factory for list relationship resolver that supports paging."""
+
                 async def func(
-                    ctx: EnrichContext, **kwargs: Any
-                ) -> list[Any]:  # Changed int to Any
-                    logger.debug(f"List resolver {model.__name__}.{f_name} raw_kwargs: {kwargs}")
+                    ctx: EnrichContext,
+                    page: int = 1,
+                    page_size: int = 20,
+                    **kwargs: Any,
+                ) -> PageResult[Any]:
                     actual_params = kwargs
                     if (
                         param not in kwargs
                         and "kwargs" in kwargs
                         and isinstance(kwargs["kwargs"], dict)
                     ):
-                        logger.debug(f"Param '{param}' not top-level. Check nested 'kwargs' dict.")
                         actual_params = kwargs["kwargs"]
 
                     entity_id = actual_params.get(param)
-                    logger.debug(f"Using param_name: '{param}', extracted entity_id: {entity_id}")
+
+                    # Prepare default empty result helper
+                    def _empty() -> PageResult[Any]:
+                        return PageResult.create(
+                            items=[],
+                            page=page,
+                            page_size=page_size,
+                            total_items=0,
+                            has_next=False,
+                        )
 
                     if entity_id is None:
-                        logger.warning(
-                            f"Param '{param}' for {model.__name__}.{f_name} not processed."
-                        )
-                        return []
+                        return _empty()
 
                     session_factory = ctx.request_context.lifespan_context[session_key]
                     async with session_factory() as session:
                         obj = await session.get(model, entity_id)
                         if not obj:
-                            logger.debug(f"Parent {model.__name__} ID {entity_id} not found.")
-                            return []
+                            return _empty()
                         await session.refresh(obj, [f_name])
                         values = getattr(obj, f_name)
-                        return [_sa_to_enrich(v, target) for v in values]
+
+                        # Safety: ensure we have a list/iterable
+                        values_list = list(values)
+                        total_items = len(values_list)
+                        start = (page - 1) * page_size
+                        end = start + page_size
+                        slice_values = values_list[start:end]
+                        items = [_sa_to_enrich(v, target) for v in slice_values]
+                        has_next = page * page_size < total_items
+
+                        return PageResult.create(
+                            items=items,
+                            page=page,
+                            page_size=page_size,
+                            total_items=total_items,
+                            has_next=has_next,
+                        )
 
                 return func
 
@@ -189,30 +192,23 @@ def _register_relationship_resolvers(
                 async def func(
                     ctx: EnrichContext, **kwargs: Any
                 ) -> Any | None:  # Changed int to Any
-                    logger.debug(f"Single resolver {model.__name__}.{f_name} raw_kwargs: {kwargs}")
                     actual_params = kwargs
                     if (
                         param not in kwargs
                         and "kwargs" in kwargs
                         and isinstance(kwargs["kwargs"], dict)
                     ):
-                        logger.debug(f"Param '{param}' not top-level. Check nested 'kwargs' dict.")
                         actual_params = kwargs["kwargs"]
 
                     entity_id = actual_params.get(param)
-                    logger.debug(f"Using param_name: '{param}', extracted entity_id: {entity_id}")
 
                     if entity_id is None:
-                        logger.warning(
-                            f"Param '{param}' for {model.__name__}.{f_name} not processed."
-                        )
                         return None
 
                     session_factory = ctx.request_context.lifespan_context[session_key]
                     async with session_factory() as session:
                         obj = await session.get(model, entity_id)
                         if not obj:
-                            logger.debug(f"Parent {model.__name__} ID {entity_id} not found.")
                             return None
                         await session.refresh(obj, [f_name])
                         value = getattr(obj, f_name)
