@@ -6,6 +6,9 @@ pytest>=8.0.0
 pytest-asyncio>=0.23.0
 pytest-cov>=5.0.0
 
+# MCP client utilities used by example tests
+mcp_use>=1.0.0
+
 # Code quality
 ruff>=0.8.0
 pyright>=1.1.400
