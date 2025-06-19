@@ -90,13 +90,39 @@ via MCP and lets you talk to it with either OpenAI or a local Ollama model.
 
 ```bash
 cd openai_chat_agent
+# install dependencies for the agent using uv
+uv pip install -r requirements.txt
 # copy the sample environment and optionally set OPENAI_API_KEY
 cp .env.example .env
-python app.py
+# run the chat agent
+uv run app.py
 ```
+
+Run the above commands from the `openai_chat_agent` directory so that
+`config.json` resolves the relative path to the `hello_world` example.
 
 If `OPENAI_API_KEY` is not set the agent defaults to a local Ollama model defined
 by `OLLAMA_MODEL` (defaults to `llama3`).
+An Ollama server must be running locally when using this mode or the
+agent will fail to connect.
+
+### Running Ollama Locally
+
+1. [Install Ollama](https://ollama.com) and ensure the `ollama` command is in
+   your `PATH`.
+2. Download the desired model (the example uses `llama3.2` by default):
+
+   ```bash
+   ollama pull llama3.2
+   ```
+
+3. Start the Ollama server in the background before launching the chat agent:
+
+   ```bash
+   ollama serve &
+   ```
+
+The chat agent will fail to start if the server is not running.
 The included configuration starts the `hello_world` example using the MCP
 stdio connector so everything runs locally.
 This example demonstrates how to use `MCPAgent` with built-in conversation
