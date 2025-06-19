@@ -83,7 +83,7 @@ class Relationship:
             self.resolvers.append((resolver_name, func))
 
             # If app is available, register as a resource
-            if self.app and hasattr(self.app, "resource"):
+            if self.app and hasattr(self.app, "retrieve"):
                 entity_name = self.owner_cls.__name__ if self.owner_cls else "Entity"
                 field_name = self.field_name or "field"
 
@@ -99,7 +99,7 @@ class Relationship:
                 ).strip()
 
                 # Register with app's resource system
-                resource_method = self.app.resource
+                resource_method = self.app.retrieve
                 return resource_method(name=resource_name, description=resource_description)(func)
 
             return func

@@ -66,7 +66,7 @@ async def test_resource_decorator():
     """Test resource decorator."""
     app = EnrichMCP("Test API", description="Test API description")
 
-    @app.resource(description="Get user resource")
+    @app.retrieve(description="Get user resource")
     async def get_user(*, id: int) -> dict:
         return {"id": id, "name": "Test User"}
 
@@ -82,7 +82,7 @@ async def test_resource_decorator_without_parens():
     """Test resource decorator without parentheses."""
     app = EnrichMCP("Test API", description="Test API description")
 
-    @app.resource
+    @app.retrieve
     async def get_user_no_parens(*, id: int) -> dict:
         """Get user by ID without parentheses in decorator."""
         return {"id": id, "name": "Test User"}
@@ -99,7 +99,7 @@ async def test_resource_decorator_empty_parens():
     """Test resource decorator with empty parentheses."""
     app = EnrichMCP("Test API", description="Test API description")
 
-    @app.resource()
+    @app.retrieve()
     async def get_user_empty_parens(*, id: int) -> dict:
         """Get user by ID with empty parentheses."""
         return {"id": id, "name": "Test User"}
@@ -116,7 +116,7 @@ async def test_resource_with_description():
     """Test resource decorator with description override."""
     app = EnrichMCP("Test API", description="Test API description")
 
-    @app.resource(name="custom_name", description="Custom resource description")
+    @app.retrieve(name="custom_name", description="Custom resource description")
     async def get_data() -> dict:
         """Original docstring that should be replaced."""
         return {"status": "ok"}
@@ -136,7 +136,7 @@ async def test_resource_without_description_fails():
 
     with pytest.raises(ValueError, match="must have a description"):
 
-        @app.resource
+        @app.retrieve
         async def bad_resource():
             # No docstring, should fail
             return {"status": "ok"}

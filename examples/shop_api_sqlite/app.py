@@ -458,7 +458,7 @@ async def by_order_id_products(order_id: int, ctx: EnrichContext) -> list[Produc
 
 
 # Define root resources
-@app.resource
+@app.retrieve
 async def list_users(ctx: EnrichContext) -> list[User]:
     """List all users in the system."""
     db: Database = ctx.request_context.lifespan_context["db"]
@@ -482,7 +482,7 @@ async def list_users(ctx: EnrichContext) -> list[User]:
     return users
 
 
-@app.resource
+@app.retrieve
 async def get_user(user_id: int, ctx: EnrichContext) -> User:
     """Get a specific user by ID."""
     db: Database = ctx.request_context.lifespan_context["db"]
@@ -510,7 +510,7 @@ async def get_user(user_id: int, ctx: EnrichContext) -> User:
     )
 
 
-@app.resource
+@app.retrieve
 async def list_products(ctx: EnrichContext) -> list[Product]:
     """List all products in the catalog."""
     db: Database = ctx.request_context.lifespan_context["db"]
@@ -534,7 +534,7 @@ async def list_products(ctx: EnrichContext) -> list[Product]:
     return products
 
 
-@app.resource
+@app.retrieve
 async def list_orders(
     ctx: EnrichContext, status: str | None = None, cursor: str | None = None, limit: int = 10
 ) -> CursorResult[Order]:

@@ -20,7 +20,7 @@ class User(EnrichModel):
 
 
 # Page-based pagination
-@app.resource
+@app.retrieve
 async def list_users(page: int = 1, page_size: int = 50) -> PageResult[User]:
     """List users with page-based pagination."""
     users, total = await db.get_users_page(page, page_size)
@@ -34,7 +34,7 @@ async def list_users(page: int = 1, page_size: int = 50) -> PageResult[User]:
 
 
 # Cursor-based pagination
-@app.resource
+@app.retrieve
 async def stream_users(cursor: str | None = None, limit: int = 50) -> CursorResult[User]:
     """Stream users with cursor-based pagination."""
     users, next_cursor = await db.get_users_cursor(cursor, limit)
@@ -55,7 +55,7 @@ Page-based pagination uses page numbers and is ideal for:
 from enrichmcp import PageResult, PaginationParams
 
 
-@app.resource
+@app.retrieve
 async def list_orders(
     page: int = 1, page_size: int = 25, status: str | None = None
 ) -> PageResult[Order]:
@@ -101,7 +101,7 @@ Cursor-based pagination uses cursors and is ideal for:
 from enrichmcp import CursorResult, CursorParams
 
 
-@app.resource
+@app.retrieve
 async def stream_notifications(
     cursor: str | None = None, limit: int = 20
 ) -> CursorResult[Notification]:
@@ -139,7 +139,7 @@ Use `PaginationParams` for consistent page-based pagination parameters:
 from enrichmcp import PaginationParams
 
 
-@app.resource
+@app.retrieve
 async def search_users(query: str, pagination: PaginationParams | None = None) -> PageResult[User]:
     """Search users with pagination helper."""
     if pagination is None:
@@ -174,7 +174,7 @@ Use `CursorParams` for consistent cursor-based pagination:
 from enrichmcp import CursorParams
 
 
-@app.resource
+@app.retrieve
 async def list_events(
     event_type: str | None = None, cursor_params: CursorParams | None = None
 ) -> CursorResult[Event]:
@@ -366,7 +366,7 @@ else:
 ### 4. Add Filtering and Sorting
 
 ```python
-@app.resource
+@app.retrieve
 async def search_orders(
     status: str | None = None,
     user_id: int | None = None,
@@ -470,13 +470,13 @@ async def test_cursor_pagination():
 
 ```python
 # Before: Returns all items
-@app.resource
+@app.retrieve
 async def list_users() -> list[User]:
     return await db.get_all_users()
 
 
 # After: Add pagination parameters
-@app.resource
+@app.retrieve
 async def list_users(page: int = 1, page_size: int = 50) -> PageResult[User]:
     users, total = await db.get_users_page(page, page_size)
     return PageResult.create(

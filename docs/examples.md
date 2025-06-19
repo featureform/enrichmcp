@@ -110,13 +110,13 @@ async def get_book_author(book_id: int) -> "Author":
 
 
 # Define root resources
-@app.resource
+@app.retrieve
 async def list_authors() -> list[Author]:
     """List all authors in the catalog."""
     return [Author(**author_data) for author_data in AUTHORS]
 
 
-@app.resource
+@app.retrieve
 async def get_author(author_id: int) -> Author:
     """Get a specific author by ID."""
     author_data = next((a for a in AUTHORS if a["id"] == author_id), None)
@@ -126,13 +126,13 @@ async def get_author(author_id: int) -> Author:
     return Author(id=-1, name="Not Found", bio="Author not found", birth_date=date(1900, 1, 1))
 
 
-@app.resource
+@app.retrieve
 async def list_books() -> list[Book]:
     """List all books in the catalog."""
     return [Book(**book_data) for book_data in BOOKS]
 
 
-@app.resource
+@app.retrieve
 async def search_books(title_contains: str) -> list[Book]:
     """Search for books by title."""
     matching_books = [book for book in BOOKS if title_contains.lower() in book["title"].lower()]
@@ -283,13 +283,13 @@ async def get_task_project(task_id: int) -> "Project":
 
 
 # Resources
-@app.resource
+@app.retrieve
 async def list_projects() -> list[Project]:
     """List all projects."""
     return [Project(**project_data) for project_data in PROJECTS]
 
 
-@app.resource
+@app.retrieve
 async def list_tasks(status: Status | None = None, priority: Priority | None = None) -> list[Task]:
     """List tasks with optional filtering."""
     filtered_tasks = TASKS
@@ -303,7 +303,7 @@ async def list_tasks(status: Status | None = None, priority: Priority | None = N
     return [Task(**task_data) for task_data in filtered_tasks]
 
 
-@app.resource
+@app.retrieve
 async def get_project_summary(project_id: int) -> dict:
     """Get summary statistics for a project."""
     project_tasks = [t for t in TASKS if t["project_id"] == project_id]
@@ -421,13 +421,13 @@ async def get_ingredient_recipes(ingredient_id: int) -> list["Recipe"]:
 
 
 # Resources
-@app.resource
+@app.retrieve
 async def list_recipes() -> list[Recipe]:
     """List all recipes."""
     return [Recipe(**recipe_data) for recipe_data in RECIPES]
 
 
-@app.resource
+@app.retrieve
 async def search_recipes_by_ingredient(ingredient_name: str) -> list[Recipe]:
     """Find recipes containing a specific ingredient."""
     # Find ingredient
@@ -442,7 +442,7 @@ async def search_recipes_by_ingredient(ingredient_name: str) -> list[Recipe]:
     return await get_ingredient_recipes(ingredient["id"])
 
 
-@app.resource
+@app.retrieve
 async def get_quick_recipes(max_time: int = 30) -> list[Recipe]:
     """Get recipes that can be made quickly."""
     quick_recipes = [
@@ -459,7 +459,7 @@ These examples demonstrate:
 - Basic entity definition with `@app.entity`
 - Relationship definition with `Relationship()`
 - Resolver implementation with `@Entity.field.resolver`
-- Resource creation with `@app.resource`
+- Resource creation with `@app.retrieve`
 - Simple in-memory data storage
 - Filtering and searching patterns
 

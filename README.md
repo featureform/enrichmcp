@@ -113,7 +113,7 @@ class Order(EnrichModel):
     customer: Customer = Relationship(description="Customer who placed this order")
 
 # Define how to fetch data
-@app.resource
+@app.retrieve
 async def get_customer(customer_id: int) -> Customer:
     """Fetch customer from CRM API."""
     response = await http.get(f"/api/customers/{customer_id}")
@@ -165,7 +165,7 @@ class Segment(EnrichModel):
     users: list[User] = Relationship(description="Users in this segment")
 
 # Complex resource with business logic
-@app.resource
+@app.retrieve
 async def find_high_value_at_risk_users(
     lifetime_value_min: Decimal = 1000,
     churn_risk_min: float = 0.7,
@@ -245,7 +245,7 @@ Handle large datasets elegantly:
 ```python
 from enrichmcp import PageResult
 
-@app.resource
+@app.retrieve
 async def list_orders(
     page: int = 1,
     page_size: int = 50
@@ -266,7 +266,7 @@ See the [Pagination Guide](https://featureform.github.io/enrichmcp/pagination) f
 Pass auth, database connections, or any context:
 
 ```python
-@app.resource
+@app.retrieve
 async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
     # Access context provided by MCP client
     auth_user = context.get("authenticated_user_id")

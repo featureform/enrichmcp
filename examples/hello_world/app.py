@@ -13,7 +13,7 @@ def main():
     app = EnrichMCP(title="Hello World API", description="A simple API that says hello!")
 
     # Define a hello world resource
-    @app.resource(description="Say hello to the world")
+    @app.retrieve(description="Say hello to the world")
     async def hello_world() -> dict:
         """
         A simple resource that returns a hello world message.

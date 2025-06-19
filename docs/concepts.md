@@ -149,7 +149,7 @@ async def get_orders(customer_id: int, limit: int = 10, offset: int = 0) -> list
 Resources are the entry points for AI agents:
 
 ```python
-@app.resource
+@app.retrieve
 async def get_customer(customer_id: int) -> Customer:
     """Retrieve a customer by ID.
 
@@ -162,7 +162,7 @@ async def get_customer(customer_id: int) -> Customer:
     return customer
 
 
-@app.resource
+@app.retrieve
 async def search_customers(query: str, status: str | None = None) -> list[Customer]:
     """Search for customers by name or email.
 
@@ -194,7 +194,7 @@ class AppContext(EnrichContext):
     user: User | None = None
 
 
-@app.resource
+@app.retrieve
 async def get_customer(customer_id: int, context: AppContext) -> Customer:
     """Get customer using context."""
     # Check cache first
@@ -236,7 +236,7 @@ enrichmcp leverages Pydantic for comprehensive validation:
 
 ```python
 # This automatically validates inputs
-@app.resource
+@app.retrieve
 async def create_customer(
     email: EmailStr,  # Validates email format
     age: int = Field(ge=18, le=150),  # Range validation
@@ -255,7 +255,7 @@ EnrichMCP extends FastMCP's context system to provide automatic injection of log
 Any resource or resolver can receive context by adding a parameter typed as `EnrichContext`:
 
 ```python
-@app.resource
+@app.retrieve
 async def my_resource(param: str, ctx: EnrichContext) -> Result:
     # Context is automatically injected
     await ctx.info("Processing request")
@@ -325,7 +325,7 @@ Use semantic errors that AI agents understand:
 from enrichmcp.errors import NotFoundError, ValidationError, AuthorizationError
 
 
-@app.resource
+@app.retrieve
 async def get_order(order_id: int, context: AppContext) -> Order:
     order = await context.db.get_order(order_id)
 

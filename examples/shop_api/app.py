@@ -433,7 +433,7 @@ async def by_order_id_products(order_id: int) -> list[Product]:
 
 
 # Define root resources
-@app.resource
+@app.retrieve
 async def list_users() -> list[User]:
     """List all users in the system.
 
@@ -447,7 +447,7 @@ async def list_users() -> list[User]:
     return [User(**user_data) for user_data in USERS]
 
 
-@app.resource
+@app.retrieve
 async def get_user(user_id: int) -> User:
     """Get a specific user by ID.
 
@@ -481,7 +481,7 @@ async def get_user(user_id: int) -> User:
     return User(**user_data)
 
 
-@app.resource
+@app.retrieve
 async def list_products() -> list[Product]:
     """List all products in the catalog.
 
@@ -495,7 +495,7 @@ async def list_products() -> list[Product]:
     return [Product(**product_data) for product_data in PRODUCTS]
 
 
-@app.resource
+@app.retrieve
 async def list_orders(
     status: str | None = None, page: int = 1, page_size: int = 10
 ) -> PageResult[Order]:

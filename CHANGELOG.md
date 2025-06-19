@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-06-19
+
+### Changed
+- Renamed `app.resource` decorator to `app.retrieve`; `app.resource` remains available as a deprecated alias.
+
 ## [0.4.1] - 2025-06-15
 
 ### Fixed

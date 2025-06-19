@@ -46,9 +46,10 @@ class User(EnrichModel):
     name: str = Field(description="Username")
 ```
 
-### `resource(func=None, *, name=None, description=None)`
+### `retrieve(func=None, *, name=None, description=None)`
 
-Decorator to register a function as an MCP resource.
+Register a function as an MCP resource. The older ``resource`` decorator
+is still available but deprecated. Switch to ``retrieve`` for new code.
 
 **Parameters:**
 - `func`: The function (when used without parentheses)
@@ -57,7 +58,7 @@ Decorator to register a function as an MCP resource.
 
 **Example:**
 ```python
-@app.resource
+@app.retrieve
 async def list_users() -> list[User]:
     """List all users in the system."""
     return await fetch_all_users()
@@ -183,7 +184,7 @@ async def get_book_author(book_id: int) -> Author:
 
 
 # Define resources
-@app.resource
+@app.retrieve
 async def list_authors() -> list[Author]:
     """List all authors."""
     # Implementation here
