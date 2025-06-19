@@ -63,6 +63,37 @@ async def list_users() -> list[User]:
     return await fetch_all_users()
 ```
 
+### `create(func=None, *, name=None, description=None)`
+
+Register an entity creation operation. Works like `@app.resource` but
+indicates a create action.
+
+```python
+@app.create
+async def create_user(email: str) -> User:
+    ...
+```
+
+### `update(func=None, *, name=None, description=None)`
+
+Register an entity update using a patch model containing mutable fields.
+
+```python
+@app.update
+async def update_user(uid: int, patch: User.PatchModel) -> User:
+    ...
+```
+
+### `delete(func=None, *, name=None, description=None)`
+
+Register an entity deletion operation.
+
+```python
+@app.delete
+async def delete_user(uid: int) -> bool:
+    ...
+```
+
 ### `run(**options)`
 
 Start the MCP server.

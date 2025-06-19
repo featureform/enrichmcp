@@ -83,6 +83,7 @@ Focus on your data model, not protocol details:
 - **Automatic Tool Generation**: Decorators handle all MCP setup
 - **Smart Defaults**: Sensible conventions out of the box
 - **Clean APIs**: Intuitive patterns inspired by GraphQL and ORMs
+- **Mutable Fields**: Opt‑in mutability with auto-generated patch models
 
 ## How It Works
 

@@ -238,6 +238,30 @@ class Order(EnrichModel):
     status: Literal["pending", "shipped", "delivered"]
 ```
 
+### ✏️ Mutability & CRUD
+
+Fields are immutable by default. Mark them as mutable and use
+auto-generated patch models for updates:
+
+```python
+@app.entity
+class Customer(EnrichModel):
+    id: int = Field(description="ID")
+    email: str = Field(mutable=True, description="Email")
+
+@app.create
+async def create_customer(email: str) -> Customer:
+    ...
+
+@app.update
+async def update_customer(cid: int, patch: Customer.PatchModel) -> Customer:
+    ...
+
+@app.delete
+async def delete_customer(cid: int) -> bool:
+    ...
+```
+
 ### 📄 Pagination Built-in
 
 Handle large datasets elegantly:

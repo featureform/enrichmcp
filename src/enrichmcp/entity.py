@@ -33,6 +33,23 @@ class EnrichModel(BaseModel):
         return {k for k, v in cls.model_fields.items() if isinstance(v.default, Relationship)}
 
     @classmethod
+    def mutable_fields(cls) -> set[str]:
+        """Return fields marked as mutable."""
+
+        def _is_mutable(f: Any) -> bool:
+            extra = getattr(f, "json_schema_extra", None)
+            if extra is None:
+                info = getattr(f, "field_info", None)
+                extra = getattr(info, "extra", {}) if info is not None else {}
+            return extra.get("mutable") is True
+
+        return {
+            name
+            for name, field in cls.model_fields.items()
+            if _is_mutable(field) and name not in cls.relationship_fields()
+        }
+
+    @classmethod
     def relationships(cls) -> set[Relationship]:
         return {
             v.default for _, v in cls.model_fields.items() if isinstance(v.default, Relationship)
@@ -94,6 +111,13 @@ class EnrichModel(BaseModel):
                 if hasattr(field.annotation, "__name__"):
                     field_type = field.annotation.__name__
             field_desc = field.description
+
+            extra = getattr(field, "json_schema_extra", None)
+            if extra is None:
+                info = getattr(field, "field_info", None)
+                extra = getattr(info, "extra", {}) if info is not None else {}
+            if extra.get("mutable"):
+                field_type = f"{field_type}, mutable"
 
             # Format field info
             field_lines.append(f"- **{name}** ({field_type}): {field_desc}")

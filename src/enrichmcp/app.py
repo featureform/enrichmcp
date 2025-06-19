@@ -14,6 +14,7 @@ from typing import (
 )
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field, create_model
 
 from .entity import EnrichModel
 from .relationship import Relationship
@@ -172,6 +173,9 @@ class EnrichMCP:
             # Find and register relationships
             self._register_relationships(cls)
 
+            # Generate PatchModel for mutable fields
+            self._generate_patch_model(cls)
+
             return cls
 
         return decorator(cls) if cls else decorator
@@ -184,6 +188,33 @@ class EnrichMCP:
             cls: The entity class to process
         """
         self.relationships[cls.__name__] = cls.relationships()
+
+    def _generate_patch_model(self, cls: type[EnrichModel]) -> None:
+        """Create an auto-generated PatchModel on the entity class."""
+        mutable_fields = {}
+        for name, field in cls.model_fields.items():
+            extra = getattr(field, "json_schema_extra", None)
+            if extra is None:
+                info = getattr(field, "field_info", None)
+                extra = getattr(info, "extra", {}) if info is not None else {}
+            if extra.get("mutable") is True and name not in cls.relationship_fields():
+                annotation = field.annotation or Any
+                mutable_fields[name] = (
+                    annotation | None,
+                    Field(
+                        default=None,
+                        description=field.description,
+                    ),
+                )
+
+        if mutable_fields:
+            patch_model_cls = create_model(
+                f"{cls.__name__}PatchModel",
+                __base__=BaseModel,
+                **mutable_fields,
+            )
+            patch_model_cls.__doc__ = f"Patch model for {cls.__name__}"
+            cls.PatchModel = patch_model_cls
 
     def describe_model(self) -> str:
         """
@@ -231,6 +262,12 @@ class EnrichMCP:
                     if hasattr(field.annotation, "__name__"):
                         field_type = field.annotation.__name__
                 field_desc = field.description
+                extra = getattr(field, "json_schema_extra", None)
+                if extra is None:
+                    info = getattr(field, "field_info", None)
+                    extra = getattr(info, "extra", {}) if info is not None else {}
+                if extra.get("mutable"):
+                    field_type = f"{field_type}, mutable"
 
                 # Format field info
                 field_lines.append(f"- **{field_name}** ({field_type}): {field_desc}")
@@ -322,6 +359,55 @@ class EnrichMCP:
             return decorator(func)
 
         # If called with parentheses (@app.resource())
+        return cast("DecoratorCallable", decorator)
+
+    # CRUD helper decorators
+    def create(
+        self,
+        func: Callable[..., Any] | None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Callable[..., Any] | DecoratorCallable:
+        """Register a create operation."""
+
+        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+            return self.resource(fn, name=name, description=description)
+
+        if func is not None:
+            return decorator(func)
+        return cast("DecoratorCallable", decorator)
+
+    def update(
+        self,
+        func: Callable[..., Any] | None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Callable[..., Any] | DecoratorCallable:
+        """Register an update operation."""
+
+        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+            return self.resource(fn, name=name, description=description)
+
+        if func is not None:
+            return decorator(func)
+        return cast("DecoratorCallable", decorator)
+
+    def delete(
+        self,
+        func: Callable[..., Any] | None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Callable[..., Any] | DecoratorCallable:
+        """Register a delete operation."""
+
+        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+            return self.resource(fn, name=name, description=description)
+
+        if func is not None:
+            return decorator(func)
         return cast("DecoratorCallable", decorator)
 
     def run(
