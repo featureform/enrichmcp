@@ -9,12 +9,28 @@ from __future__ import annotations
 import asyncio
 import os
 
+import httpx
 from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from mcp_use import MCPAgent, MCPClient
 
 SYSTEM_MESSAGE = "You are a helpful assistant that talks to the user and uses tools via MCP."
+
+
+async def ensure_ollama_running(model: str) -> None:
+    """Check that an Ollama server is running."""
+    try:
+        async with httpx.AsyncClient(timeout=1.0) as client:
+            await client.get("http://localhost:11434/api/tags")
+    except Exception:
+        msg = (
+            "Ollama server not detected. Install from https://ollama.com and "
+            "start it using:\n\n"
+            "    ollama serve &\n    ollama pull "
+            f"{model}\n"
+        )
+        raise RuntimeError(msg) from None
 
 
 async def run_memory_chat() -> None:
@@ -26,9 +42,13 @@ async def run_memory_chat() -> None:
     client = MCPClient.from_config_file(config_file)
 
     openai_key = os.getenv("OPENAI_API_KEY")
-    ollama_model = os.getenv("OLLAMA_MODEL", "llama3")
+    ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
 
-    llm = ChatOpenAI(model="gpt-4o") if openai_key else ChatOllama(model=ollama_model)
+    if openai_key:
+        llm = ChatOpenAI(model="gpt-4o")
+    else:
+        await ensure_ollama_running(ollama_model)
+        llm = ChatOllama(model=ollama_model)
 
     agent = MCPAgent(
         llm=llm,
@@ -59,9 +79,9 @@ async def run_memory_chat() -> None:
                 continue
 
             if command == "history":
-                for msg in agent.conversation_history:
-                    role = msg.get("role", "assistant").capitalize()
-                    print(f"{role}: {msg['content']}")
+                for msg in agent.get_conversation_history():
+                    role = getattr(msg, "type", "assistant").capitalize()
+                    print(f"{role}: {msg.content}")
                 continue
 
             print("\nAssistant: ", end="", flush=True)
