@@ -45,7 +45,7 @@ class MyContext(EnrichContext):
 
 
 # Use in resources
-@app.resource
+@app.retrieve
 async def get_data(context: MyContext) -> dict:
     # Use your custom context
     return await context.db.fetch_data()

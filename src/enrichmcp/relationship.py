@@ -99,7 +99,7 @@ class Relationship:
                 ).strip()
 
                 # Register with app's resource system
-                resource_method = self.app.resource
+                resource_method = self.app.retrieve
                 return resource_method(name=resource_name, description=resource_description)(func)
 
             return func

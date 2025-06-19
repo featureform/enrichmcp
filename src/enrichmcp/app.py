@@ -4,6 +4,7 @@ Main application module for enrichmcp.
 Provides the EnrichMCP class for creating MCP applications.
 """
 
+import warnings
 from collections.abc import Callable
 from typing import (
     Any,
@@ -67,7 +68,7 @@ class EnrichMCP:
         Register built-in resources for the API.
         """
 
-        @self.resource(
+        @self.retrieve(
             name="explore_data_model",
             description=(
                 "IMPORTANT: Call this tool FIRST to understand the complete data model, "
@@ -299,7 +300,7 @@ class EnrichMCP:
 
         return "\n".join(lines)
 
-    def resource(
+    def retrieve(
         self,
         func: Callable[..., Any] | None = None,
         *,
@@ -310,13 +311,13 @@ class EnrichMCP:
         Register a function as an MCP resource.
 
         Can be used as:
-            @app.resource
+            @app.retrieve
             async def my_resource():
                 '''Resource description in docstring'''
                 ...
 
         Or with explicit parameters:
-            @app.resource(name="custom_name", description="Custom description")
+            @app.retrieve(name="custom_name", description="Custom description")
             async def my_resource():
                 ...
 
@@ -341,7 +342,7 @@ class EnrichMCP:
             if not resource_desc:
                 raise ValueError(
                     f"Resource '{resource_name}' must have a description. "
-                    f"Provide it via @app.resource(description=...) or function docstring."
+                    f"Provide it via @app.retrieve(description=...) or function docstring."
                 )
 
             # Strip docstring if used
@@ -354,12 +355,21 @@ class EnrichMCP:
             mcp_tool = self.mcp.tool(name=resource_name, description=resource_desc)
             return mcp_tool(fn)
 
-        # If called without parentheses (@app.resource)
+        # If called without parentheses (@app.retrieve)
         if func is not None:
             return decorator(func)
 
-        # If called with parentheses (@app.resource())
+        # If called with parentheses (@app.retrieve())
         return cast("DecoratorCallable", decorator)
+
+    def resource(self, *args: Any, **kwargs: Any) -> Any:
+        """Deprecated alias for :meth:`retrieve`. Use :meth:`retrieve` instead."""
+        warnings.warn(
+            "app.resource is deprecated; use app.retrieve instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.retrieve(*args, **kwargs)
 
     # CRUD helper decorators
     def create(
@@ -372,7 +382,7 @@ class EnrichMCP:
         """Register a create operation."""
 
         def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.resource(fn, name=name, description=description)
+            return self.retrieve(fn, name=name, description=description)
 
         if func is not None:
             return decorator(func)
@@ -388,7 +398,7 @@ class EnrichMCP:
         """Register an update operation."""
 
         def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.resource(fn, name=name, description=description)
+            return self.retrieve(fn, name=name, description=description)
 
         if func is not None:
             return decorator(func)
@@ -404,7 +414,7 @@ class EnrichMCP:
         """Register a delete operation."""
 
         def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.resource(fn, name=name, description=description)
+            return self.retrieve(fn, name=name, description=description)
 
         if func is not None:
             return decorator(func)

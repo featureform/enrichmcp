@@ -74,7 +74,7 @@ async def _client(ctx: EnrichContext) -> httpx.AsyncClient:
     return ctx.request_context.lifespan_context["client"]
 
 
-@app.resource
+@app.retrieve
 async def list_users(ctx: EnrichContext) -> list[User]:
     """Fetch all users from the backend service."""
     client = await _client(ctx)
@@ -83,7 +83,7 @@ async def list_users(ctx: EnrichContext) -> list[User]:
     return [User(**u) for u in resp.json()]
 
 
-@app.resource
+@app.retrieve
 async def get_user(user_id: int, ctx: EnrichContext) -> User:
     """Return a single user by ID."""
     client = await _client(ctx)
@@ -92,7 +92,7 @@ async def get_user(user_id: int, ctx: EnrichContext) -> User:
     return User(**resp.json())
 
 
-@app.resource
+@app.retrieve
 async def list_products(ctx: EnrichContext) -> list[Product]:
     """Retrieve all products available for sale."""
     client = await _client(ctx)
@@ -101,7 +101,7 @@ async def list_products(ctx: EnrichContext) -> list[Product]:
     return [Product(**p) for p in resp.json()]
 
 
-@app.resource
+@app.retrieve
 async def get_product(product_id: int, ctx: EnrichContext) -> Product:
     """Get a single product by ID."""
     client = await _client(ctx)
@@ -110,7 +110,7 @@ async def get_product(product_id: int, ctx: EnrichContext) -> Product:
     return Product(**resp.json())
 
 
-@app.resource
+@app.retrieve
 async def list_orders(
     user_id: int | None = None,
     ctx: EnrichContext | None = None,
@@ -125,7 +125,7 @@ async def list_orders(
     return [Order(**o) for o in resp.json()]
 
 
-@app.resource
+@app.retrieve
 async def get_order(order_id: int, ctx: EnrichContext) -> Order:
     """Retrieve a specific order."""
     client = await _client(ctx)

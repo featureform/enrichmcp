@@ -104,7 +104,7 @@ class TestPaginatedResources:
         """Test page-based pagination in resource."""
         user_cls = app._test_user
 
-        @app.resource
+        @app.retrieve
         async def list_users(
             ctx: EnrichContext, page: int = 1, page_size: int = 10
         ) -> PageResult[user_cls]:
@@ -163,7 +163,7 @@ class TestPaginatedResources:
         """Test cursor-based pagination in resource."""
         user_cls = app._test_user
 
-        @app.resource
+        @app.retrieve
         async def list_users_cursor(
             ctx: EnrichContext, cursor: str | None = None, page_size: int = 10
         ) -> CursorResult[user_cls]:
@@ -215,7 +215,7 @@ class TestPaginatedResources:
         """Test pagination combined with filtering."""
         user_cls = app._test_user
 
-        @app.resource
+        @app.retrieve
         async def search_users(
             ctx: EnrichContext, name_contains: str, page: int = 1, page_size: int = 5
         ) -> PageResult[user_cls]:
@@ -257,7 +257,7 @@ class TestPaginatedResources:
         """Test pagination with no results."""
         user_cls = app._test_user
 
-        @app.resource
+        @app.retrieve
         async def list_empty_users(
             ctx: EnrichContext, page: int = 1, page_size: int = 10
         ) -> PageResult[user_cls]:
@@ -386,7 +386,7 @@ class TestPaginationParams:
         """Test using PaginationParams helper class."""
         user_cls = app._test_user
 
-        @app.resource
+        @app.retrieve
         async def list_users_with_params(
             ctx: EnrichContext, pagination: PaginationParams | None = None
         ) -> PageResult[user_cls]:
@@ -430,7 +430,7 @@ class TestPaginationParams:
         """Test using CursorParams helper class."""
         user_cls = app._test_user
 
-        @app.resource
+        @app.retrieve
         async def list_users_with_cursor_params(
             ctx: EnrichContext, cursor_params: CursorParams | None = None
         ) -> CursorResult[user_cls]:
@@ -478,7 +478,7 @@ class TestRealWorldScenarios:
             for i in range(1, 10001)  # 10,000 users
         ]
 
-        @app.resource
+        @app.retrieve
         async def list_large_dataset(
             ctx: EnrichContext, page: int = 1, page_size: int = 100
         ) -> PageResult[user_cls]:
@@ -522,7 +522,7 @@ class TestRealWorldScenarios:
             for i in range(1, 6)  # 5 users
         ]
 
-        @app.resource
+        @app.retrieve
         async def list_single_page(
             ctx: EnrichContext, page: int = 1, page_size: int = 10
         ) -> PageResult[user_cls]:

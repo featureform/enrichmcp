@@ -20,7 +20,7 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
     - Lifespan context (e.g., database connections)
 
     Example:
-        @app.resource
+        @app.retrieve
         async def get_user(user_id: int, ctx: EnrichContext) -> User:
             ctx.info(f"Fetching user {user_id}")
             db = ctx.request_context.lifespan_context["db"]

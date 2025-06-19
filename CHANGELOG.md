@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-06-19
+
+### Changed
+- Renamed `app.resource` decorator to `app.retrieve`. `app.resource` remains
+  as a deprecated alias.
+
+### Added
+- Support for marking fields as mutable with `mutable=True` and CRUD example
+- BigInteger column type handling for SQLAlchemy integration
+- Example smoke tests and improved OpenAI chat example
+- Optional cleanup for SQLAlchemy lifespans
+- Detailed ROBOTS guide and CI improvements
+
 ## [0.4.1] - 2025-06-15
 
 ### Fixed

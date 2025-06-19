@@ -126,7 +126,7 @@ async def get_book_author(book_id: int) -> Author:
 
 
 # Define root resources
-@app.resource
+@app.retrieve
 async def list_books() -> list[Book]:
     """List all books in the catalog."""
     return [
@@ -140,7 +140,7 @@ async def list_books() -> list[Book]:
     ]
 
 
-@app.resource
+@app.retrieve
 async def get_author(author_id: int) -> Author:
     """Get a specific author by ID."""
     return Author(id=author_id, name="Jane Doe", bio="Bestselling author")
@@ -175,7 +175,7 @@ app = EnrichMCP("My API", "Description", lifespan=lifespan)
 
 
 # Use context in resources and resolvers
-@app.resource
+@app.retrieve
 async def get_user(user_id: int, ctx: EnrichContext) -> User:
     # Logging
     await ctx.info(f"Fetching user {user_id}")
