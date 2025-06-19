@@ -81,6 +81,15 @@ python app.py
 Stop the background server when finished. The gateway listens on port 8000 and
 provides the same schema-driven interface as the other examples.
 
+## Mutable CRUD
+
+A minimal API showcasing mutable fields and the new CRUD decorators.
+
+```bash
+cd mutable_crud
+python app.py
+```
+
 Stop the background server when finished. The gateway listens on port 8000 and provides the same schema-driven interface as the other examples.
 
 ## OpenAI MCP Chat Agent
