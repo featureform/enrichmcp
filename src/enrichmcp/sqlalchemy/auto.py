@@ -70,9 +70,14 @@ def _register_default_resources(
             return None
 
         session_factory = ctx.request_context.lifespan_context[session_key]
+
         async with session_factory() as session:
             obj = await session.get(sa_model, entity_id)
-            return _sa_to_enrich(obj, enrich_model) if obj else None
+            if obj:
+                enriched_obj = _sa_to_enrich(obj, enrich_model)
+                return enriched_obj
+            else:
+                return None
 
     # Ensure ctx annotation is an actual class for FastMCP before decorating
     get_resource.__annotations__["ctx"] = EnrichContext
@@ -110,20 +115,47 @@ def _register_relationship_resolvers(
                 model: type = sa_model,
                 target: type = target_model,
                 param: str = param_name,
-            ) -> Callable[..., Awaitable[list[Any]]]:
-                async def func(ctx: EnrichContext, **kwargs: Any) -> list[Any]:
+            ) -> Callable[..., Awaitable[PageResult[Any]]]:
+                async def func(
+                    ctx: EnrichContext, page: int = 1, page_size: int = 20, **kwargs: Any
+                ) -> PageResult[Any]:
                     entity_id = kwargs.get(param)
+
+                    def _empty() -> PageResult[Any]:
+                        return PageResult.create(
+                            items=[],
+                            page=page,
+                            page_size=page_size,
+                            total_items=0,
+                            has_next=False,
+                        )
+
                     if entity_id is None:
-                        return []
+                        return _empty()
 
                     session_factory = ctx.request_context.lifespan_context[session_key]
                     async with session_factory() as session:
                         obj = await session.get(model, entity_id)
                         if not obj:
-                            return []
+                            return _empty()
                         await session.refresh(obj, [f_name])
                         values = getattr(obj, f_name)
-                        return [_sa_to_enrich(v, target) for v in values]
+
+                        values_list = list(values)
+                        total_items = len(values_list)
+                        start = (page - 1) * page_size
+                        end = start + page_size
+                        slice_values = values_list[start:end]
+                        items = [_sa_to_enrich(v, target) for v in slice_values]
+                        has_next = page * page_size < total_items
+
+                        return PageResult.create(
+                            items=items,
+                            page=page,
+                            page_size=page_size,
+                            total_items=total_items,
+                            has_next=has_next,
+                        )
 
                 return func
 

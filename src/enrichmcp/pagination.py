@@ -104,7 +104,7 @@ class PaginationParams(BaseModel):
     """Standard pagination parameters for page-based pagination."""
 
     page: int = Field(default=1, ge=1, description="Page number (1-indexed)")
-    page_size: int = Field(default=50, ge=1, le=1000, description="Items per page")
+    page_size: int = Field(default=50, ge=1, description="Items per page (choose a sensible value)")
     order_by: str | None = Field(None, description="Field to order by")
     order_direction: str = Field(default="asc", description="Order direction: asc or desc")
 
@@ -121,6 +121,6 @@ class CursorParams(BaseModel):
     """Standard parameters for cursor-based pagination."""
 
     cursor: str | None = Field(None, description="Cursor for pagination")
-    page_size: int = Field(default=50, ge=1, le=1000, description="Items per page")
+    page_size: int = Field(default=50, ge=1, description="Items per page (choose a sensible value)")
     order_by: str | None = Field(None, description="Field to order by")
     order_direction: str = Field(default="asc", description="Order direction: asc or desc")
