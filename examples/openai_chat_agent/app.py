@@ -42,7 +42,7 @@ async def run_memory_chat() -> None:
     client = MCPClient.from_config_file(config_file)
 
     openai_key = os.getenv("OPENAI_API_KEY")
-    ollama_model = os.getenv("OLLAMA_MODEL", "llama3")
+    ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
 
     if openai_key:
         llm = ChatOpenAI(model="gpt-4o")

@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "hello_world": {
+    "shop_api": {
       "command": "python",
-      "args": ["../hello_world/app.py"]
+      "args": ["../shop_api/app.py"]
     }
   }
 }

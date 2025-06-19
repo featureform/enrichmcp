@@ -110,10 +110,10 @@ agent will fail to connect.
 
 1. [Install Ollama](https://ollama.com) and ensure the `ollama` command is in
    your `PATH`.
-2. Download the desired model (the example uses `llama3` by default):
+2. Download the desired model (the example uses `llama3.2` by default):
 
    ```bash
-   ollama pull llama3
+   ollama pull llama3.2
    ```
 
 3. Start the Ollama server in the background before launching the chat agent:
