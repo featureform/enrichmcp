@@ -62,7 +62,7 @@ def _register_default_resources(
     # Ensure ctx annotation is an actual class for FastMCP before decorating
     list_resource.__annotations__["ctx"] = EnrichContext
 
-    list_resource = app.resource(name=list_name, description=list_description)(list_resource)
+    list_resource = app.retrieve(name=list_name, description=list_description)(list_resource)
 
     async def get_resource(ctx: EnrichContext, **kwargs: Any) -> enrich_model | None:  # type: ignore[name-defined]
         entity_id = kwargs.get(param_name)
@@ -77,7 +77,7 @@ def _register_default_resources(
     # Ensure ctx annotation is an actual class for FastMCP before decorating
     get_resource.__annotations__["ctx"] = EnrichContext
 
-    get_resource = app.resource(name=get_name, description=get_description)(get_resource)
+    get_resource = app.retrieve(name=get_name, description=get_description)(get_resource)
 
 
 def _register_relationship_resolvers(

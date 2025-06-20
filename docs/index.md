@@ -45,7 +45,7 @@ async def get_customer_orders(customer_id: int) -> list[Order]:
 
 
 # Create entry points for AI
-@app.resource
+@app.retrieve
 async def get_customer(customer_id: int) -> Customer:
     """Get a customer by ID."""
     return await db.get_customer(customer_id)

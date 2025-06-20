@@ -52,7 +52,7 @@ async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
 Resources and resolvers receive context automatically when they have a parameter typed as `EnrichContext`:
 
 ```python
-@app.resource
+@app.retrieve
 async def get_user(user_id: int, ctx: EnrichContext) -> User:
     # Access database from lifespan context
     db = ctx.request_context.lifespan_context["db"]

@@ -58,7 +58,7 @@ def test_resource_requires_description_via_parameter():
     app = EnrichMCP("Test API", description="Test API description")
 
     # Should work with a description
-    @app.resource(description="Test resource description")
+    @app.retrieve(description="Test resource description")
     async def test_resource():
         return {"status": "ok"}
 
@@ -70,7 +70,7 @@ def test_resource_accepts_function_docstring():
     app = EnrichMCP("Test API", description="Test API description")
 
     # Should work with a function docstring
-    @app.resource()
+    @app.retrieve()
     async def test_resource():
         """Test resource docstring."""
         return {"status": "ok"}
@@ -85,7 +85,7 @@ def test_resource_raises_error_without_description():
     # Should fail without a description
     with pytest.raises(ValueError) as exc_info:
 
-        @app.resource()
+        @app.retrieve()
         async def test_resource():
             return {"status": "ok"}
 
@@ -98,7 +98,7 @@ def test_resource_with_custom_name_and_description():
     app = EnrichMCP("Test API", description="Test API description")
 
     # Should work with custom name and description
-    @app.resource(name="custom_name", description="Custom resource description")
+    @app.retrieve(name="custom_name", description="Custom resource description")
     async def test_resource():
         return {"status": "ok"}
 

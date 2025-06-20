@@ -72,7 +72,7 @@ async def get_user_orders(user_id: int) -> list["Order"]:
 Resources are the entry points for AI agents:
 
 ```python
-@app.resource
+@app.retrieve
 async def list_users() -> list[User]:
     """List all users in the system."""
     return fetch_all_users()

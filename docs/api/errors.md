@@ -33,7 +33,7 @@ except ValidationError as e:
 Use Python's standard exceptions:
 
 ```python
-@app.resource
+@app.retrieve
 async def get_user(user_id: int) -> User:
     user = find_user(user_id)
     if not user:
