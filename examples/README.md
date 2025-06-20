@@ -2,6 +2,16 @@
 
 This directory contains examples demonstrating how to use EnrichMCP.
 
+Available examples:
+
+- [hello_world](hello_world) - minimal "Hello, World" API
+- [shop_api](shop_api) - in-memory shop with relationships
+- [shop_api_sqlite](shop_api_sqlite) - SQLite-backed shop
+- [sqlalchemy_shop](sqlalchemy_shop) - SQLAlchemy ORM version
+- [shop_api_gateway](shop_api_gateway) - gateway in front of FastAPI
+- [mutable_crud](mutable_crud) - mutable fields and CRUD decorators
+- [openai_chat_agent](openai_chat_agent) - interactive chat client
+
 ## Hello World
 
 The simplest EnrichMCP application with a single resource that returns "Hello, World!".
@@ -108,7 +118,7 @@ uv run app.py
 ```
 
 Run the above commands from the `openai_chat_agent` directory so that
-`config.json` resolves the relative path to the `hello_world` example.
+`config.json` resolves the relative path to the `shop_api` example.
 
 If `OPENAI_API_KEY` is not set the agent defaults to a local Ollama model defined
 by `OLLAMA_MODEL` (defaults to `llama3`).
@@ -132,7 +142,7 @@ agent will fail to connect.
    ```
 
 The chat agent will fail to start if the server is not running.
-The included configuration starts the `hello_world` example using the MCP
+The included configuration starts the `shop_api` example using the MCP
 stdio connector so everything runs locally.
 This example demonstrates how to use `MCPAgent` with built-in conversation
 memory for chatting with your MCP data.
