@@ -16,17 +16,20 @@ T = TypeVar("T")
 
 
 class Relationship:
-    """
-    Define a relationship between entities using a descriptor pattern.
+    """Relationship descriptor for linking entities.
 
-    This allows for the @Entity.field.resolver pattern.
+    This allows the ``@Entity.field.resolver`` pattern and now supports
+    automatic inlining when returning entities from resources.
 
     Args:
-        description: Description of the relationship
+        description: Human readable description of the relationship.
+        inline: Automatically inline this relationship when returned from a
+            resource. Defaults to ``False``.
     """
 
-    def __init__(self, *, description: str):
+    def __init__(self, *, description: str, inline: bool = False):
         self.description = description
+        self.inline = inline
         self.resolvers: list[tuple[str, Callable[..., Any]]] = []
         self.field_name: str | None = None
         self.owner_cls: type | None = None
