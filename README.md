@@ -318,6 +318,8 @@ Check out the [examples directory](examples/README.md):
 - [shop_api_sqlite](examples/shop_api_sqlite) - SQLite-backed version
 - [shop_api_gateway](examples/shop_api_gateway) - EnrichMCP as a gateway in front of FastAPI
 - [sqlalchemy_shop](examples/sqlalchemy_shop) - Auto-generated API from SQLAlchemy models
+- [mutable_crud](examples/mutable_crud) - Demonstrates mutable fields and CRUD decorators
+- [openai_chat_agent](examples/openai_chat_agent) - Interactive chat client for MCP examples
 
 ## Documentation
 
