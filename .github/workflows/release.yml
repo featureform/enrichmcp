@@ -25,7 +25,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
-        run: uv pip install -r requirements-dev.txt
+        run: uv pip install --system --break-system-packages -r requirements-dev.txt
 
       - name: Build package
         run: python -m build
