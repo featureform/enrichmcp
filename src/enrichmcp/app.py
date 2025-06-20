@@ -4,6 +4,8 @@ Main application module for enrichmcp.
 Provides the EnrichMCP class for creating MCP applications.
 """
 
+import functools
+import inspect
 import warnings
 from collections.abc import Callable
 from typing import (
@@ -18,6 +20,7 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field, create_model
 
 from .entity import EnrichModel
+from .inlining import inline_relationships
 from .relationship import Relationship
 
 # Type variables
@@ -333,6 +336,13 @@ class EnrichMCP:
             ValueError: If no description is provided (neither in decorator nor docstring)
         """
 
+        async def _auto_inline(value: Any) -> Any:
+            if isinstance(value, EnrichModel):
+                return await inline_relationships(value, only_inline=True)
+            if isinstance(value, list | tuple | set):
+                return [await _auto_inline(v) for v in value]
+            return value
+
         def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
             # Get name and description
             resource_name = name or fn.__name__
@@ -349,11 +359,19 @@ class EnrichMCP:
             if resource_desc == fn.__doc__ and resource_desc:
                 resource_desc = resource_desc.strip()
 
+            # Wrapper adds automatic relationship inlining
+            @functools.wraps(fn)
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
+                result = fn(*args, **kwargs)
+                if inspect.iscoroutine(result):
+                    result = await result
+                return await _auto_inline(result)
+
             # Store the resource for testing
-            self.resources[resource_name] = fn
+            self.resources[resource_name] = wrapper
             # Create and apply the MCP tool decorator
             mcp_tool = self.mcp.tool(name=resource_name, description=resource_desc)
-            return mcp_tool(fn)
+            return mcp_tool(wrapper)
 
         # If called without parentheses (@app.retrieve)
         if func is not None:
