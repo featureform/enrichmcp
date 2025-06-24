@@ -43,7 +43,7 @@ lint-check:
 	$(PYTHON_CMD) -m pyright
 
 test:
-	$(PYTHON_CMD) -m pytest --cov-branch --cov-report=term --cov-report=html --cov=src/enrichmcp
+	$(PYTHON_CMD) -m pytest --cov-report=term --cov-report=html --cov=src/enrichmcp
 
 # Run only example tests
 examples-test:
@@ -62,8 +62,8 @@ ci-lint:
 	$(PYTHON) -m pyright
 
 ci-test:
-	$(PYTHON) -m pytest -o addopts="" --cov=src/enrichmcp --cov-branch --cov-report=term --cov-report=xml --cov-report=html -m 'not examples'
-	$(PYTHON) -m pytest -o addopts="" --cov=src/enrichmcp --cov-branch --cov-append --cov-report=xml --cov-report=html tests/test_examples.py -m examples
+	$(PYTHON) -m pytest -o addopts="" --cov=src/enrichmcp --cov-report=term --cov-report=xml --cov-report=html -m 'not examples'
+	$(PYTHON) -m pytest -o addopts="" --cov=src/enrichmcp --cov-append --cov-report=xml --cov-report=html tests/test_examples.py -m examples
 
 clean:
 	rm -rf build/ dist/ *.egg-info .pytest_cache __pycache__ htmlcov/ .coverage

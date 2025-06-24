@@ -157,7 +157,9 @@ markers = [
 
 # Coverage configuration
 [tool.coverage.run]
-branch = true
+# Measure only line coverage to match Codecov's default behavior
+# and avoid lower percentages from branch metrics
+branch = false
 source = ["src/enrichmcp"]
 omit = [
     "*/tests/*",
