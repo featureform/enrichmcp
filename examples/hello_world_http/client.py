@@ -8,7 +8,7 @@ from mcp_use import MCPClient
 
 
 async def main() -> None:
-    client = MCPClient(config={"mcpServers": {"hello": {"url": "http://localhost:8000"}}})
+    client = MCPClient(config={"mcpServers": {"hello": {"url": "http://localhost:8000/mcp"}}})
     session = await client.create_session("hello")
     result = await session.connector.call_tool("hello_http", {})
     print(result.content[0].text)
