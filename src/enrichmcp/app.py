@@ -427,7 +427,11 @@ class EnrichMCP:
         Start the MCP server.
 
         Args:
-            **options: Options to pass to the FastMCP run method
+            transport: Transport protocol to use when starting the server.
+                Supported values are "stdio", "sse", and "streamable-http".
+                If not provided, the default from ``FastMCP`` is used.
+            mount_path: Optional mount path for SSE transport.
+            **options: Additional options forwarded to ``FastMCP.run``.
 
         Returns:
             Result from FastMCP.run()
@@ -449,6 +453,12 @@ class EnrichMCP:
                 f"The following relationships are missing resolvers: {', '.join(unresolved)}. "
                 f"Define resolvers with @Entity.relationship.resolver"
             )
+
+        # Forward transport options to FastMCP
+        if transport is not None:
+            options.setdefault("transport", transport)
+        if mount_path is not None:
+            options.setdefault("mount_path", mount_path)
 
         # Run the MCP server
         return self.mcp.run(**options)

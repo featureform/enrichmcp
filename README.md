@@ -314,6 +314,7 @@ The result: AI agents can work with your data as naturally as a developer using 
 Check out the [examples directory](examples/README.md):
 
 - [hello_world](examples/hello_world) - The smallest possible EnrichMCP app
+- [hello_world_http](examples/hello_world_http) - HTTP example using streamable HTTP
 - [shop_api](examples/shop_api) - In-memory shop API with pagination and filters
 - [shop_api_sqlite](examples/shop_api_sqlite) - SQLite-backed version
 - [shop_api_gateway](examples/shop_api_gateway) - EnrichMCP as a gateway in front of FastAPI
