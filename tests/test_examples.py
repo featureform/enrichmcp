@@ -11,6 +11,7 @@ EXAMPLES = [
     "shop_api_sqlite/app.py",
     "sqlalchemy_shop/app.py",
     "shop_api_gateway/app.py",
+    "basic_memory/app.py",
     "mutable_crud/app.py",
 ]
 
