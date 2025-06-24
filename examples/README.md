@@ -10,6 +10,7 @@ Available examples:
 - [sqlalchemy_shop](sqlalchemy_shop) - SQLAlchemy ORM version
 - [shop_api_gateway](shop_api_gateway) - gateway in front of FastAPI
 - [mutable_crud](mutable_crud) - mutable fields and CRUD decorators
+- [basic_memory](basic_memory) - simple note-taking API using FileMemoryStore
 - [openai_chat_agent](openai_chat_agent) - interactive chat client
 
 ## Hello World
