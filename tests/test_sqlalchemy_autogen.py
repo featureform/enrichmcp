@@ -41,8 +41,8 @@ class Order(Base):
 
 async def seed(session: AsyncSession) -> None:
     user = User(id=1, name="Alice")
-    order = Order(id=1, user=user)
-    session.add_all([user, order])
+    orders = [Order(id=i, user=user) for i in range(1, 4)]
+    session.add_all([user, *orders])
 
 
 def create_app():
@@ -71,8 +71,17 @@ async def test_auto_resources_and_resolvers():
         single = await get_user(user_id=1, ctx=mock_ctx)
         assert single.name == "Alice"
 
-        # Relationship resolver
+        # Relationship resolver pagination
         get_orders = app.resources["get_userenrichmodel_orders"]
-        rel = await get_orders(user_id=1, ctx=mock_ctx)
-        assert len(rel) == 1
-        assert rel[0].id == 1
+
+        first = await get_orders(user_id=1, page=1, page_size=2, ctx=mock_ctx)
+        assert len(first.items) == 2
+        assert first.page == 1
+        assert first.page_size == 2
+        assert first.has_next
+        assert first.total_items is None
+
+        second = await get_orders(user_id=1, page=2, page_size=2, ctx=mock_ctx)
+        assert len(second.items) == 1
+        assert not second.has_next
+        assert second.total_items is None

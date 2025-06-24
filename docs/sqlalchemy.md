@@ -59,10 +59,12 @@ The function scans all models inheriting from `Base` and creates:
 
 - `list_<entity>` and `get_<entity>` resources using primary keys.
 - Relationship resolvers for each SQLAlchemy relationship.
+  - List relationships return `PageResult` and accept `page` and `page_size`
+    parameters without performing expensive count queries.
 - Pydantic `EnrichModel` classes with descriptions derived from column `info`.
 
 Pagination parameters `page` and `page_size` are available on the generated
-`list_*` endpoints.
+`list_*` endpoints and list relationship resolvers.
 
 `sqlalchemy_lifespan` automatically creates tables on startup and yields a
 `session_factory` that resolvers can use. Providing a `seed` function is
