@@ -35,9 +35,11 @@ pip install enrichmcp[sqlalchemy]
 
 Transform your existing SQLAlchemy models into an AI-navigable API:
 
+
 ```python
 from enrichmcp import EnrichMCP
 from enrichmcp.sqlalchemy import include_sqlalchemy_models, sqlalchemy_lifespan, EnrichSQLAlchemyMixin
+from sqlalchemy import ForeignKey
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -48,20 +50,24 @@ class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
     pass
 
 class User(Base):
+    """User account."""
+
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(unique=True)
-    status: Mapped[str] = mapped_column(default="active")
-    orders: Mapped[list["Order"]] = relationship(back_populates="user")
+    id: Mapped[int] = mapped_column(primary_key=True, info={"description": "Unique user ID"})
+    email: Mapped[str] = mapped_column(unique=True, info={"description": "Email address"})
+    status: Mapped[str] = mapped_column(default="active", info={"description": "Account status"})
+    orders: Mapped[list["Order"]] = relationship(back_populates="user", info={"description": "All orders for this user"})
 
 class Order(Base):
+    """Customer order."""
+
     __tablename__ = "orders"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    total: Mapped[float] = mapped_column()
-    user: Mapped[User] = relationship(back_populates="orders")
+    id: Mapped[int] = mapped_column(primary_key=True, info={"description": "Order ID"})
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), info={"description": "Owner user ID"})
+    total: Mapped[float] = mapped_column(info={"description": "Order total"})
+    user: Mapped[User] = relationship(back_populates="orders", info={"description": "User who placed the order"})
 
 # That's it! Create your MCP app
 app = EnrichMCP(
@@ -73,7 +79,6 @@ include_sqlalchemy_models(app, Base)
 if __name__ == "__main__":
     app.run()
 ```
-
 AI agents can now:
 - `explore_data_model()` - understand your entire schema
 - `list_users(status='active')` - query with filters
