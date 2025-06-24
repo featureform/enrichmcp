@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- List relationship resolvers generated from SQLAlchemy models now return
+  `PageResult` using `page` and `page_size` parameters without performing
+  count queries. `total_items` is omitted and `has_next` is inferred from
+  the query results.
+
 ## [0.4.2] - 2025-06-19
 
 ### Changed
