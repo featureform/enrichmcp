@@ -2,9 +2,10 @@
 
 This directory contains examples demonstrating how to use EnrichMCP.
 
-Available examples:
+-Available examples:
 
 - [hello_world](hello_world) - minimal "Hello, World" API
+- [hello_world_http](hello_world_http) - HTTP version using streamable HTTP
 - [shop_api](shop_api) - in-memory shop with relationships
 - [shop_api_sqlite](shop_api_sqlite) - SQLite-backed shop
 - [sqlalchemy_shop](sqlalchemy_shop) - SQLAlchemy ORM version
@@ -20,6 +21,22 @@ The simplest EnrichMCP application with a single resource that returns "Hello, W
 ```bash
 cd hello_world
 python app.py
+```
+
+## Hello World HTTP
+
+A variant of the Hello World example that serves the API over HTTP using the
+streamable HTTP transport.
+
+```bash
+cd hello_world_http
+python app.py
+```
+
+Invoke the example using `mcp_use`:
+
+```bash
+python client.py
 ```
 
 ## Shop API

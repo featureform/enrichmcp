@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -11,6 +12,7 @@ EXAMPLES = [
     "sqlalchemy_shop/app.py",
     "shop_api_gateway/app.py",
     "basic_memory/app.py",
+    "mutable_crud/app.py",
 ]
 
 
@@ -23,7 +25,11 @@ async def test_example_runs(example):
     if db_path.exists():
         db_path.unlink()
 
-    params = StdioServerParameters(command=sys.executable, args=[str(example_path)])
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=[str(example_path)],
+        env=os.environ.copy(),
+    )
     async with ClientSessionGroup() as group:
         session = await group.connect_to_server(params)
         await session.list_tools()

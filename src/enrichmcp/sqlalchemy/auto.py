@@ -110,22 +110,69 @@ def _register_relationship_resolvers(
                 model: type = sa_model,
                 target: type = target_model,
                 param: str = param_name,
-            ) -> Callable[..., Awaitable[list[Any]]]:
-                async def func(ctx: EnrichContext, **kwargs: Any) -> list[Any]:
+                relation=rel,
+                target_sa: type = rel.mapper.class_,
+            ) -> Callable[..., Awaitable[PageResult[Any]]]:
+                async def resolver_func(
+                    ctx: EnrichContext,
+                    page: int = 1,
+                    page_size: int = 20,
+                    **kwargs: Any,
+                ) -> PageResult[Any]:
+                    if page < 1 or page_size < 1:
+                        raise ValueError("page and page_size must be >= 1")
+
                     entity_id = kwargs.get(param)
+                    if entity_id is None and "kwargs" in kwargs:
+                        entity_id = kwargs["kwargs"].get(param)
                     if entity_id is None:
-                        return []
+                        return PageResult.create(
+                            items=[],
+                            page=page,
+                            page_size=page_size,
+                            has_next=False,
+                            total_items=None,
+                        )
 
                     session_factory = ctx.request_context.lifespan_context[session_key]
                     async with session_factory() as session:
-                        obj = await session.get(model, entity_id)
-                        if not obj:
-                            return []
-                        await session.refresh(obj, [f_name])
-                        values = getattr(obj, f_name)
-                        return [_sa_to_enrich(v, target) for v in values]
+                        primary_col = inspect(model).primary_key[0]
+                        back_attr = getattr(target_sa, relation.back_populates)
 
-                return func
+                        offset = (page - 1) * page_size
+
+                        stmt = (
+                            select(target_sa)
+                            .join(back_attr)
+                            .where(primary_col == entity_id)
+                            .offset(offset)
+                            .limit(page_size + 1)
+                        )
+                        result = await session.execute(stmt)
+                        values = result.scalars().all()
+
+                        has_next = len(values) > page_size
+                        items = values[:page_size]
+
+                        if not items and page > 1:
+                            return PageResult.create(
+                                items=[],
+                                page=page,
+                                page_size=page_size,
+                                has_next=False,
+                                total_items=None,
+                            )
+
+                        items = [_sa_to_enrich(v, target) for v in items]
+                        return PageResult.create(
+                            items=items,
+                            page=page,
+                            page_size=page_size,
+                            has_next=has_next,
+                            total_items=None,
+                        )
+
+                return resolver_func
 
             resolver = _create_list_resolver()
             resolver.__annotations__["ctx"] = EnrichContext
@@ -139,6 +186,8 @@ def _register_relationship_resolvers(
             ) -> Callable[..., Awaitable[Any | None]]:
                 async def func(ctx: EnrichContext, **kwargs: Any) -> Any | None:
                     entity_id = kwargs.get(param)
+                    if entity_id is None and "kwargs" in kwargs:
+                        entity_id = kwargs["kwargs"].get(param)
                     if entity_id is None:
                         return None
 
