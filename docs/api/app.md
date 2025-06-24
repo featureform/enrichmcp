@@ -100,12 +100,15 @@ async def delete_user(uid: int) -> bool:
 Start the MCP server.
 
 **Parameters:**
-- `**options`: Options passed to FastMCP (transport, host, port, etc.)
+- `transport`: Transport protocol - `"stdio"`, `"sse"`, or `"streamable-http"`.
+- `mount_path`: Optional mount path for SSE transport.
+- `**options`: Additional options forwarded to FastMCP.
 
 **Example:**
 ```python
 if __name__ == "__main__":
-    app.run()
+    app.run()  # stdio default
+    app.run(transport="streamable-http")
 ```
 
 ### `describe_model() -> str`

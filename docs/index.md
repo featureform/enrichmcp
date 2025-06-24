@@ -53,6 +53,9 @@ async def get_customer(customer_id: int) -> Customer:
 
 # Run it!
 app.run()
+
+# Serve over HTTP instead of stdio
+app.run(transport="streamable-http")
 ```
 
 Already using SQLAlchemy? See how to

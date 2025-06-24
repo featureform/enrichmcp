@@ -299,6 +299,15 @@ async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
     return await db.get_profile(user_id)
 ```
 
+### 🌐 HTTP & SSE Support
+
+Serve your API over standard output (default), SSE, or HTTP:
+
+```python
+app.run()  # stdio default
+app.run(transport="streamable-http")
+```
+
 ## Why EnrichMCP?
 
 EnrichMCP adds three critical layers on top of MCP:
@@ -320,6 +329,7 @@ Check out the [examples directory](examples/README.md):
 - [shop_api_gateway](examples/shop_api_gateway) - EnrichMCP as a gateway in front of FastAPI
 - [sqlalchemy_shop](examples/sqlalchemy_shop) - Auto-generated API from SQLAlchemy models
 - [mutable_crud](examples/mutable_crud) - Demonstrates mutable fields and CRUD decorators
+- [basic_memory](examples/basic_memory) - Simple note-taking API using FileMemoryStore
 - [openai_chat_agent](examples/openai_chat_agent) - Interactive chat client for MCP examples
 
 ## Documentation

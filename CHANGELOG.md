@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2025-06-24
+
+### Added
+- HTTP transport via `app.run(transport="streamable-http")`
+- Basic memory example demonstrating `FileMemoryStore`
+- `mcp_use` client for the hello_world example
+
 ### Changed
-- List relationship resolvers generated from SQLAlchemy models now return
-  `PageResult` using `page` and `page_size` parameters without performing
-  count queries. `total_items` is omitted and `has_next` is inferred from
-  the query results.
+- SQLAlchemy relationship resolvers now return `PageResult` using
+  `page` and `page_size` parameters without count queries.
+
+### Fixed
+- Correct path handling in the HTTP example
 
 ## [0.4.2] - 2025-06-19
 
