@@ -61,6 +61,7 @@ def _register_default_resources(
 
     # Ensure ctx annotation is an actual class for FastMCP before decorating
     list_resource.__annotations__["ctx"] = EnrichContext
+    list_resource.__annotations__["return"] = PageResult[enrich_model]
 
     list_resource = app.retrieve(name=list_name, description=list_description)(list_resource)
 
@@ -76,6 +77,7 @@ def _register_default_resources(
 
     # Ensure ctx annotation is an actual class for FastMCP before decorating
     get_resource.__annotations__["ctx"] = EnrichContext
+    get_resource.__annotations__["return"] = enrich_model | None
 
     get_resource = app.retrieve(name=get_name, description=get_description)(get_resource)
 
