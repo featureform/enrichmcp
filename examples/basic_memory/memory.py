@@ -148,8 +148,20 @@ class MemoryProject:
         self.name = name
         self.store = store
 
-    def create_note(self, title: str, content: str, tags: list[str] | None = None) -> MemoryNote:
-        note = MemoryNote(id=self.store.new_id(), title=title, content=content, tags=tags or [])
+    def create_note(
+        self,
+        title: str,
+        content: str,
+        tags: list[str] | None = None,
+        note_id: str | None = None,
+    ) -> MemoryNote:
+        """Create a new note or overwrite an existing one."""
+        note = MemoryNote(
+            id=note_id or self.store.new_id(),
+            title=title,
+            content=content,
+            tags=tags or [],
+        )
         self.store.save(self.name, note)
         return note
 

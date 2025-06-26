@@ -37,9 +37,15 @@ class NoteSummary(MemoryNoteSummary):
 
 
 @app.create
-async def create_note(title: str, content: str, tags: list[str] | None = None) -> Note:
-    """Create and persist a new note."""
-    return project.create_note(title, content, tags)
+async def create_note(
+    title: str,
+    content: str,
+    tags: list[str] | None = None,
+    note_id: str | None = None,
+) -> Note:
+    """Create or replace a note."""
+    note = project.create_note(title, content, tags, note_id=note_id)
+    return Note.model_validate(note.model_dump())
 
 
 @app.retrieve
