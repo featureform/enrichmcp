@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 from .app import EnrichMCP
 from .context import EnrichContext
 from .entity import EnrichModel
+from .inlining import inline_relationships
 from .lifespan import combine_lifespans
 from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult, PaginationParams
 from .relationship import (
@@ -57,6 +58,7 @@ __all__ = [
     "Relationship",
     "__version__",
     "combine_lifespans",
+    "inline_relationships",
 ]
 
 # Add SQLAlchemy to exports if available
