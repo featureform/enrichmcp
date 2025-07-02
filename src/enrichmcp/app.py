@@ -20,6 +20,7 @@ from typing import (
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field, create_model
 
+from .context import EnrichContext
 from .entity import EnrichModel
 from .relationship import Relationship
 
@@ -427,6 +428,15 @@ class EnrichMCP:
         if func is not None:
             return decorator(func)
         return cast("DecoratorCallable", decorator)
+
+    def get_context(self) -> EnrichContext:
+        """Return the current :class:`EnrichContext` for this app."""
+
+        base_ctx = self.mcp.get_context()
+        return EnrichContext.model_construct(
+            _request_context=getattr(base_ctx, "_request_context", None),
+            _fastmcp=getattr(base_ctx, "_fastmcp", None),
+        )
 
     def run(
         self, *, transport: str | None = None, mount_path: str | None = None, **options: Any
