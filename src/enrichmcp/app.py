@@ -8,9 +8,12 @@ import warnings
 from collections.abc import Callable
 from typing import (
     Any,
+    Literal,
     Protocol,
     TypeVar,
     cast,
+    get_args,
+    get_origin,
     runtime_checkable,
 )
 from uuid import uuid4
@@ -283,9 +286,14 @@ class EnrichMCP:
                 # Get field type and description
                 field_type = "Any"  # Default type if annotation is None
                 if field.annotation is not None:
-                    field_type = str(field.annotation)  # Always safe fallback
-                    if hasattr(field.annotation, "__name__"):
-                        field_type = field.annotation.__name__
+                    annotation = field.annotation
+                    if get_origin(annotation) is Literal:
+                        values = ", ".join(repr(v) for v in get_args(annotation))
+                        field_type = f"Literal[{values}]"
+                    else:
+                        field_type = str(annotation)  # Always safe fallback
+                        if hasattr(annotation, "__name__"):
+                            field_type = annotation.__name__
                 field_desc = field.description
                 extra = getattr(field, "json_schema_extra", None)
                 if extra is None:
@@ -443,6 +451,15 @@ class EnrichMCP:
         if func is not None:
             return decorator(func)
         return cast("DecoratorCallable", decorator)
+
+    def get_context(self) -> EnrichContext:
+        """Return the current :class:`EnrichContext` for this app."""
+
+        base_ctx = self.mcp.get_context()
+        return EnrichContext.model_construct(
+            _request_context=getattr(base_ctx, "_request_context", None),
+            _fastmcp=getattr(base_ctx, "_fastmcp", None),
+        )
 
     def run(
         self, *, transport: str | None = None, mount_path: str | None = None, **options: Any
