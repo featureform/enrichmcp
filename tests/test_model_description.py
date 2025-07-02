@@ -145,4 +145,4 @@ def test_describe_model_with_literal_type():
     description = app.describe_model()
 
     assert "## Item" in description
-    assert "- **status** (Literal): Item status" in description
+    assert "- **status** (Literal['pending', 'complete']): Item status" in description
