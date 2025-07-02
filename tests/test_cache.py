@@ -45,3 +45,14 @@ async def test_user_scope_warns_and_falls_back(monkeypatch):
         ns = cache._build_namespace("user")
 
     assert ns == cache._build_namespace("request")
+
+
+@pytest.mark.asyncio
+async def test_request_id_sanitization_and_unique_fallback():
+    backend = MemoryCache()
+    cache = ContextCache(backend, "app", "bad:id")
+    assert cache._build_namespace("request") == "enrichmcp:request:app:bad_id"
+
+    c1 = ContextCache(backend, "app", "")
+    c2 = ContextCache(backend, "app", "")
+    assert c1._request_id != c2._request_id

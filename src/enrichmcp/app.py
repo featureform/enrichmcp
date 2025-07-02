@@ -445,9 +445,8 @@ class EnrichMCP:
 
         base_ctx = self.mcp.get_context()
         request_ctx = getattr(base_ctx, "_request_context", None)
-        request_id = (
-            str(getattr(request_ctx, "request_id", "no-request")) if request_ctx else "no-request"
-        )
+        rid = str(getattr(request_ctx, "request_id", "")) if request_ctx else ""
+        request_id = rid if rid else uuid4().hex
         ctx = EnrichContext.model_construct(
             _request_context=request_ctx,
             _fastmcp=getattr(base_ctx, "_fastmcp", None),
