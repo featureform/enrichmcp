@@ -16,8 +16,10 @@ class Customer(EnrichModel):
 
     id: int = Field(description="Customer ID")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
-    email: str = Field(mutable=True, description="Email address")
-    tier: str = Field(mutable=True, description="Subscription tier", default="free")
+    email: str = Field(json_schema_extra={"mutable": True}, description="Email address")
+    tier: str = Field(
+        json_schema_extra={"mutable": True}, description="Subscription tier", default="free"
+    )
 
 
 CUSTOMERS: dict[int, Customer] = {}

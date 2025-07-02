@@ -258,7 +258,7 @@ auto-generated patch models for updates:
 @app.entity
 class Customer(EnrichModel):
     id: int = Field(description="ID")
-    email: str = Field(mutable=True, description="Email")
+    email: str = Field(json_schema_extra={"mutable": True}, description="Email")
 
 @app.create
 async def create_customer(email: str) -> Customer:
