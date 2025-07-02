@@ -1,7 +1,10 @@
+from unittest.mock import patch
+
 import pytest
 from pydantic import Field
 
 from enrichmcp import (
+    EnrichContext,
     EnrichMCP,
     EnrichModel,
 )
@@ -153,3 +156,26 @@ async def test_entity_without_description_fails():
         class BadEntity(EnrichModel):
             # No docstring, should fail
             id: int = Field(description="ID")
+
+
+def test_get_context_returns_enrich_context():
+    """app.get_context should return an EnrichContext"""
+
+    app = EnrichMCP("Test API", description="Test API description")
+    ctx = app.get_context()
+
+    assert isinstance(ctx, EnrichContext)
+    assert ctx.fastmcp is app.mcp
+
+    with pytest.raises(ValueError):
+        _ = ctx.request_context
+
+
+def test_get_context_propagates_errors():
+    app = EnrichMCP("Test API", description="desc")
+
+    with (
+        patch.object(app.mcp, "get_context", side_effect=RuntimeError("boom")),
+        pytest.raises(RuntimeError),
+    ):
+        app.get_context()
