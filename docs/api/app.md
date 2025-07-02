@@ -95,6 +95,16 @@ async def delete_user(uid: int) -> bool:
     ...
 ```
 
+### `get_context() -> EnrichContext`
+
+Return the current request context as an :class:`~enrichmcp.EnrichContext`.
+
+```python
+app = EnrichMCP("My API", description="desc")
+ctx = app.get_context()
+assert ctx.fastmcp is app.mcp
+```
+
 ### `run(**options)`
 
 Start the MCP server.
