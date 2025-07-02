@@ -147,3 +147,6 @@ Thumbs.db
 lint.output
 test_*.py
 !tests/test_*.py
+
+# Example repo
+examples/basic_memory/data/
