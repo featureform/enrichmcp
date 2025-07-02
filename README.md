@@ -90,6 +90,7 @@ AI agents can now:
 Wrap your existing APIs with semantic understanding:
 
 ```python
+from typing import Literal
 from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
 
@@ -101,7 +102,9 @@ class Customer(EnrichModel):
 
     id: int = Field(description="Unique customer ID")
     email: str = Field(description="Primary contact email")
-    tier: str = Field(description="Subscription tier: free, pro, enterprise")
+    tier: Literal["free", "pro", "enterprise"] = Field(
+        description="Subscription tier"
+    )
 
     # Define navigable relationships
     orders: list["Order"] = Relationship(description="Customer's purchase history")
@@ -113,7 +116,9 @@ class Order(EnrichModel):
     id: int = Field(description="Order ID")
     customer_id: int = Field(description="Associated customer")
     total: float = Field(description="Order total in USD")
-    status: str = Field(description="Order status: pending, shipped, delivered")
+    status: Literal["pending", "shipped", "delivered"] = Field(
+        description="Order status"
+    )
 
     customer: Customer = Relationship(description="Customer who placed this order")
 
@@ -242,6 +247,7 @@ class Order(EnrichModel):
     email: EmailStr = Field(description="Customer email")
     status: Literal["pending", "shipped", "delivered"]
 ```
+`describe_model()` will list these allowed values so agents know the valid options.
 
 ### ✏️ Mutability & CRUD
 
