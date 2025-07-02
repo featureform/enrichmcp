@@ -13,8 +13,8 @@ async def test_patch_model_generation_and_mutable_fields():
         """Customer entity."""
 
         id: int = Field(description="id")
-        email: str = Field(description="email", mutable=True)
-        status: str = Field(description="status", mutable=True)
+        email: str = Field(description="email", json_schema_extra={"mutable": True})
+        status: str = Field(description="status", json_schema_extra={"mutable": True})
 
     # mutable fields detected
     assert Customer.mutable_fields() == {"email", "status"}
@@ -32,7 +32,7 @@ async def test_crud_decorators_register_resources():
         """Item entity."""
 
         id: int = Field(description="id")
-        name: str = Field(description="name", mutable=True)
+        name: str = Field(description="name", json_schema_extra={"mutable": True})
 
     @app.create
     async def create_item(name: str) -> Item:

@@ -157,13 +157,13 @@ metadata: dict[str, Any] = Field(description="Arbitrary metadata", default_facto
 
 ### Mutable Fields
 
-Fields are immutable unless `mutable=True`:
+Fields are immutable unless `json_schema_extra={"mutable": True}`:
 
 ```python
 @app.entity
 class Customer(EnrichModel):
     id: int = Field(description="ID")
-    email: str = Field(mutable=True, description="Email")
+    email: str = Field(json_schema_extra={"mutable": True}, description="Email")
 
     # Customer.PatchModel is generated automatically
 ```
