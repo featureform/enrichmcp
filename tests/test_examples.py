@@ -12,6 +12,7 @@ EXAMPLES = [
     "sqlalchemy_shop/app.py",
     "shop_api_gateway/app.py",
     "basic_memory/app.py",
+    "caching/app.py",
     "mutable_crud/app.py",
 ]
 

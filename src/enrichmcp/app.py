@@ -16,10 +16,12 @@ from typing import (
     get_origin,
     runtime_checkable,
 )
+from uuid import uuid4
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field, create_model
 
+from .cache import CacheBackend, ContextCache, MemoryCache
 from .context import EnrichContext
 from .entity import EnrichModel
 from .relationship import Relationship
@@ -44,7 +46,14 @@ class EnrichMCP:
     with entity support.
     """
 
-    def __init__(self, title: str, description: str, *, lifespan: Any = None):
+    def __init__(
+        self,
+        title: str,
+        description: str,
+        *,
+        lifespan: Any = None,
+        cache_backend: CacheBackend | None = None,
+    ):
         """
         Initialize the EnrichMCP application.
 
@@ -55,6 +64,8 @@ class EnrichMCP:
         """
         self.title = title
         self.description = description
+        self._cache_id = uuid4().hex[:8]
+        self.cache_backend = cache_backend or MemoryCache()
         self.mcp = FastMCP(title, description=description, lifespan=lifespan)
         self.name = title  # Required for mcp install
 
@@ -433,10 +444,16 @@ class EnrichMCP:
         """Return the current :class:`EnrichContext` for this app."""
 
         base_ctx = self.mcp.get_context()
-        return EnrichContext.model_construct(
-            _request_context=getattr(base_ctx, "_request_context", None),
+        request_ctx = getattr(base_ctx, "_request_context", None)
+        request_id = (
+            str(getattr(request_ctx, "request_id", "no-request")) if request_ctx else "no-request"
+        )
+        ctx = EnrichContext.model_construct(
+            _request_context=request_ctx,
             _fastmcp=getattr(base_ctx, "_fastmcp", None),
         )
+        ctx._cache = ContextCache(self.cache_backend, self._cache_id, request_id)
+        return ctx
 
     def run(
         self, *, transport: str | None = None, mount_path: str | None = None, **options: Any

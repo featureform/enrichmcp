@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- `EnrichMCP.get_context()` returns an `EnrichContext` instance mirroring
-  the underlying FastMCP context.
+- Context caching with `MemoryCache` and optional `RedisCache` backends.
+- `EnrichMCP.get_context()` returns an `EnrichContext` instance mirroring the underlying FastMCP context.
 
 ## [0.4.4] - 2025-06-26
 

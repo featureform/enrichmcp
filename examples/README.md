@@ -12,6 +12,7 @@ This directory contains examples demonstrating how to use EnrichMCP.
 - [shop_api_gateway](shop_api_gateway) - gateway in front of FastAPI
 - [mutable_crud](mutable_crud) - mutable fields and CRUD decorators
 - [basic_memory](basic_memory) - simple note-taking API using FileMemoryStore
+- [caching](caching) - request caching with ContextCache
 - [openai_chat_agent](openai_chat_agent) - interactive chat client
 
 ## Hello World
