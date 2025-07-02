@@ -117,6 +117,7 @@ Generate a comprehensive description of the data model. This is used internally 
 
 **Returns:**
 A formatted string containing all entities, fields, and relationships.
+If a field is annotated with `typing.Literal`, the allowed values are shown in the output.
 
 ## Built-in Resources
 
