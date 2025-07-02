@@ -39,7 +39,10 @@ class User(EnrichModel):
 ```
 
 ### [EnrichContext](api/context.md)
-Placeholder for future context functionality (currently minimal implementation).
+Context object with request scoped utilities including caching.
+
+### [Cache](api/cache.md)
+Request, user, and global scoped caching utilities.
 
 ### [Errors](api/errors.md)
 Currently uses standard Python exceptions and Pydantic validation.

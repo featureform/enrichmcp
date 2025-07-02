@@ -95,6 +95,16 @@ async def delete_user(uid: int) -> bool:
     ...
 ```
 
+### `get_context() -> EnrichContext`
+
+Return the current request context as an :class:`~enrichmcp.EnrichContext`.
+
+```python
+app = EnrichMCP("My API", description="desc")
+ctx = app.get_context()
+assert ctx.fastmcp is app.mcp
+```
+
 ### `run(**options)`
 
 Start the MCP server.
@@ -117,6 +127,7 @@ Generate a comprehensive description of the data model. This is used internally 
 
 **Returns:**
 A formatted string containing all entities, fields, and relationships.
+If a field is annotated with `typing.Literal`, the allowed values are shown in the output.
 
 ## Built-in Resources
 

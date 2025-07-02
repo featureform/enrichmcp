@@ -71,6 +71,7 @@ nav:
     - Entities: api/entity.md
     - Relationships: api/relationship.md
     - Context: api/context.md
+    - Cache: api/cache.md
     - Errors: api/errors.md
 
 extra:

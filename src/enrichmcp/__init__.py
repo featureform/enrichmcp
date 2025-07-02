@@ -25,6 +25,7 @@ except ImportError:
 from typing import TYPE_CHECKING
 
 from .app import EnrichMCP
+from .cache import MemoryCache, RedisCache
 from .context import EnrichContext
 from .entity import EnrichModel
 from .lifespan import combine_lifespans
@@ -51,9 +52,11 @@ __all__ = [
     "EnrichContext",
     "EnrichMCP",
     "EnrichModel",
+    "MemoryCache",
     "PageResult",
     "PaginatedResult",
     "PaginationParams",
+    "RedisCache",
     "Relationship",
     "__version__",
     "combine_lifespans",

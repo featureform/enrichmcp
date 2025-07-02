@@ -245,6 +245,7 @@ async def create_customer(
     # All inputs are validated before reaching your code
     ...
 ```
+The `describe_model()` output will list these allowed values.
 
 ## Context and Lifespan Management
 
