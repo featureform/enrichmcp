@@ -87,3 +87,14 @@ The repository includes a `CONTRIBUTING.md` file and references standard open-so
 
 ## 8. Summary
 EnrichMCP provides a structured approach to exposing data models to AI agents using the Model Context Protocol. It emphasizes rich descriptions, typed relationships, and automatic schema discovery, acting similarly to an ORM but focused on agentic data access. Optional SQLAlchemy integration allows rapid conversion of existing models. Comprehensive documentation, examples, and tests make it straightforward to adopt and extend.
+
+## 9. Agent Setup Instructions
+
+When working on pull requests in this repository, follow these steps to ensure tests run properly:
+
+1. Ensure Python 3.11 is available.
+2. Run `make setup` to create a `.venv` and install dependencies in editable mode (`pip install -e .[dev]`).
+3. Activate the environment with `source .venv/bin/activate`.
+4. Execute the test suite using `make test`.
+
+These commands install all required packages, including development extras and pre-commit hooks, so subsequent commands run without additional setup.
