@@ -425,9 +425,9 @@ class EnrichMCP:
         """Return the current :class:`EnrichContext` for this app."""
 
         base_ctx = self.mcp.get_context()
-        return EnrichContext(
-            request_context=getattr(base_ctx, "_request_context", None),
-            fastmcp=getattr(base_ctx, "_fastmcp", None),
+        return EnrichContext.model_construct(
+            _request_context=getattr(base_ctx, "_request_context", None),
+            _fastmcp=getattr(base_ctx, "_fastmcp", None),
         )
 
     def run(
