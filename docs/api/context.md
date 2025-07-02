@@ -8,7 +8,8 @@
 
 ## Overview
 
-The `EnrichContext` class provides a placeholder for future context functionality. Currently, it's a minimal implementation that can be extended for request-scoped dependencies.
+The `EnrichContext` class provides request-scoped utilities such as the cache system.
+It can be extended for additional dependencies as needed.
 
 ## Current State
 
@@ -19,14 +20,10 @@ from enrichmcp import EnrichContext
 context = EnrichContext()
 ```
 
-## Future Use Cases
+## Capabilities
 
-The context system is designed to eventually support:
-
-- Database connections
-- Authentication information
-- Request metadata
-- Dependency injection
+The context exposes a `cache` attribute for storing values across the request,
+user, or global scopes.
 
 ## Extending Context
 

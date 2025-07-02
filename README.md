@@ -304,6 +304,19 @@ async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
     return await db.get_profile(user_id)
 ```
 
+### ⚡ Request Caching
+
+Reduce API overhead by storing results in a per-request, per-user, or global cache:
+
+```python
+@app.retrieve
+async def get_customer(cid: int, ctx: EnrichContext) -> Customer:
+    async def fetch() -> Customer:
+        return await db.get_customer(cid)
+
+    return await ctx.cache.get_or_set(f"customer:{cid}", fetch)
+```
+
 ### 🌐 HTTP & SSE Support
 
 Serve your API over standard output (default), SSE, or HTTP:
@@ -334,6 +347,7 @@ Check out the [examples directory](examples/README.md):
 - [shop_api_gateway](examples/shop_api_gateway) - EnrichMCP as a gateway in front of FastAPI
 - [sqlalchemy_shop](examples/sqlalchemy_shop) - Auto-generated API from SQLAlchemy models
 - [mutable_crud](examples/mutable_crud) - Demonstrates mutable fields and CRUD decorators
+- [caching](examples/caching) - Demonstrates ContextCache usage
 - [basic_memory](examples/basic_memory) - Simple note-taking API using FileMemoryStore
 - [openai_chat_agent](examples/openai_chat_agent) - Interactive chat client for MCP examples
 

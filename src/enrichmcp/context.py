@@ -6,6 +6,8 @@ Provides a thin wrapper over FastMCP's Context for request handling.
 
 from mcp.server.fastmcp import Context  # pyright: ignore[reportMissingTypeArgument]
 
+from .cache import ContextCache
+
 
 class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
     """
@@ -27,4 +29,10 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
             return await db.get_user(user_id)
     """
 
-    pass
+    _cache: ContextCache | None = None
+
+    @property
+    def cache(self) -> ContextCache:
+        if self._cache is None:
+            raise ValueError("Cache is not configured")
+        return self._cache

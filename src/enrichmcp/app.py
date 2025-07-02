@@ -13,10 +13,13 @@ from typing import (
     cast,
     runtime_checkable,
 )
+from uuid import uuid4
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from pydantic import BaseModel, Field, create_model
 
+from .cache import CacheBackend, ContextCache, MemoryCache
+from .context import EnrichContext
 from .entity import EnrichModel
 from .relationship import Relationship
 
@@ -40,7 +43,14 @@ class EnrichMCP:
     with entity support.
     """
 
-    def __init__(self, title: str, description: str, *, lifespan: Any = None):
+    def __init__(
+        self,
+        title: str,
+        description: str,
+        *,
+        lifespan: Any = None,
+        cache_backend: CacheBackend | None = None,
+    ):
         """
         Initialize the EnrichMCP application.
 
@@ -51,7 +61,21 @@ class EnrichMCP:
         """
         self.title = title
         self.description = description
+        self._cache_id = uuid4().hex[:8]
+        self.cache_backend = cache_backend or MemoryCache()
         self.mcp = FastMCP(title, description=description, lifespan=lifespan)
+
+        # Patch the FastMCP instance to return our enriched context
+        def _get_context() -> Context:
+            try:
+                request_context = self.mcp._mcp_server.request_context
+            except LookupError:
+                request_context = None
+            ctx = EnrichContext(request_context=request_context, fastmcp=self.mcp)
+            ctx._cache = ContextCache(self.cache_backend, self._cache_id, ctx.request_id)
+            return ctx
+
+        self.mcp.get_context = _get_context  # type: ignore[assignment]
         self.name = title  # Required for mcp install
 
         # Registries
