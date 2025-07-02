@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -132,3 +132,17 @@ def test_describe_model_with_complex_types():
     assert "**categories**" in description and "Article categories" in description
 
     assert "- **author** → Relationship: Article author" in description
+
+
+def test_describe_model_with_literal_type():
+    """Test describe_model with Literal field types."""
+    app = EnrichMCP("Enum API", description="A model with Literal fields")
+
+    @app.entity(description="Entity using Literal")
+    class Item(EnrichModel):
+        status: Literal["pending", "complete"] = Field(description="Item status")
+
+    description = app.describe_model()
+
+    assert "## Item" in description
+    assert "- **status** (Literal): Item status" in description
