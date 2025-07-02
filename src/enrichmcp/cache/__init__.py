@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import pickle
+import re
 import time
 import warnings
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
+from uuid import uuid4
 
 if TYPE_CHECKING:  # pragma: no cover - used for type hints
     from collections.abc import Callable
@@ -99,7 +101,8 @@ class ContextCache:
     def __init__(self, backend: CacheBackend, cache_id: str, request_id: str) -> None:
         self._backend = backend
         self._cache_id = cache_id
-        self._request_id = request_id
+        cleaned = re.sub(r"[^a-zA-Z0-9_-]", "_", str(request_id))
+        self._request_id = cleaned if cleaned else uuid4().hex
 
     def _user_hash(self) -> str | None:
         try:
