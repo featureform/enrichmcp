@@ -7,6 +7,7 @@
 [![PyPI](https://img.shields.io/pypi/v/enrichmcp.svg)](https://pypi.org/project/enrichmcp/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/featureform/enrichmcp/blob/main/LICENSE)
+[![Docs](https://img.shields.io/badge/docs-website-blue.svg)](https://featureform.github.io/enrichmcp)
 
 EnrichMCP is a Python framework that helps AI agents understand and navigate your data. Built on MCP (Model Context Protocol), it adds a semantic layer that turns your data model into typed, discoverable tools - like an ORM for AI.
 
