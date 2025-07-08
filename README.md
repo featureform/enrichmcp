@@ -73,6 +73,7 @@ class Order(Base):
 # That's it! Create your MCP app
 app = EnrichMCP(
     "E-commerce Data",
+    "API generated from SQLAlchemy models",
     lifespan=sqlalchemy_lifespan(Base, engine, cleanup_db_file=True),
 )
 include_sqlalchemy_models(app, Base)
@@ -94,8 +95,10 @@ Wrap your existing APIs with semantic understanding:
 from typing import Literal
 from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
+import httpx
 
-app = EnrichMCP("API Gateway")
+app = EnrichMCP("API Gateway", "Wrapper around existing REST APIs")
+http = httpx.AsyncClient(base_url="https://api.example.com")
 
 @app.entity
 class Customer(EnrichModel):
@@ -137,6 +140,12 @@ async def get_customer_orders(customer_id: int) -> list[Order]:
     response = await http.get(f"/api/customers/{customer_id}/orders")
     return [Order(**order) for order in response.json()]
 
+@Order.customer.resolver
+async def get_order_customer(order_id: int) -> Customer:
+    """Fetch the customer for an order."""
+    response = await http.get(f"/api/orders/{order_id}/customer")
+    return Customer(**response.json())
+
 app.run()
 ```
 
@@ -148,8 +157,11 @@ Build a complete data layer with custom logic:
 from enrichmcp import EnrichMCP, EnrichModel, Relationship, EnrichContext
 from datetime import datetime
 from decimal import Decimal
+from pydantic import Field
 
-app = EnrichMCP("Analytics Platform")
+app = EnrichMCP("Analytics Platform", "Custom analytics API")
+
+db = ...  # your database connection
 
 @app.entity
 class User(EnrichModel):
@@ -174,6 +186,42 @@ class Segment(EnrichModel):
     name: str = Field(description="Segment name")
     criteria: dict = Field(description="Segment criteria")
     users: list[User] = Relationship(description="Users in this segment")
+
+
+@app.entity
+class Order(EnrichModel):
+    """Simplified order record."""
+
+    id: int = Field(description="Order ID")
+    user_id: int = Field(description="Owner user ID")
+    total: Decimal = Field(description="Order total")
+
+@User.orders.resolver
+async def list_user_orders(user_id: int) -> list[Order]:
+    """Fetch orders for a user."""
+    rows = await db.query(
+        "SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC",
+        user_id,
+    )
+    return [Order(**row) for row in rows]
+
+@User.segments.resolver
+async def list_user_segments(user_id: int) -> list[Segment]:
+    """Fetch segments that include the user."""
+    rows = await db.query(
+        "SELECT s.* FROM segments s JOIN user_segments us ON s.name = us.segment_name WHERE us.user_id = ?",
+        user_id,
+    )
+    return [Segment(**row) for row in rows]
+
+@Segment.users.resolver
+async def list_segment_users(name: str) -> list[User]:
+    """List users in a segment."""
+    rows = await db.query(
+        "SELECT u.* FROM users u JOIN user_segments us ON u.id = us.user_id WHERE us.segment_name = ?",
+        name,
+    )
+    return [User(**row) for row in rows]
 
 # Complex resource with business logic
 @app.retrieve
@@ -302,6 +350,15 @@ See the [Pagination Guide](https://featureform.github.io/enrichmcp/pagination) f
 Pass auth, database connections, or any context:
 
 ```python
+from pydantic import Field
+from enrichmcp import EnrichModel
+
+class UserProfile(EnrichModel):
+    """User profile information."""
+
+    user_id: int = Field(description="User ID")
+    bio: str | None = Field(default=None, description="Short bio")
+
 @app.retrieve
 async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
     # Access context provided by MCP client
@@ -316,6 +373,7 @@ async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
 Reduce API overhead by storing results in a per-request, per-user, or global cache:
 
 ```python
+
 @app.retrieve
 async def get_customer(cid: int, ctx: EnrichContext) -> Customer:
     async def fetch() -> Customer:
