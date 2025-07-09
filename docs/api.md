@@ -41,6 +41,9 @@ class User(EnrichModel):
 ### [EnrichContext](api/context.md)
 Context object with request scoped utilities including caching.
 
+### [EnrichParameter](api/parameter.md)
+Attach metadata like descriptions and examples to function parameters.
+
 ### [Cache](api/cache.md)
 Request, user, and global scoped caching utilities.
 

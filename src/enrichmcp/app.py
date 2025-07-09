@@ -4,6 +4,7 @@ Main application module for enrichmcp.
 Provides the EnrichMCP class for creating MCP applications.
 """
 
+import inspect
 import warnings
 from collections.abc import Callable
 from typing import (
@@ -24,6 +25,7 @@ from pydantic import BaseModel, Field, create_model
 from .cache import CacheBackend, ContextCache, MemoryCache
 from .context import EnrichContext
 from .entity import EnrichModel
+from .parameter import EnrichParameter
 from .relationship import Relationship
 
 # Type variables
@@ -320,6 +322,52 @@ class EnrichMCP:
 
         return "\n".join(lines)
 
+    def _append_enrichparameter_hints(self, description: str, fn: Callable[..., Any]) -> str:
+        """Append ``EnrichParameter`` metadata to a description string."""
+
+        hints: list[str] = []
+        try:
+            sig = inspect.signature(fn)
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            return description
+
+        for param in sig.parameters.values():
+            default = param.default
+            annotation = param.annotation
+
+            if isinstance(default, EnrichParameter):
+                if annotation is EnrichContext:
+                    # Context parameters are stripped from the final tool
+                    # interface so hints would be confusing to the agent.
+                    continue
+
+                param_type = "Any"
+                if annotation is not inspect.Parameter.empty:
+                    if get_origin(annotation) is Literal:
+                        values = ", ".join(repr(v) for v in get_args(annotation))
+                        param_type = f"Literal[{values}]"
+                    else:
+                        param_type = getattr(annotation, "__name__", str(annotation))
+
+                parts = [param_type]
+                if default.description:
+                    parts.append(default.description)
+                if default.examples:
+                    joined = ", ".join(map(str, default.examples))
+                    parts.append(f"examples: {joined}")
+                if default.metadata:
+                    meta = ", ".join(f"{k}: {v}" for k, v in default.metadata.items())
+                    parts.append(meta)
+
+                hints.append(f"{param.name} - {'; '.join(parts)}")
+
+        if hints:
+            description = (
+                description.rstrip() + "\n\nParameter hints:\n" + "\n".join(f"- {h}" for h in hints)
+            )
+
+        return description
+
     def retrieve(
         self,
         func: Callable[..., Any] | None = None,
@@ -368,6 +416,9 @@ class EnrichMCP:
             # Strip docstring if used
             if resource_desc == fn.__doc__ and resource_desc:
                 resource_desc = resource_desc.strip()
+
+            # Append EnrichParameter parameter hints
+            resource_desc = self._append_enrichparameter_hints(resource_desc, fn)
 
             # Store the resource for testing
             self.resources[resource_name] = fn
