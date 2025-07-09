@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field, create_model
 
 from .cache import CacheBackend, ContextCache, MemoryCache
 from .context import EnrichContext
+from .datamodel import DataModelSummary
 from .entity import EnrichModel
 from .parameter import EnrichParameter
 from .relationship import Relationship
@@ -85,17 +86,18 @@ class EnrichMCP:
         Register built-in resources for the API.
         """
 
-        @self.retrieve(
-            name="explore_data_model",
-            description=(
-                "IMPORTANT: Call this tool FIRST to understand the complete data model, "
-                "entity relationships, and available operations. This provides a comprehensive "
-                "overview of the API structure, including all entities, their fields, "
-                "relationships, and semantic meanings. Understanding this model is essential "
-                "for effectively querying and navigating the data."
-            ),
+        tool_name = f"explore_{self.name.lower().replace(' ', '_')}_data_model"
+        tool_description = (
+            "IMPORTANT: Call this tool FIRST before using any other tools on the "
+            f"{self.title} server. {self.description} "
+            "This provides a comprehensive overview of the API structure, including "
+            "all entities, their fields, relationships, and semantic meanings. "
+            "Understanding this model is essential for effectively querying and "
+            "navigating the data."
         )
-        async def explore_data_model() -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
+
+        @self.retrieve(name=tool_name, description=tool_description)
+        async def explore_data_model() -> "DataModelSummary":  # pyright: ignore[reportUnusedFunction]
             """Get a comprehensive overview of the API data model.
 
             Returns detailed information about all entities, their fields, relationships,
@@ -103,18 +105,18 @@ class EnrichMCP:
             the available data and operations.
             """
             model_description = self.describe_model()
-            return {
-                "title": self.title,
-                "description": self.description,
-                "entity_count": len(self.entities),
-                "entities": list(self.entities.keys()),
-                "model": model_description,
-                "usage_hint": (
+            return DataModelSummary(
+                title=self.title,
+                description=self.description,
+                entity_count=len(self.entities),
+                entities=list(self.entities.keys()),
+                model=model_description,
+                usage_hint=(
                     "Use the model information above to understand how to query the data. "
                     "Each entity has fields and relationships. Relationships must be resolved "
                     "separately using their specific resolver endpoints."
                 ),
-            }
+            )
 
     def entity(
         self, cls: type[EnrichModel] | None = None, *, description: str | None = None
