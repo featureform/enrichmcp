@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 from .app import EnrichMCP
 from .cache import MemoryCache, RedisCache
 from .context import EnrichContext
+from .datamodel import DataModelSummary
 from .entity import EnrichModel
 from .lifespan import combine_lifespans
 from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult, PaginationParams
@@ -49,6 +50,7 @@ else:
 __all__ = [
     "CursorParams",
     "CursorResult",
+    "DataModelSummary",
     "EnrichContext",
     "EnrichMCP",
     "EnrichModel",
