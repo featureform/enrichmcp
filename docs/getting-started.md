@@ -191,6 +191,20 @@ async def get_user(user_id: int, ctx: EnrichContext) -> User:
 
 Context is automatically injected when you add a parameter typed as `EnrichContext`.
 
+## Parameter Hints
+
+You can attach descriptions and examples to resource parameters using `EnrichParameter`:
+
+```python
+from enrichmcp import EnrichParameter
+
+@app.retrieve
+async def greet(name: str = EnrichParameter(description="user name", examples=["bob"])) -> str:
+    return f"Hello {name}"
+```
+
+These hints are appended to the generated tool description so agents know how to call the resource.
+
 ## Using Existing SQLAlchemy Models
 
 Have a project full of SQLAlchemy models already? You can expose them as an MCP

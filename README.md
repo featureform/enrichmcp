@@ -382,6 +382,20 @@ async def get_customer(cid: int, ctx: EnrichContext) -> Customer:
     return await ctx.cache.get_or_set(f"customer:{cid}", fetch)
 ```
 
+### 🧭 Parameter Hints
+
+Provide examples and metadata for tool parameters using `EnrichParameter`:
+
+```python
+from enrichmcp import EnrichParameter
+
+@app.retrieve
+async def greet_user(name: str = EnrichParameter(description="user name", examples=["bob"])) -> str:
+    return f"Hello {name}"
+```
+
+Tool descriptions will include the parameter type, description, and examples.
+
 ### 🌐 HTTP & SSE Support
 
 Serve your API over standard output (default), SSE, or HTTP:

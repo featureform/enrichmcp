@@ -30,6 +30,7 @@ from .context import EnrichContext
 from .entity import EnrichModel
 from .lifespan import combine_lifespans
 from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult, PaginationParams
+from .parameter import EnrichParameter
 from .relationship import (
     Relationship,
 )
@@ -52,6 +53,7 @@ __all__ = [
     "EnrichContext",
     "EnrichMCP",
     "EnrichModel",
+    "EnrichParameter",
     "MemoryCache",
     "PageResult",
     "PaginatedResult",
