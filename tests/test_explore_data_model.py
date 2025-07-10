@@ -31,5 +31,5 @@ async def test_explore_data_model_returns_summary() -> None:
 
     tools = await app.mcp.list_tools()
     tool = next(t for t in tools if t.name == tool_name)
-    assert "Call this tool FIRST" in tool.description
+    assert "start of an agent session" in tool.description
     assert "Demo server" in tool.description

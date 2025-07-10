@@ -30,6 +30,7 @@ class ToolDef:
         """Return the description with standard usage prefix."""
         prefix = (
             f"This is a {self.kind.value} for the {app.title} server. "
-            f"Use it after calling {app.data_model_tool_name()}."
+            f"Call {app.data_model_tool_name()} at the start of the session "
+            "and keep its response in context before using this tool."
         )
         return f"{prefix} {self.description}".strip()
