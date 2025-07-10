@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/featureform-enrichmcp-badge.png)](https://mseep.ai/app/featureform-enrichmcp)
+
 # EnrichMCP
 
 **The ORM for AI Agents - Turn your data model into a semantic MCP layer**
