@@ -193,13 +193,17 @@ Context is automatically injected when you add a parameter typed as `EnrichConte
 
 ## Parameter Hints
 
-You can attach descriptions and examples to resource parameters using `EnrichParameter`:
+You can attach descriptions and examples to resource parameters using `EnrichParameter`.
+The provided `default` value becomes the runtime default when the argument is omitted:
 
 ```python
 from enrichmcp import EnrichParameter
 
+
 @app.retrieve
-async def greet(name: str = EnrichParameter(description="user name", examples=["bob"])) -> str:
+async def greet(
+    name: str = EnrichParameter(default="bob", description="user name", examples=["bob"]),
+) -> str:
     return f"Hello {name}"
 ```
 

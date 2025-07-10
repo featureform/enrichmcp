@@ -4,6 +4,7 @@ Main application module for enrichmcp.
 Provides the EnrichMCP class for creating MCP applications.
 """
 
+import functools
 import inspect
 import warnings
 from collections.abc import Callable
@@ -24,9 +25,17 @@ from pydantic import BaseModel, Field, create_model
 
 from .cache import CacheBackend, ContextCache, MemoryCache
 from .context import EnrichContext
+from .datamodel import (
+    DataModelSummary,
+    EntityDescription,
+    FieldDescription,
+    ModelDescription,
+    RelationshipDescription,
+)
 from .entity import EnrichModel
 from .parameter import EnrichParameter
 from .relationship import Relationship
+from .tool import ToolDef, ToolKind
 
 # Type variables
 T = TypeVar("T", bound=EnrichModel)
@@ -80,22 +89,28 @@ class EnrichMCP:
         # Register built-in resources
         self._register_builtin_resources()
 
+    def data_model_tool_name(self) -> str:
+        """Return the name of the built-in data model exploration tool."""
+
+        return f"explore_{self.name.lower().replace(' ', '_')}_data_model"
+
     def _register_builtin_resources(self) -> None:
         """
         Register built-in resources for the API.
         """
 
-        @self.retrieve(
-            name="explore_data_model",
-            description=(
-                "IMPORTANT: Call this tool FIRST to understand the complete data model, "
-                "entity relationships, and available operations. This provides a comprehensive "
-                "overview of the API structure, including all entities, their fields, "
-                "relationships, and semantic meanings. Understanding this model is essential "
-                "for effectively querying and navigating the data."
-            ),
+        tool_name = self.data_model_tool_name()
+        tool_description = (
+            "IMPORTANT: Call this tool FIRST before using any other tools on the "
+            f"{self.title} server. {self.description} "
+            "This provides a comprehensive overview of the API structure, including "
+            "all entities, their fields, relationships, and semantic meanings. "
+            "Understanding this model is essential for effectively querying and "
+            "navigating the data."
         )
-        async def explore_data_model() -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
+
+        @self.retrieve(name=tool_name, description=tool_description)
+        async def explore_data_model() -> "DataModelSummary":  # pyright: ignore[reportUnusedFunction]
             """Get a comprehensive overview of the API data model.
 
             Returns detailed information about all entities, their fields, relationships,
@@ -103,18 +118,18 @@ class EnrichMCP:
             the available data and operations.
             """
             model_description = self.describe_model()
-            return {
-                "title": self.title,
-                "description": self.description,
-                "entity_count": len(self.entities),
-                "entities": list(self.entities.keys()),
-                "model": model_description,
-                "usage_hint": (
+            return DataModelSummary(
+                title=self.title,
+                description=self.description,
+                entity_count=len(self.entities),
+                entities=list(self.entities.keys()),
+                model=model_description,
+                usage_hint=(
                     "Use the model information above to understand how to query the data. "
                     "Each entity has fields and relationships. Relationships must be resolved "
                     "separately using their specific resolver endpoints."
                 ),
-            }
+            )
 
     def entity(
         self, cls: type[EnrichModel] | None = None, *, description: str | None = None
@@ -234,93 +249,69 @@ class EnrichMCP:
             patch_model_cls.__doc__ = f"Patch model for {cls.__name__}"
             cls.PatchModel = patch_model_cls
 
-    def describe_model(self) -> str:
-        """
-        Generate a comprehensive description of the entire data model.
+    def describe_model_struct(self) -> ModelDescription:
+        """Return a structured description of the entire data model."""
+        desc = ModelDescription(title=self.title, description=self.description)
 
-        Returns:
-            A formatted string containing all entities, their fields, and relationships.
-        """
-        lines: list[str] = []
-
-        # Add title
-        lines.append(f"# Data Model: {self.title}")
-        if self.description:
-            lines.append(self.description)
-        lines.append("")
-
-        # Add table of contents
-        if self.entities:
-            lines.append("## Entities")
-            for entity_name in sorted(self.entities.keys()):
-                lines.append(f"- [{entity_name}](#{entity_name.lower()})")
-            lines.append("")
-        else:
-            lines.append("*No entities registered*")
-            return "\n".join(lines)
-
-        # Add each entity
         for entity_name, entity_cls in sorted(self.entities.items()):
-            lines.append(f"## {entity_name}")
-            description = entity_cls.__doc__ or "No description available"
-            lines.append(description.strip())
-            lines.append("")
+            entity_desc = EntityDescription(
+                name=entity_name,
+                description=(entity_cls.__doc__ or "No description available").strip(),
+            )
 
-            # Fields section
-            field_lines: list[str] = []
             for field_name, field in entity_cls.model_fields.items():
-                # Skip relationship fields, we'll handle them separately
                 if field_name in entity_cls.relationship_fields():
                     continue
 
-                # Get field type and description
-                field_type = "Any"  # Default type if annotation is None
+                field_type = "Any"
                 if field.annotation is not None:
                     annotation = field.annotation
                     if get_origin(annotation) is Literal:
                         values = ", ".join(repr(v) for v in get_args(annotation))
                         field_type = f"Literal[{values}]"
                     else:
-                        field_type = str(annotation)  # Always safe fallback
+                        field_type = str(annotation)
                         if hasattr(annotation, "__name__"):
                             field_type = annotation.__name__
-                field_desc = field.description
+
                 extra = getattr(field, "json_schema_extra", None)
                 if extra is None:
                     info = getattr(field, "field_info", None)
                     extra = getattr(info, "extra", {}) if info is not None else {}
-                if extra.get("mutable"):
-                    field_type = f"{field_type}, mutable"
 
-                # Format field info
-                field_lines.append(f"- **{field_name}** ({field_type}): {field_desc}")
+                entity_desc.fields.append(
+                    FieldDescription(
+                        name=field_name,
+                        type=field_type,
+                        description=field.description or "",
+                        mutable=bool(extra.get("mutable")),
+                    )
+                )
 
-            if field_lines:
-                lines.append("### Fields")
-                lines.extend(field_lines)
-                lines.append("")
-
-            # Relationships section
-            rel_lines: list[str] = []
-            rel_fields = entity_cls.relationship_fields()
-            for field_name in rel_fields:
+            for field_name in entity_cls.relationship_fields():
                 field = entity_cls.model_fields[field_name]
                 rel = field.default
-                target_type = "Any"  # Default type if annotation is None
+                target_type = "Any"
                 if field.annotation is not None:
-                    target_type = str(field.annotation)  # Always safe fallback
+                    target_type = str(field.annotation)
                     if hasattr(field.annotation, "__name__"):
                         target_type = field.annotation.__name__
-                rel_desc = rel.description
 
-                rel_lines.append(f"- **{field_name}** → {target_type}: {rel_desc}")
+                entity_desc.relationships.append(
+                    RelationshipDescription(
+                        name=field_name,
+                        target=target_type,
+                        description=rel.description,
+                    )
+                )
 
-            if rel_lines:
-                lines.append("### Relationships")
-                lines.extend(rel_lines)
-                lines.append("")
+            desc.entities.append(entity_desc)
 
-        return "\n".join(lines)
+        return desc
+
+    def describe_model(self) -> str:
+        """Return a Markdown description of the entire data model."""
+        return str(self.describe_model_struct())
 
     def _append_enrichparameter_hints(self, description: str, fn: Callable[..., Any]) -> str:
         """Append ``EnrichParameter`` metadata to a description string."""
@@ -368,6 +359,86 @@ class EnrichMCP:
 
         return description
 
+    def _apply_enrichparameter_defaults(self, fn: Callable[..., Any]) -> Callable[..., Any]:
+        """Replace ``EnrichParameter`` defaults with their values."""
+
+        sig = inspect.signature(fn)
+        params: list[inspect.Parameter] = []
+        changed = False
+        for param in sig.parameters.values():
+            default = param.default
+            if isinstance(default, EnrichParameter):
+                params.append(param.replace(default=default.default))
+                changed = True
+            else:
+                params.append(param)
+
+        if not changed:
+            return fn
+
+        new_sig = sig.replace(parameters=params)
+
+        if inspect.iscoroutinefunction(fn):
+
+            @functools.wraps(fn)
+            async def wrapper_async(*args: Any, **kwargs: Any) -> Any:
+                bound = new_sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
+                return await fn(**bound.arguments)
+
+            wrapper = wrapper_async
+        else:
+
+            @functools.wraps(fn)
+            def wrapper_sync(*args: Any, **kwargs: Any) -> Any:
+                bound = new_sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
+                return fn(**bound.arguments)
+
+            wrapper = wrapper_sync
+
+        wrapper.__signature__ = new_sig
+        return wrapper
+
+    def _register_tool_def(self, fn: Callable[..., Any], tool_def: ToolDef) -> Callable[..., Any]:
+        """Register ``fn`` as a tool using ``tool_def``."""
+
+        desc = self._append_enrichparameter_hints(tool_def.final_description(self), fn)
+        fn = self._apply_enrichparameter_defaults(fn)
+        self.resources[tool_def.name] = fn
+        mcp_tool = self.mcp.tool(name=tool_def.name, description=desc)
+        return mcp_tool(fn)
+
+    def _tool_decorator(
+        self,
+        kind: ToolKind,
+        func: Callable[..., Any] | None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Callable[..., Any] | DecoratorCallable:
+        """Return a decorator that registers a tool of the given ``kind``."""
+
+        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+            tool_name = name or fn.__name__
+            tool_desc = description or fn.__doc__
+            if not tool_desc:
+                raise ValueError(
+                    f"Resource '{tool_name}' must have a description. "
+                    "Provide it via the decorator or function docstring."
+                )
+
+            if tool_desc == fn.__doc__ and tool_desc:
+                tool_desc = tool_desc.strip()
+
+            tool_def = ToolDef(kind=kind, name=tool_name, description=tool_desc)
+            return self._register_tool_def(fn, tool_def)
+
+        if func is not None:
+            return decorator(func)
+
+        return cast("DecoratorCallable", decorator)
+
     def retrieve(
         self,
         func: Callable[..., Any] | None = None,
@@ -401,37 +472,7 @@ class EnrichMCP:
             ValueError: If no description is provided (neither in decorator nor docstring)
         """
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            # Get name and description
-            resource_name = name or fn.__name__
-            resource_desc = description or fn.__doc__
-
-            # Check for description
-            if not resource_desc:
-                raise ValueError(
-                    f"Resource '{resource_name}' must have a description. "
-                    f"Provide it via @app.retrieve(description=...) or function docstring."
-                )
-
-            # Strip docstring if used
-            if resource_desc == fn.__doc__ and resource_desc:
-                resource_desc = resource_desc.strip()
-
-            # Append EnrichParameter parameter hints
-            resource_desc = self._append_enrichparameter_hints(resource_desc, fn)
-
-            # Store the resource for testing
-            self.resources[resource_name] = fn
-            # Create and apply the MCP tool decorator
-            mcp_tool = self.mcp.tool(name=resource_name, description=resource_desc)
-            return mcp_tool(fn)
-
-        # If called without parentheses (@app.retrieve)
-        if func is not None:
-            return decorator(func)
-
-        # If called with parentheses (@app.retrieve())
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.RETRIEVER, func, name=name, description=description)
 
     def resource(self, *args: Any, **kwargs: Any) -> Any:
         """Deprecated alias for :meth:`retrieve`. Use :meth:`retrieve` instead."""
@@ -452,12 +493,7 @@ class EnrichMCP:
     ) -> Callable[..., Any] | DecoratorCallable:
         """Register a create operation."""
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.retrieve(fn, name=name, description=description)
-
-        if func is not None:
-            return decorator(func)
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.CREATOR, func, name=name, description=description)
 
     def update(
         self,
@@ -468,12 +504,7 @@ class EnrichMCP:
     ) -> Callable[..., Any] | DecoratorCallable:
         """Register an update operation."""
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.retrieve(fn, name=name, description=description)
-
-        if func is not None:
-            return decorator(func)
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.UPDATER, func, name=name, description=description)
 
     def delete(
         self,
@@ -484,12 +515,7 @@ class EnrichMCP:
     ) -> Callable[..., Any] | DecoratorCallable:
         """Register a delete operation."""
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.retrieve(fn, name=name, description=description)
-
-        if func is not None:
-            return decorator(func)
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.DELETER, func, name=name, description=description)
 
     def get_context(self) -> EnrichContext:
         """Return the current :class:`EnrichContext` for this app."""
