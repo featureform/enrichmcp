@@ -440,6 +440,20 @@ Check out the [examples directory](examples/README.md):
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
+## Development Setup
+
+The repository requires **Python&nbsp;3.11** or newer. The Makefile includes
+commands to create a virtual environment and run the tests:
+
+```bash
+make setup            # create .venv and install dependencies
+source .venv/bin/activate
+make test             # run the test suite
+```
+
+This installs all development extras and pre-commit hooks so commands like
+`make lint` or `make docs` work right away.
+
 ## License
 
 Apache 2.0 - See [LICENSE](LICENSE)
