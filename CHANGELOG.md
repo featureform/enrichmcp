@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2025-07-10
+
+### Added
+- `EnrichParameter` for attaching descriptions and examples to resource
+  parameters.
+- `DataModelSummary` object returned by the built-in data model explorat
+
+  tool.
+- Standardized tool descriptions via new `ToolDef` and `ToolKind` helper
+
+
+### Changed
+- Built-in data model tool description now instructs calling it once at
+
+  start of a session.
+- Improved `DataModelSummary` string formatting and explore endpoint out
+
+
+### Fixed
+- Correct typing for field descriptions returned by the explore endpoint
+
 ## [0.4.5] - 2025-07-02
+
 ### Added
 - Context caching with `MemoryCache` and optional `RedisCache` backends.
 - `EnrichMCP.get_context()` returns an `EnrichContext` instance mirroring the underlying FastMCP context.
