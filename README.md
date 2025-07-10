@@ -39,16 +39,22 @@ Transform your existing SQLAlchemy models into an AI-navigable API:
 
 ```python
 from enrichmcp import EnrichMCP
-from enrichmcp.sqlalchemy import include_sqlalchemy_models, sqlalchemy_lifespan, EnrichSQLAlchemyMixin
+from enrichmcp.sqlalchemy import (
+    include_sqlalchemy_models,
+    sqlalchemy_lifespan,
+    EnrichSQLAlchemyMixin,
+)
 from sqlalchemy import ForeignKey
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/db")
 
+
 # Add the mixin to your declarative base
 class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
     pass
+
 
 class User(Base):
     """User account."""
@@ -58,7 +64,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, info={"description": "Unique user ID"})
     email: Mapped[str] = mapped_column(unique=True, info={"description": "Email address"})
     status: Mapped[str] = mapped_column(default="active", info={"description": "Account status"})
-    orders: Mapped[list["Order"]] = relationship(back_populates="user", info={"description": "All orders for this user"})
+    orders: Mapped[list["Order"]] = relationship(
+        back_populates="user", info={"description": "All orders for this user"}
+    )
+
 
 class Order(Base):
     """Customer order."""
@@ -66,9 +75,14 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True, info={"description": "Order ID"})
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), info={"description": "Owner user ID"})
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), info={"description": "Owner user ID"}
+    )
     total: Mapped[float] = mapped_column(info={"description": "Order total"})
-    user: Mapped[User] = relationship(back_populates="orders", info={"description": "User who placed the order"})
+    user: Mapped[User] = relationship(
+        back_populates="orders", info={"description": "User who placed the order"}
+    )
+
 
 # That's it! Create your MCP app
 app = EnrichMCP(
@@ -100,18 +114,18 @@ import httpx
 app = EnrichMCP("API Gateway", "Wrapper around existing REST APIs")
 http = httpx.AsyncClient(base_url="https://api.example.com")
 
+
 @app.entity
 class Customer(EnrichModel):
     """Customer in our CRM system."""
 
     id: int = Field(description="Unique customer ID")
     email: str = Field(description="Primary contact email")
-    tier: Literal["free", "pro", "enterprise"] = Field(
-        description="Subscription tier"
-    )
+    tier: Literal["free", "pro", "enterprise"] = Field(description="Subscription tier")
 
     # Define navigable relationships
     orders: list["Order"] = Relationship(description="Customer's purchase history")
+
 
 @app.entity
 class Order(EnrichModel):
@@ -120,11 +134,10 @@ class Order(EnrichModel):
     id: int = Field(description="Order ID")
     customer_id: int = Field(description="Associated customer")
     total: float = Field(description="Order total in USD")
-    status: Literal["pending", "shipped", "delivered"] = Field(
-        description="Order status"
-    )
+    status: Literal["pending", "shipped", "delivered"] = Field(description="Order status")
 
     customer: Customer = Relationship(description="Customer who placed this order")
+
 
 # Define how to fetch data
 @app.retrieve
@@ -133,6 +146,7 @@ async def get_customer(customer_id: int) -> Customer:
     response = await http.get(f"/api/customers/{customer_id}")
     return Customer(**response.json())
 
+
 # Define relationship resolvers
 @Customer.orders.resolver
 async def get_customer_orders(customer_id: int) -> list[Order]:
@@ -140,11 +154,13 @@ async def get_customer_orders(customer_id: int) -> list[Order]:
     response = await http.get(f"/api/customers/{customer_id}/orders")
     return [Order(**order) for order in response.json()]
 
+
 @Order.customer.resolver
 async def get_order_customer(order_id: int) -> Customer:
     """Fetch the customer for an order."""
     response = await http.get(f"/api/orders/{order_id}/customer")
     return Customer(**response.json())
+
 
 app.run()
 ```
@@ -163,6 +179,7 @@ app = EnrichMCP("Analytics Platform", "Custom analytics API")
 
 db = ...  # your database connection
 
+
 @app.entity
 class User(EnrichModel):
     """User with computed analytics fields."""
@@ -178,6 +195,7 @@ class User(EnrichModel):
     # Relationships
     orders: list["Order"] = Relationship(description="Purchase history")
     segments: list["Segment"] = Relationship(description="Marketing segments")
+
 
 @app.entity
 class Segment(EnrichModel):
@@ -196,6 +214,7 @@ class Order(EnrichModel):
     user_id: int = Field(description="Owner user ID")
     total: Decimal = Field(description="Order total")
 
+
 @User.orders.resolver
 async def list_user_orders(user_id: int) -> list[Order]:
     """Fetch orders for a user."""
@@ -204,6 +223,7 @@ async def list_user_orders(user_id: int) -> list[Order]:
         user_id,
     )
     return [Order(**row) for row in rows]
+
 
 @User.segments.resolver
 async def list_user_segments(user_id: int) -> list[Segment]:
@@ -214,6 +234,7 @@ async def list_user_segments(user_id: int) -> list[Segment]:
     )
     return [Segment(**row) for row in rows]
 
+
 @Segment.users.resolver
 async def list_segment_users(name: str) -> list[User]:
     """List users in a segment."""
@@ -223,12 +244,11 @@ async def list_segment_users(name: str) -> list[User]:
     )
     return [User(**row) for row in rows]
 
+
 # Complex resource with business logic
 @app.retrieve
 async def find_high_value_at_risk_users(
-    lifetime_value_min: Decimal = 1000,
-    churn_risk_min: float = 0.7,
-    limit: int = 100
+    lifetime_value_min: Decimal = 1000, churn_risk_min: float = 0.7, limit: int = 100
 ) -> list[User]:
     """Find valuable customers likely to churn."""
     users = await db.query(
@@ -238,19 +258,20 @@ async def find_high_value_at_risk_users(
         ORDER BY lifetime_value DESC
         LIMIT ?
         """,
-        lifetime_value_min, churn_risk_min, limit
+        lifetime_value_min,
+        churn_risk_min,
+        limit,
     )
     return [User(**u) for u in users]
+
 
 # Async computed field resolver
 @User.lifetime_value.resolver
 async def calculate_lifetime_value(user_id: int) -> Decimal:
     """Calculate total revenue from user's orders."""
-    total = await db.query_single(
-        "SELECT SUM(total) FROM orders WHERE user_id = ?",
-        user_id
-    )
+    total = await db.query_single("SELECT SUM(total) FROM orders WHERE user_id = ?", user_id)
     return Decimal(str(total or 0))
+
 
 # ML-powered field
 @User.churn_risk.resolver
@@ -259,6 +280,7 @@ async def predict_churn_risk(user_id: int, context: EnrichContext) -> float:
     features = await gather_user_features(user_id)
     model = context.get("ml_models")["churn"]
     return float(model.predict_proba(features)[0][1])
+
 
 app.run()
 ```
@@ -309,17 +331,17 @@ class Customer(EnrichModel):
     id: int = Field(description="ID")
     email: str = Field(json_schema_extra={"mutable": True}, description="Email")
 
+
 @app.create
-async def create_customer(email: str) -> Customer:
-    ...
+async def create_customer(email: str) -> Customer: ...
+
 
 @app.update
-async def update_customer(cid: int, patch: Customer.PatchModel) -> Customer:
-    ...
+async def update_customer(cid: int, patch: Customer.PatchModel) -> Customer: ...
+
 
 @app.delete
-async def delete_customer(cid: int) -> bool:
-    ...
+async def delete_customer(cid: int) -> bool: ...
 ```
 
 ### 📄 Pagination Built-in
@@ -329,18 +351,11 @@ Handle large datasets elegantly:
 ```python
 from enrichmcp import PageResult
 
+
 @app.retrieve
-async def list_orders(
-    page: int = 1,
-    page_size: int = 50
-) -> PageResult[Order]:
+async def list_orders(page: int = 1, page_size: int = 50) -> PageResult[Order]:
     orders, total = await db.get_orders_page(page, page_size)
-    return PageResult.create(
-        items=orders,
-        page=page,
-        page_size=page_size,
-        total_items=total
-    )
+    return PageResult.create(items=orders, page=page, page_size=page_size, total_items=total)
 ```
 
 See the [Pagination Guide](https://featureform.github.io/enrichmcp/pagination) for more examples.
@@ -353,11 +368,13 @@ Pass auth, database connections, or any context:
 from pydantic import Field
 from enrichmcp import EnrichModel
 
+
 class UserProfile(EnrichModel):
     """User profile information."""
 
     user_id: int = Field(description="User ID")
     bio: str | None = Field(default=None, description="Short bio")
+
 
 @app.retrieve
 async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
@@ -373,7 +390,6 @@ async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
 Reduce API overhead by storing results in a per-request, per-user, or global cache:
 
 ```python
-
 @app.retrieve
 async def get_customer(cid: int, ctx: EnrichContext) -> Customer:
     async def fetch() -> Customer:
@@ -390,8 +406,11 @@ The value of its `default` attribute becomes the runtime default:
 ```python
 from enrichmcp import EnrichParameter
 
+
 @app.retrieve
-async def greet_user(name: str = EnrichParameter(default="bob", description="user name", examples=["bob"])) -> str:
+async def greet_user(
+    name: str = EnrichParameter(default="bob", description="user name", examples=["bob"]),
+) -> str:
     return f"Hello {name}"
 ```
 
@@ -440,6 +459,20 @@ Check out the [examples directory](examples/README.md):
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Development Setup
+
+The repository requires **Python&nbsp;3.11** or newer. The Makefile includes
+commands to create a virtual environment and run the tests:
+
+```bash
+make setup            # create .venv and install dependencies
+source .venv/bin/activate
+make test             # run the test suite
+```
+
+This installs all development extras and pre-commit hooks so commands like
+`make lint` or `make docs` work right away.
 
 ## License
 

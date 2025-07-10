@@ -28,7 +28,9 @@ async def ensure_ollama_running(model: str) -> None:
             "Ollama server not detected. Install from https://ollama.com and "
             "start it using:\n\n"
             "    ollama serve &\n    ollama pull "
-            f"{model}\n"
+            f"{model}\n\n"
+            "Alternatively set the OPENAI_API_KEY environment variable to use "
+            "OpenAI instead of Ollama."
         )
         raise RuntimeError(msg) from None
 
