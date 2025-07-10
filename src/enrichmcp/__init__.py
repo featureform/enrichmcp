@@ -27,7 +27,13 @@ from typing import TYPE_CHECKING
 from .app import EnrichMCP
 from .cache import MemoryCache, RedisCache
 from .context import EnrichContext
-from .datamodel import DataModelSummary
+from .datamodel import (
+    DataModelSummary,
+    EntityDescription,
+    FieldDescription,
+    ModelDescription,
+    RelationshipDescription,
+)
 from .entity import EnrichModel
 from .lifespan import combine_lifespans
 from .pagination import CursorParams, CursorResult, PageResult, PaginatedResult, PaginationParams
@@ -56,12 +62,16 @@ __all__ = [
     "EnrichMCP",
     "EnrichModel",
     "EnrichParameter",
+    "EntityDescription",
+    "FieldDescription",
     "MemoryCache",
+    "ModelDescription",
     "PageResult",
     "PaginatedResult",
     "PaginationParams",
     "RedisCache",
     "Relationship",
+    "RelationshipDescription",
     "__version__",
     "combine_lifespans",
 ]
