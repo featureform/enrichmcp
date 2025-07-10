@@ -16,8 +16,8 @@ class EnrichParameter:
 
     When a parameter's default value is an instance of ``EnrichParameter`` the
     metadata contained here is appended to the generated tool description. The
-    ``default`` attribute is **not** used as the runtime default value; it simply
-    provides a placeholder so function signatures remain valid.
+    ``default`` attribute is also used as the runtime default value when the
+    argument is omitted, so function signatures remain valid.
     """
 
     default: Any | None = None

@@ -18,7 +18,7 @@ from memory import (
     MemoryProject,
 )
 
-from enrichmcp import EnrichMCP
+from enrichmcp import EnrichMCP, EnrichParameter
 
 store = FileMemoryStore(Path(__file__).parent / "data")
 project = MemoryProject("demo", store)
@@ -38,10 +38,10 @@ class NoteSummary(MemoryNoteSummary):
 
 @app.create
 async def create_note(
-    title: str,
-    content: str,
-    tags: list[str] | None = None,
-    note_id: str | None = None,
+    title: str = EnrichParameter(description="Note title"),
+    content: str = EnrichParameter(description="Note content"),
+    tags: list[str] | None = EnrichParameter(default=None, description="Optional list of tags"),  # noqa: B008
+    note_id: str | None = EnrichParameter(default=None, description="Optional identifier override"),
 ) -> Note:
     """Create or replace a note."""
     note = project.create_note(title, content, tags, note_id=note_id)
@@ -49,7 +49,9 @@ async def create_note(
 
 
 @app.retrieve
-async def get_note(note_id: str) -> Note:
+async def get_note(
+    note_id: str = EnrichParameter(description="Note identifier"),
+) -> Note:
     """Retrieve a single note by its identifier."""
     note = project.get_note(note_id)
     if note is None:
@@ -58,7 +60,10 @@ async def get_note(note_id: str) -> Note:
 
 
 @app.retrieve
-async def list_notes(page: int = 1, page_size: int = 10) -> list[NoteSummary]:
+async def list_notes(
+    page: int = EnrichParameter(default=1, description="Page number"),
+    page_size: int = EnrichParameter(default=10, description="Items per page"),
+) -> list[NoteSummary]:
     """Return a paginated list of notes."""
     return project.list_notes(page, page_size)
 

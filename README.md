@@ -384,13 +384,14 @@ async def get_customer(cid: int, ctx: EnrichContext) -> Customer:
 
 ### 🧭 Parameter Hints
 
-Provide examples and metadata for tool parameters using `EnrichParameter`:
+Provide examples and metadata for tool parameters using `EnrichParameter`.
+The value of its `default` attribute becomes the runtime default:
 
 ```python
 from enrichmcp import EnrichParameter
 
 @app.retrieve
-async def greet_user(name: str = EnrichParameter(description="user name", examples=["bob"])) -> str:
+async def greet_user(name: str = EnrichParameter(default="bob", description="user name", examples=["bob"])) -> str:
     return f"Hello {name}"
 ```
 

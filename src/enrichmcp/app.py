@@ -4,6 +4,7 @@ Main application module for enrichmcp.
 Provides the EnrichMCP class for creating MCP applications.
 """
 
+import functools
 import inspect
 import warnings
 from collections.abc import Callable
@@ -368,6 +369,43 @@ class EnrichMCP:
 
         return description
 
+    def _apply_enrichparameter_defaults(self, fn: Callable[..., Any]) -> Callable[..., Any]:
+        """Replace ``EnrichParameter`` defaults with their values."""
+
+        sig = inspect.signature(fn)
+        params: list[inspect.Parameter] = []
+        changed = False
+        for param in sig.parameters.values():
+            default = param.default
+            if isinstance(default, EnrichParameter):
+                params.append(param.replace(default=default.default))
+                changed = True
+            else:
+                params.append(param)
+
+        if not changed:
+            return fn
+
+        new_sig = sig.replace(parameters=params)
+
+        if inspect.iscoroutinefunction(fn):
+
+            @functools.wraps(fn)
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
+                bound = new_sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
+                return await fn(**bound.arguments)
+        else:
+
+            @functools.wraps(fn)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                bound = new_sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
+                return fn(**bound.arguments)
+
+        wrapper.__signature__ = new_sig
+        return wrapper
+
     def retrieve(
         self,
         func: Callable[..., Any] | None = None,
@@ -417,8 +455,9 @@ class EnrichMCP:
             if resource_desc == fn.__doc__ and resource_desc:
                 resource_desc = resource_desc.strip()
 
-            # Append EnrichParameter parameter hints
+            # Append EnrichParameter parameter hints and apply defaults
             resource_desc = self._append_enrichparameter_hints(resource_desc, fn)
+            fn = self._apply_enrichparameter_defaults(fn)
 
             # Store the resource for testing
             self.resources[resource_name] = fn
