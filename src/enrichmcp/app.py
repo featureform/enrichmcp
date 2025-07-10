@@ -276,7 +276,7 @@ class EnrichMCP:
                     FieldDescription(
                         name=field_name,
                         type=field_type,
-                        description=field.description,
+                        description=field.description or "",
                         mutable=bool(extra.get("mutable")),
                     )
                 )
