@@ -12,6 +12,8 @@ from typing import (
     get_origin,
 )
 
+from .tool import ToolDef, ToolKind
+
 T = TypeVar("T")
 
 
@@ -98,9 +100,13 @@ class Relationship:
                     f"Get {field_name} for {entity_name}. {self.description}. {func_doc}"
                 ).strip()
 
-                # Register with app's resource system
-                resource_method = self.app.retrieve
-                return resource_method(name=resource_name, description=resource_description)(func)
+                # Register with app's tool system using a ToolDef
+                tool_def = ToolDef(
+                    kind=ToolKind.RESOLVER,
+                    name=resource_name,
+                    description=resource_description,
+                )
+                return self.app._register_tool_def(func, tool_def)
 
             return func
 
