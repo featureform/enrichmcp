@@ -34,6 +34,7 @@ from .datamodel import (
 from .entity import EnrichModel
 from .parameter import EnrichParameter
 from .relationship import Relationship
+from .tool import ToolDef, ToolKind
 
 # Type variables
 T = TypeVar("T", bound=EnrichModel)
@@ -87,12 +88,17 @@ class EnrichMCP:
         # Register built-in resources
         self._register_builtin_resources()
 
+    def data_model_tool_name(self) -> str:
+        """Return the name of the built-in data model exploration tool."""
+
+        return f"explore_{self.name.lower().replace(' ', '_')}_data_model"
+
     def _register_builtin_resources(self) -> None:
         """
         Register built-in resources for the API.
         """
 
-        tool_name = f"explore_{self.name.lower().replace(' ', '_')}_data_model"
+        tool_name = self.data_model_tool_name()
         tool_description = (
             "IMPORTANT: Call this tool FIRST before using any other tools on the "
             f"{self.title} server. {self.description} "
@@ -352,6 +358,44 @@ class EnrichMCP:
 
         return description
 
+    def _register_tool_def(self, fn: Callable[..., Any], tool_def: ToolDef) -> Callable[..., Any]:
+        """Register ``fn`` as a tool using ``tool_def``."""
+
+        desc = self._append_enrichparameter_hints(tool_def.final_description(self), fn)
+        self.resources[tool_def.name] = fn
+        mcp_tool = self.mcp.tool(name=tool_def.name, description=desc)
+        return mcp_tool(fn)
+
+    def _tool_decorator(
+        self,
+        kind: ToolKind,
+        func: Callable[..., Any] | None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Callable[..., Any] | DecoratorCallable:
+        """Return a decorator that registers a tool of the given ``kind``."""
+
+        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+            tool_name = name or fn.__name__
+            tool_desc = description or fn.__doc__
+            if not tool_desc:
+                raise ValueError(
+                    f"Resource '{tool_name}' must have a description. "
+                    "Provide it via the decorator or function docstring."
+                )
+
+            if tool_desc == fn.__doc__ and tool_desc:
+                tool_desc = tool_desc.strip()
+
+            tool_def = ToolDef(kind=kind, name=tool_name, description=tool_desc)
+            return self._register_tool_def(fn, tool_def)
+
+        if func is not None:
+            return decorator(func)
+
+        return cast("DecoratorCallable", decorator)
+
     def retrieve(
         self,
         func: Callable[..., Any] | None = None,
@@ -385,37 +429,7 @@ class EnrichMCP:
             ValueError: If no description is provided (neither in decorator nor docstring)
         """
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            # Get name and description
-            resource_name = name or fn.__name__
-            resource_desc = description or fn.__doc__
-
-            # Check for description
-            if not resource_desc:
-                raise ValueError(
-                    f"Resource '{resource_name}' must have a description. "
-                    f"Provide it via @app.retrieve(description=...) or function docstring."
-                )
-
-            # Strip docstring if used
-            if resource_desc == fn.__doc__ and resource_desc:
-                resource_desc = resource_desc.strip()
-
-            # Append EnrichParameter parameter hints
-            resource_desc = self._append_enrichparameter_hints(resource_desc, fn)
-
-            # Store the resource for testing
-            self.resources[resource_name] = fn
-            # Create and apply the MCP tool decorator
-            mcp_tool = self.mcp.tool(name=resource_name, description=resource_desc)
-            return mcp_tool(fn)
-
-        # If called without parentheses (@app.retrieve)
-        if func is not None:
-            return decorator(func)
-
-        # If called with parentheses (@app.retrieve())
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.RETRIEVER, func, name=name, description=description)
 
     def resource(self, *args: Any, **kwargs: Any) -> Any:
         """Deprecated alias for :meth:`retrieve`. Use :meth:`retrieve` instead."""
@@ -436,12 +450,7 @@ class EnrichMCP:
     ) -> Callable[..., Any] | DecoratorCallable:
         """Register a create operation."""
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.retrieve(fn, name=name, description=description)
-
-        if func is not None:
-            return decorator(func)
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.CREATOR, func, name=name, description=description)
 
     def update(
         self,
@@ -452,12 +461,7 @@ class EnrichMCP:
     ) -> Callable[..., Any] | DecoratorCallable:
         """Register an update operation."""
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.retrieve(fn, name=name, description=description)
-
-        if func is not None:
-            return decorator(func)
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.UPDATER, func, name=name, description=description)
 
     def delete(
         self,
@@ -468,12 +472,7 @@ class EnrichMCP:
     ) -> Callable[..., Any] | DecoratorCallable:
         """Register a delete operation."""
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-            return self.retrieve(fn, name=name, description=description)
-
-        if func is not None:
-            return decorator(func)
-        return cast("DecoratorCallable", decorator)
+        return self._tool_decorator(ToolKind.DELETER, func, name=name, description=description)
 
     def get_context(self) -> EnrichContext:
         """Return the current :class:`EnrichContext` for this app."""

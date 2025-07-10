@@ -41,6 +41,7 @@ from .parameter import EnrichParameter
 from .relationship import (
     Relationship,
 )
+from .tool import ToolDef, ToolKind
 
 if TYPE_CHECKING:
     from .sqlalchemy import EnrichSQLAlchemyMixin, sqlalchemy_lifespan
@@ -72,6 +73,8 @@ __all__ = [
     "RedisCache",
     "Relationship",
     "RelationshipDescription",
+    "ToolDef",
+    "ToolKind",
     "__version__",
     "combine_lifespans",
 ]
