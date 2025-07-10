@@ -100,12 +100,11 @@ class EnrichMCP:
 
         tool_name = self.data_model_tool_name()
         tool_description = (
-            "IMPORTANT: Call this tool FIRST before using any other tools on the "
-            f"{self.title} server. {self.description} "
-            "This provides a comprehensive overview of the API structure, including "
-            "all entities, their fields, relationships, and semantic meanings. "
-            "Understanding this model is essential for effectively querying and "
-            "navigating the data."
+            "IMPORTANT: Call this tool at the start of an agent session before"
+            f" using other tools on the {self.title} server. {self.description} "
+            "This provides a comprehensive overview of the API structure, including"
+            " all entities, their fields, relationships, and semantic meanings. "
+            "You don't need to call it again if its response is already in context."
         )
 
         @self.retrieve(name=tool_name, description=tool_description)
@@ -113,8 +112,9 @@ class EnrichMCP:
             """Get a comprehensive overview of the API data model.
 
             Returns detailed information about all entities, their fields, relationships,
-            and how to traverse the data graph. Always call this first to understand
-            the available data and operations.
+            and how to traverse the data graph. Call this at the start of a session to
+            understand the available data and operations. If you still have its
+            response in context, you don't need to call it again.
             """
             model_description = self.describe_model()
             return DataModelSummary(
