@@ -18,8 +18,12 @@ async def test_explore_data_model_returns_summary() -> None:
     summary = await app.resources[tool_name]()
     assert isinstance(summary, DataModelSummary)
     assert summary.title == "My API"
+    assert summary.description == "Demo server"
     assert summary.entity_count == 1
     assert summary.entities == ["Item"]
+    assert isinstance(summary.model, str)
+    assert "Item" in summary.model
+
     summary_text = str(summary)
     assert "# My API" in summary_text
     assert "**Entity count:** 1" in summary_text

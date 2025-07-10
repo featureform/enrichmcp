@@ -24,7 +24,13 @@ from pydantic import BaseModel, Field, create_model
 
 from .cache import CacheBackend, ContextCache, MemoryCache
 from .context import EnrichContext
-from .datamodel import DataModelSummary
+from .datamodel import (
+    DataModelSummary,
+    EntityDescription,
+    FieldDescription,
+    ModelDescription,
+    RelationshipDescription,
+)
 from .entity import EnrichModel
 from .parameter import EnrichParameter
 from .relationship import Relationship
@@ -242,93 +248,69 @@ class EnrichMCP:
             patch_model_cls.__doc__ = f"Patch model for {cls.__name__}"
             cls.PatchModel = patch_model_cls
 
-    def describe_model(self) -> str:
-        """
-        Generate a comprehensive description of the entire data model.
+    def describe_model_struct(self) -> ModelDescription:
+        """Return a structured description of the entire data model."""
+        desc = ModelDescription(title=self.title, description=self.description)
 
-        Returns:
-            A formatted string containing all entities, their fields, and relationships.
-        """
-        lines: list[str] = []
-
-        # Add title
-        lines.append(f"# Data Model: {self.title}")
-        if self.description:
-            lines.append(self.description)
-        lines.append("")
-
-        # Add table of contents
-        if self.entities:
-            lines.append("## Entities")
-            for entity_name in sorted(self.entities.keys()):
-                lines.append(f"- [{entity_name}](#{entity_name.lower()})")
-            lines.append("")
-        else:
-            lines.append("*No entities registered*")
-            return "\n".join(lines)
-
-        # Add each entity
         for entity_name, entity_cls in sorted(self.entities.items()):
-            lines.append(f"## {entity_name}")
-            description = entity_cls.__doc__ or "No description available"
-            lines.append(description.strip())
-            lines.append("")
+            entity_desc = EntityDescription(
+                name=entity_name,
+                description=(entity_cls.__doc__ or "No description available").strip(),
+            )
 
-            # Fields section
-            field_lines: list[str] = []
             for field_name, field in entity_cls.model_fields.items():
-                # Skip relationship fields, we'll handle them separately
                 if field_name in entity_cls.relationship_fields():
                     continue
 
-                # Get field type and description
-                field_type = "Any"  # Default type if annotation is None
+                field_type = "Any"
                 if field.annotation is not None:
                     annotation = field.annotation
                     if get_origin(annotation) is Literal:
                         values = ", ".join(repr(v) for v in get_args(annotation))
                         field_type = f"Literal[{values}]"
                     else:
-                        field_type = str(annotation)  # Always safe fallback
+                        field_type = str(annotation)
                         if hasattr(annotation, "__name__"):
                             field_type = annotation.__name__
-                field_desc = field.description
+
                 extra = getattr(field, "json_schema_extra", None)
                 if extra is None:
                     info = getattr(field, "field_info", None)
                     extra = getattr(info, "extra", {}) if info is not None else {}
-                if extra.get("mutable"):
-                    field_type = f"{field_type}, mutable"
 
-                # Format field info
-                field_lines.append(f"- **{field_name}** ({field_type}): {field_desc}")
+                entity_desc.fields.append(
+                    FieldDescription(
+                        name=field_name,
+                        type=field_type,
+                        description=field.description or "",
+                        mutable=bool(extra.get("mutable")),
+                    )
+                )
 
-            if field_lines:
-                lines.append("### Fields")
-                lines.extend(field_lines)
-                lines.append("")
-
-            # Relationships section
-            rel_lines: list[str] = []
-            rel_fields = entity_cls.relationship_fields()
-            for field_name in rel_fields:
+            for field_name in entity_cls.relationship_fields():
                 field = entity_cls.model_fields[field_name]
                 rel = field.default
-                target_type = "Any"  # Default type if annotation is None
+                target_type = "Any"
                 if field.annotation is not None:
-                    target_type = str(field.annotation)  # Always safe fallback
+                    target_type = str(field.annotation)
                     if hasattr(field.annotation, "__name__"):
                         target_type = field.annotation.__name__
-                rel_desc = rel.description
 
-                rel_lines.append(f"- **{field_name}** → {target_type}: {rel_desc}")
+                entity_desc.relationships.append(
+                    RelationshipDescription(
+                        name=field_name,
+                        target=target_type,
+                        description=rel.description,
+                    )
+                )
 
-            if rel_lines:
-                lines.append("### Relationships")
-                lines.extend(rel_lines)
-                lines.append("")
+            desc.entities.append(entity_desc)
 
-        return "\n".join(lines)
+        return desc
+
+    def describe_model(self) -> str:
+        """Return a Markdown description of the entire data model."""
+        return str(self.describe_model_struct())
 
     def _append_enrichparameter_hints(self, description: str, fn: Callable[..., Any]) -> str:
         """Append ``EnrichParameter`` metadata to a description string."""

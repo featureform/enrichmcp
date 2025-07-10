@@ -5,6 +5,7 @@ from pydantic import Field
 from enrichmcp import (
     EnrichMCP,
     EnrichModel,
+    ModelDescription,
     Relationship,
 )
 
@@ -13,13 +14,14 @@ def test_describe_model_empty():
     """Test describe_model with no entities."""
     app = EnrichMCP("Test API", description="Test API description")
 
-    # Get the model description
-    description = app.describe_model()
+    # Get the structured model description
+    model = app.describe_model_struct()
 
-    # Check the description content
-    assert "# Data Model: Test API" in description
-    assert "Test API description" in description
-    assert "*No entities registered*" in description
+    assert model == ModelDescription(
+        title="Test API",
+        description="Test API description",
+        entities=[],
+    )
 
 
 def test_describe_model_with_entities():
@@ -58,46 +60,27 @@ def test_describe_model_with_entities():
         author: Relationship = Relationship(description="Comment author")
         post: Relationship = Relationship(description="Post being commented on")
 
-    # Get the model description
-    description = app.describe_model()
+    # Get the structured model description
+    model = app.describe_model_struct()
 
-    # Check the title and table of contents
-    assert "# Data Model: Social Network" in description
-    assert "A social network data model" in description
-    assert "## Entities" in description
-    assert "- [Comment](#comment)" in description
-    assert "- [Post](#post)" in description
-    assert "- [User](#user)" in description
+    assert model.title == "Social Network"
+    assert model.description == "A social network data model"
+    assert [e.name for e in model.entities] == ["Comment", "Post", "User"]
 
-    # Check User entity description
-    assert "## User" in description
-    assert "User entity for the social network" in description
-    assert "### Fields" in description
-    assert "- **id** (int): Unique identifier" in description
-    assert "- **name** (str): User's full name" in description
-    assert "- **email** (str): User's email address" in description
-    assert "- **is_active** (bool): Whether the user is active" in description
-    assert "### Relationships" in description
-    assert "- **posts** → Relationship: User's posts" in description
-    assert "- **followers** → Relationship: User's followers" in description
+    user = next(e for e in model.entities if e.name == "User")
+    assert user.description == "User entity for the social network"
+    assert [f.name for f in user.fields] == ["id", "name", "email", "is_active"]
+    assert {r.name for r in user.relationships} == {"posts", "followers"}
 
-    # Check Post entity description
-    assert "## Post" in description
-    assert "Post entity for the social network" in description
-    assert "- **id** (int): Unique identifier" in description
-    assert "- **title** (str): Post title" in description
-    assert "- **content** (str): Post content" in description
-    assert "- **published** (bool): Whether the post is published" in description
-    assert "- **author** → Relationship: Post author" in description
-    assert "- **comments** → Relationship: Comments on the post" in description
+    post = next(e for e in model.entities if e.name == "Post")
+    assert post.description == "Post entity for the social network"
+    assert [f.name for f in post.fields] == ["id", "title", "content", "published"]
+    assert {r.name for r in post.relationships} == {"author", "comments"}
 
-    # Check Comment entity description
-    assert "## Comment" in description
-    assert "Comment entity for the social network" in description
-    assert "- **id** (int): Unique identifier" in description
-    assert "- **content** (str): Comment content" in description
-    assert "- **author** → Relationship: Comment author" in description
-    assert "- **post** → Relationship: Post being commented on" in description
+    comment = next(e for e in model.entities if e.name == "Comment")
+    assert comment.description == "Comment entity for the social network"
+    assert [f.name for f in comment.fields] == ["id", "content"]
+    assert {r.name for r in comment.relationships} == {"author", "post"}
 
 
 def test_describe_model_with_complex_types():
@@ -116,22 +99,28 @@ def test_describe_model_with_complex_types():
         # Relationship
         author: Relationship = Relationship(description="Article author")
 
-    # Get the model description
-    description = app.describe_model()
+    # Get the structured model description
+    model = app.describe_model_struct()
 
-    # Check the description
-    assert "## Article" in description
-    assert "Article entity with complex field types" in description
-    assert "- **id** (int): Unique identifier" in description
-    assert "- **title** (str): Article title" in description
+    assert [e.name for e in model.entities] == ["Article"]
 
-    # Complex types may be rendered differently based on implementation
-    # So we check for the field name and description rather than exact type representation
-    assert "**tags**" in description and "Article tags" in description
-    assert "**metadata**" in description and "Article metadata" in description
-    assert "**categories**" in description and "Article categories" in description
-
-    assert "- **author** → Relationship: Article author" in description
+    article = model.entities[0]
+    assert article.description == "Article entity with complex field types"
+    assert [f.name for f in article.fields] == [
+        "id",
+        "title",
+        "tags",
+        "metadata",
+        "categories",
+    ]
+    assert [f.type for f in article.fields] == [
+        "int",
+        "str",
+        "list",
+        "dict",
+        "set",
+    ]
+    assert {r.name for r in article.relationships} == {"author"}
 
 
 def test_describe_model_with_literal_type():
@@ -142,7 +131,8 @@ def test_describe_model_with_literal_type():
     class Item(EnrichModel):
         status: Literal["pending", "complete"] = Field(description="Item status")
 
-    description = app.describe_model()
+    model = app.describe_model_struct()
 
-    assert "## Item" in description
-    assert "- **status** (Literal['pending', 'complete']): Item status" in description
+    item = model.entities[0]
+    assert item.name == "Item"
+    assert [f.type for f in item.fields] == ["Literal['pending', 'complete']"]
