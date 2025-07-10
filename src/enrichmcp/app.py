@@ -4,6 +4,7 @@ Main application module for enrichmcp.
 Provides the EnrichMCP class for creating MCP applications.
 """
 
+import functools
 import inspect
 import warnings
 from collections.abc import Callable
@@ -364,7 +365,30 @@ class EnrichMCP:
         desc = self._append_enrichparameter_hints(tool_def.final_description(self), fn)
         self.resources[tool_def.name] = fn
         mcp_tool = self.mcp.tool(name=tool_def.name, description=desc)
-        return mcp_tool(fn)
+
+        sig = inspect.signature(fn)
+        context_kwarg = None
+        for param_name, param in sig.parameters.items():
+            try:
+                if issubclass(param.annotation, EnrichContext):
+                    context_kwarg = param_name
+                    break
+            except Exception:
+                continue
+
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            ctx = kwargs.get(context_kwarg) if context_kwarg else None
+            if ctx is not None:
+                params = {k: v for k, v in kwargs.items() if k != context_kwarg}
+                message = f"Calling tool {tool_def.name} params={params!r}"
+                await ctx.info(message)
+            if inspect.iscoroutinefunction(fn):
+                return await fn(*args, **kwargs)
+            return fn(*args, **kwargs)
+
+        wrapped = functools.wraps(fn)(wrapper)
+        wrapped.__signature__ = sig
+        return mcp_tool(wrapped)
 
     def _tool_decorator(
         self,
