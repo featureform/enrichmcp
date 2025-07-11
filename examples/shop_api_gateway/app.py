@@ -13,7 +13,13 @@ from typing import Any
 import httpx
 from pydantic import Field
 
-from enrichmcp import EnrichContext, EnrichMCP, EnrichModel, Relationship
+from enrichmcp import (
+    EnrichContext,
+    EnrichMCP,
+    EnrichModel,
+    EnrichParameter,
+    Relationship,
+)
 
 BACKEND_URL = "http://localhost:8001"
 
@@ -84,7 +90,10 @@ async def list_users(ctx: EnrichContext) -> list[User]:
 
 
 @app.retrieve
-async def get_user(user_id: int, ctx: EnrichContext) -> User:
+async def get_user(
+    ctx: EnrichContext,
+    user_id: int = EnrichParameter(description="User identifier"),
+) -> User:
     """Return a single user by ID."""
     client = await _client(ctx)
     resp = await client.get(f"/users/{user_id}")
@@ -102,7 +111,10 @@ async def list_products(ctx: EnrichContext) -> list[Product]:
 
 
 @app.retrieve
-async def get_product(product_id: int, ctx: EnrichContext) -> Product:
+async def get_product(
+    ctx: EnrichContext,
+    product_id: int = EnrichParameter(description="Product identifier"),
+) -> Product:
     """Get a single product by ID."""
     client = await _client(ctx)
     resp = await client.get(f"/products/{product_id}")
@@ -112,8 +124,8 @@ async def get_product(product_id: int, ctx: EnrichContext) -> Product:
 
 @app.retrieve
 async def list_orders(
-    user_id: int | None = None,
     ctx: EnrichContext | None = None,
+    user_id: int | None = EnrichParameter(description="Filter by user"),
 ) -> list[Order]:
     """List orders optionally filtered by user."""
     if ctx is None:
@@ -126,7 +138,10 @@ async def list_orders(
 
 
 @app.retrieve
-async def get_order(order_id: int, ctx: EnrichContext) -> Order:
+async def get_order(
+    ctx: EnrichContext,
+    order_id: int = EnrichParameter(description="Order identifier"),
+) -> Order:
     """Retrieve a specific order."""
     client = await _client(ctx)
     resp = await client.get(f"/orders/{order_id}")
@@ -135,17 +150,26 @@ async def get_order(order_id: int, ctx: EnrichContext) -> Order:
 
 
 @User.orders.resolver
-async def get_orders_for_user(user_id: int, ctx: EnrichContext) -> list["Order"]:
+async def get_orders_for_user(
+    ctx: EnrichContext,
+    user_id: int = EnrichParameter(description="User identifier"),
+) -> list["Order"]:
     return await list_orders(user_id=user_id, ctx=ctx)
 
 
 @Order.user.resolver
-async def get_order_user(user_id: int, ctx: EnrichContext) -> "User":
+async def get_order_user(
+    ctx: EnrichContext,
+    user_id: int = EnrichParameter(description="User identifier"),
+) -> "User":
     return await get_user(user_id=user_id, ctx=ctx)
 
 
 @Order.products.resolver
-async def get_order_products(order_id: int, ctx: EnrichContext) -> list[Product]:
+async def get_order_products(
+    ctx: EnrichContext,
+    order_id: int = EnrichParameter(description="Order identifier"),
+) -> list[Product]:
     client = await _client(ctx)
     resp = await client.get(f"/orders/{order_id}")
     resp.raise_for_status()

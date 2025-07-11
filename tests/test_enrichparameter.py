@@ -23,3 +23,17 @@ async def test_enrichparameter_hints_appended():
     assert "user name" in desc
     assert "examples: bob" in desc
     assert "ctx" not in desc
+
+
+@pytest.mark.asyncio
+async def test_enrichparameter_default_used():
+    """Default values should be applied when parameters are omitted."""
+
+    app = EnrichMCP("Test", description="desc")
+
+    @app.retrieve(description="demo")
+    async def greet(name: str = EnrichParameter(default="bob", description="user name")) -> str:
+        return name
+
+    result = await app.resources["greet"]()
+    assert result == "bob"

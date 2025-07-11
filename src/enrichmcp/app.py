@@ -4,6 +4,7 @@ Main application module for enrichmcp.
 Provides the EnrichMCP class for creating MCP applications.
 """
 
+import functools
 import inspect
 import warnings
 from collections.abc import Callable
@@ -100,6 +101,7 @@ class EnrichMCP:
 
         tool_name = self.data_model_tool_name()
         tool_description = (
+
             "IMPORTANT: Call this tool at the start of an agent session before"
             f" using other tools on the {self.title} server. {self.description} "
             "This provides a comprehensive overview of the API structure, including"
@@ -352,10 +354,52 @@ class EnrichMCP:
 
         return description
 
+    def _apply_enrichparameter_defaults(self, fn: Callable[..., Any]) -> Callable[..., Any]:
+        """Replace ``EnrichParameter`` defaults with their values."""
+
+        sig = inspect.signature(fn)
+        params: list[inspect.Parameter] = []
+        changed = False
+        for param in sig.parameters.values():
+            default = param.default
+            if isinstance(default, EnrichParameter):
+                params.append(param.replace(default=default.default))
+                changed = True
+            else:
+                params.append(param)
+
+        if not changed:
+            return fn
+
+        new_sig = sig.replace(parameters=params)
+
+        if inspect.iscoroutinefunction(fn):
+
+            @functools.wraps(fn)
+            async def wrapper_async(*args: Any, **kwargs: Any) -> Any:
+                bound = new_sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
+                return await fn(**bound.arguments)
+
+            wrapper = wrapper_async
+        else:
+
+            @functools.wraps(fn)
+            def wrapper_sync(*args: Any, **kwargs: Any) -> Any:
+                bound = new_sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
+                return fn(**bound.arguments)
+
+            wrapper = wrapper_sync
+
+        wrapper.__signature__ = new_sig
+        return wrapper
+
     def _register_tool_def(self, fn: Callable[..., Any], tool_def: ToolDef) -> Callable[..., Any]:
         """Register ``fn`` as a tool using ``tool_def``."""
 
         desc = self._append_enrichparameter_hints(tool_def.final_description(self), fn)
+        fn = self._apply_enrichparameter_defaults(fn)
         self.resources[tool_def.name] = fn
         mcp_tool = self.mcp.tool(name=tool_def.name, description=desc)
         return mcp_tool(fn)

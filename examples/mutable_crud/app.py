@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import Field
 
-from enrichmcp import EnrichMCP, EnrichModel
+from enrichmcp import EnrichMCP, EnrichModel, EnrichParameter
 
 app = EnrichMCP(
     title="Customer CRUD API",
@@ -26,7 +26,10 @@ CUSTOMERS: dict[int, Customer] = {}
 
 
 @app.create
-async def create_customer(email: str, tier: str = "free") -> Customer:
+async def create_customer(
+    email: str = EnrichParameter(description="Customer email"),
+    tier: str = EnrichParameter(default="free", description="Subscription tier"),
+) -> Customer:
     """Create a new customer."""
     cid = len(CUSTOMERS) + 1
     customer = Customer(id=cid, email=email, tier=tier)
@@ -35,7 +38,10 @@ async def create_customer(email: str, tier: str = "free") -> Customer:
 
 
 @app.update
-async def update_customer(customer_id: int, patch: Customer.PatchModel) -> Customer:
+async def update_customer(
+    customer_id: int = EnrichParameter(description="Customer ID"),
+    patch: Customer.PatchModel = EnrichParameter(description="Mutable fields to update"),  # noqa: B008
+) -> Customer:
     """Update an existing customer."""
     customer = CUSTOMERS[customer_id]
     data = patch.dict(exclude_unset=True)
@@ -45,7 +51,9 @@ async def update_customer(customer_id: int, patch: Customer.PatchModel) -> Custo
 
 
 @app.delete
-async def delete_customer(customer_id: int) -> bool:
+async def delete_customer(
+    customer_id: int = EnrichParameter(description="Customer ID"),
+) -> bool:
     """Delete a customer."""
     return CUSTOMERS.pop(customer_id, None) is not None
 

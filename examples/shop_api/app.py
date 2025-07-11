@@ -10,7 +10,7 @@ from datetime import datetime
 
 from pydantic import Field
 
-from enrichmcp import EnrichMCP, EnrichModel, PageResult, Relationship
+from enrichmcp import EnrichMCP, EnrichModel, EnrichParameter, PageResult, Relationship
 
 # Create the application
 app = EnrichMCP(
@@ -326,7 +326,9 @@ ORDERS = [
 
 # Define relationship resolvers
 @User.orders.resolver
-async def by_user_id(user_id: int) -> list["Order"]:
+async def by_user_id(
+    user_id: int = EnrichParameter(description="User identifier"),
+) -> list["Order"]:
     """Get all orders for a specific user.
 
     Returns a list of orders placed by the user, including
@@ -349,7 +351,9 @@ async def by_user_id(user_id: int) -> list["Order"]:
 
 
 @Order.user.resolver
-async def by_order_id(order_id: int) -> "User":
+async def by_order_id(
+    order_id: int = EnrichParameter(description="Order identifier"),
+) -> "User":
     """Get the user who placed a specific order.
 
     Returns the complete user object for the customer who
@@ -404,7 +408,9 @@ async def by_order_id(order_id: int) -> "User":
 
 
 @Order.products.resolver
-async def by_order_id_products(order_id: int) -> list[Product]:
+async def by_order_id_products(
+    order_id: int = EnrichParameter(description="Order identifier"),
+) -> list[Product]:
     """Get all products included in a specific order.
 
     Returns the list of products that were purchased in the order.
@@ -448,7 +454,9 @@ async def list_users() -> list[User]:
 
 
 @app.retrieve
-async def get_user(user_id: int) -> User:
+async def get_user(
+    user_id: int = EnrichParameter(description="User identifier"),
+) -> User:
     """Get a specific user by ID.
 
     Retrieves complete user information including risk scores
@@ -497,7 +505,9 @@ async def list_products() -> list[Product]:
 
 @app.retrieve
 async def list_orders(
-    status: str | None = None, page: int = 1, page_size: int = 10
+    status: str | None = EnrichParameter(description="Status filter"),
+    page: int = EnrichParameter(default=1, description="Page number"),
+    page_size: int = EnrichParameter(default=10, description="Items per page"),
 ) -> PageResult[Order]:
     """List orders, optionally filtered by status.
 
