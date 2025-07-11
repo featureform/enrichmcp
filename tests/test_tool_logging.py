@@ -16,7 +16,7 @@ async def test_tool_logs_call_params():
     mock_ctx = Mock(spec=EnrichContext)
     mock_ctx.info = AsyncMock()
 
-    result = await greet(name="bob", ctx=mock_ctx)
+    result = await greet("bob", ctx=mock_ctx)
 
     assert result == "hi bob"
     mock_ctx.info.assert_awaited_once()

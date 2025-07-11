@@ -368,21 +368,24 @@ class EnrichMCP:
 
         sig = inspect.signature(fn)
         context_kwarg = None
-        for param_name, param in sig.parameters.items():
+        for name, param in sig.parameters.items():
             try:
                 if issubclass(param.annotation, EnrichContext):
-                    context_kwarg = param_name
+                    context_kwarg = name
                     break
             except Exception:
                 continue
 
+        is_coroutine = inspect.iscoroutinefunction(fn)
+
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             ctx = kwargs.get(context_kwarg) if context_kwarg else None
             if ctx is not None:
-                params = {k: v for k, v in kwargs.items() if k != context_kwarg}
-                message = f"Calling tool {tool_def.name} params={params!r}"
-                await ctx.info(message)
-            if inspect.iscoroutinefunction(fn):
+                bound = sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
+                params = {k: v for k, v in bound.arguments.items() if k != context_kwarg}
+                await ctx.info(f"Calling tool {tool_def.name} params={params!r}")
+            if is_coroutine:
                 return await fn(*args, **kwargs)
             return fn(*args, **kwargs)
 
