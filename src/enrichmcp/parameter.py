@@ -26,4 +26,5 @@ class EnrichParameter:
     metadata: dict[str, Any] = dataclass_field(default_factory=dict)
 
     def __iter__(self) -> Iterable[Any]:  # pragma: no cover - convenience
+        """Iterate over the contained default value to mimic a tuple."""
         yield self.default
