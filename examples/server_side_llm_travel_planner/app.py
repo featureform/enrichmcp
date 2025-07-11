@@ -1,7 +1,5 @@
 """Travel planner example using server-side LLM sampling."""
 
-from __future__ import annotations
-
 import json
 from typing import Annotated
 
