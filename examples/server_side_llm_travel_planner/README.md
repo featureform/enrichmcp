@@ -18,3 +18,8 @@ python app.py
 Then invoke it with an MCP client such as `mcp_use` or the `openai_chat_agent`
 example. Describe your travel preferences and the server will respond with three
 suggested destinations.
+
+Calling `plan_trip` directly from Python will fail with `Context is not
+available outside of a request`. Always use an MCP client like `mcp_use`
+to create a session and invoke the tool so the request context is properly
+initialized.
