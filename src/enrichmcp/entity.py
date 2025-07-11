@@ -30,6 +30,7 @@ class EnrichModel(BaseModel):
 
     @classmethod
     def relationship_fields(cls) -> set[str]:
+        """Return names of fields that represent relationships."""
         return {k for k, v in cls.model_fields.items() if isinstance(v.default, Relationship)}
 
     @classmethod
@@ -51,6 +52,7 @@ class EnrichModel(BaseModel):
 
     @classmethod
     def relationships(cls) -> set[Relationship]:
+        """Return ``Relationship`` objects declared on the model."""
         return {
             v.default for _, v in cls.model_fields.items() if isinstance(v.default, Relationship)
         }
@@ -173,6 +175,7 @@ class EnrichModel(BaseModel):
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> str:
+        """Serialize to JSON, omitting relationship fields by default."""
         rel_fields = self.__class__.relationship_fields()
         exclude_set = self.__class__._add_fields_to_incex(exclude, rel_fields)
 
@@ -208,6 +211,7 @@ class EnrichModel(BaseModel):
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
+        """Dump the model to a dict while hiding relationship fields."""
         rel_fields = self.__class__.relationship_fields()
         exclude_set = self.__class__._add_fields_to_incex(exclude, rel_fields)
 
