@@ -366,6 +366,8 @@ class EnrichMCP:
         self.resources[tool_def.name] = fn
         mcp_tool = self.mcp.tool(name=tool_def.name, description=desc)
 
+        registered = mcp_tool(fn)
+
         sig = inspect.signature(fn)
         context_kwarg = None
         for name, param in sig.parameters.items():
@@ -386,12 +388,12 @@ class EnrichMCP:
                 params = {k: v for k, v in bound.arguments.items() if k != context_kwarg}
                 await ctx.info(f"Calling tool {tool_def.name} params={params!r}")
             if is_coroutine:
-                return await fn(*args, **kwargs)
-            return fn(*args, **kwargs)
+                return await registered(*args, **kwargs)
+            return registered(*args, **kwargs)
 
-        wrapped = functools.wraps(fn)(wrapper)
+        wrapped = functools.wraps(registered)(wrapper)
         wrapped.__signature__ = sig
-        return mcp_tool(wrapped)
+        return wrapped
 
     def _tool_decorator(
         self,
