@@ -24,9 +24,15 @@ except ImportError:
 # Public exports
 from typing import TYPE_CHECKING
 
+from mcp.types import ModelPreferences
+
 from .app import EnrichMCP
 from .cache import MemoryCache, RedisCache
-from .context import EnrichContext
+from .context import (
+    EnrichContext,
+    prefer_fast_model,
+    prefer_smart_model,
+)
 from .datamodel import (
     DataModelSummary,
     EntityDescription,
@@ -67,6 +73,7 @@ __all__ = [
     "FieldDescription",
     "MemoryCache",
     "ModelDescription",
+    "ModelPreferences",
     "PageResult",
     "PaginatedResult",
     "PaginationParams",
@@ -77,6 +84,8 @@ __all__ = [
     "ToolKind",
     "__version__",
     "combine_lifespans",
+    "prefer_fast_model",
+    "prefer_smart_model",
 ]
 
 # Add SQLAlchemy to exports if available

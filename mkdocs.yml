@@ -63,6 +63,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Core Concepts: concepts.md
+  - Server-Side LLM: server_side_llm.md
   - Examples: examples.md
   - SQLAlchemy: sqlalchemy.md
   - API Reference:
