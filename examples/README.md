@@ -14,6 +14,7 @@ This directory contains examples demonstrating how to use EnrichMCP.
 - [basic_memory](basic_memory) - simple note-taking API using FileMemoryStore
 - [caching](caching) - request caching with ContextCache
 - [openai_chat_agent](openai_chat_agent) - interactive chat client
+- [server_side_llm_travel_planner](server_side_llm_travel_planner) - LLM-backed travel suggestions
 
 ## Hello World
 

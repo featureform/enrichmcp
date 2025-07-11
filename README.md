@@ -415,6 +415,15 @@ EnrichMCP adds three critical layers on top of MCP:
 
 The result: AI agents can work with your data as naturally as a developer using an ORM.
 
+## Server-Side LLM Sampling
+
+EnrichMCP can request language model completions through MCP's **sampling**
+feature. Call `ctx.ask_llm()` or the `ctx.sampling()` alias from any resource
+and the connected client will choose an LLM and pay for the usage. You can tune
+behavior using options like `model_preferences`, `allow_tools`, and
+`max_tokens`. See [docs/server_side_llm.md](docs/server_side_llm.md) for more
+details.
+
 ## Examples
 
 Check out the [examples directory](examples/README.md):

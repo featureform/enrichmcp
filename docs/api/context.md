@@ -25,6 +25,21 @@ context = EnrichContext()
 The context exposes a `cache` attribute for storing values across the request,
 user, or global scopes.
 
+## LLM Integration
+
+Use `ask_llm()` (or the `sampling()` alias) to request completions from the client-side LLM. See the [Server-Side LLM guide](../server_side_llm.md) for more details:
+
+```python
+from enrichmcp import prefer_fast_model
+
+result = await ctx.ask_llm(
+    "Summarize our latest sales numbers",
+    model_preferences=prefer_fast_model(),
+    max_tokens=200,
+)
+print(result.content.text)
+```
+
 ## Extending Context
 
 For now, if you need context functionality, you can extend the base class:
