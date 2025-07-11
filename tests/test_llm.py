@@ -44,3 +44,10 @@ async def test_sampling_alias_and_type_error():
     # Invalid message type raises TypeError
     with pytest.raises(TypeError):
         await ctx.sampling([123])
+
+
+@pytest.mark.asyncio
+async def test_ask_llm_requires_request_context():
+    ctx = EnrichContext()
+    with pytest.raises(ValueError, match="outside of a request"):
+        await ctx.ask_llm("ping")

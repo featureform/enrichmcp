@@ -87,7 +87,7 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
         """Request LLM sampling via the connected client."""
 
         sampling_messages = self._convert_messages(messages)
-        session = self._request_context.session  # type: ignore[attr-defined]
+        session = self.session
         return await session.create_message(
             messages=sampling_messages,
             system_prompt=system_prompt,
