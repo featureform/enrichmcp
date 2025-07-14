@@ -42,7 +42,7 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
         if params.systemPrompt:
             lc_messages.append(SystemMessage(content=params.systemPrompt))
         for msg in params.messages:
-            logger.error(f"HERE2")
+            logger.error("HERE2")
             content = msg.content.text
             if msg.role == "assistant":
                 lc_messages.append(AIMessage(content=content))
@@ -50,7 +50,7 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
                 lc_messages.append(HumanMessage(content=content))
 
         try:
-            logger.error(f'Sampling with messages: {lc_messages}')
+            logger.error(f"Sampling with messages: {lc_messages}")
             result_msg = await llm.ainvoke(
                 lc_messages,
                 temperature=params.temperature,
@@ -63,7 +63,7 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
 
         text = getattr(result_msg, "content", str(result_msg))
         model_name = getattr(llm, "model", "llm")
-        logger.error(f'Sampling result: {text}')
+        logger.error(f"Sampling result: {text}")
         return CreateMessageResult(
             content=TextContent(text=text, type="text"),
             model=model_name,
@@ -117,7 +117,10 @@ async def run_memory_chat() -> None:
             sampling_callback=make_sampling_callback(llm),
         )
     else:
-        logger.warning("mcp-use %s does not support sampling, install >1.3.6. Disabling sampling callback", mcp_use_version)
+        logger.warning(
+            "mcp-use %s does not support sampling, install >1.3.6. Disabling sampling callback",
+            mcp_use_version,
+        )
         client = MCPClient(load_config_file(config_file))
 
     agent = MCPAgent(
