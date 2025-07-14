@@ -120,6 +120,10 @@ jsonpointer==3.0.0
     # via jsonpatch
 jsonschema-pydantic==0.6
     # via mcp-use
+jsonschema==4.24.0
+    # via mcp
+jsonschema-specifications==2025.4.1
+    # via jsonschema
 keyring==25.6.0
     # via twine
 langchain==0.3.25
@@ -157,7 +161,7 @@ markupsafe==3.0.2
     #   mkdocstrings
 marshmallow==3.26.1
     # via dataclasses-json
-mcp==1.9.4
+mcp==1.11.0
     # via
     #   mcp-python
     #   mcp-use
@@ -309,6 +313,10 @@ pyyaml-env-tag==1.1
     # via mkdocs
 readme-renderer==44.0
     # via twine
+referencing==0.36.2
+    # via jsonschema
+rpds-py==0.26.0
+    # via referencing
 redis==6.2.0
     # via fakeredis
 requests==2.32.4

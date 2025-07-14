@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "shop_api": {
+    "travel_agent": {
       "command": "python",
-      "args": ["../shop_api/app.py"]
+      "args": ["../server_side_llm_travel_planner/app.py"]
     }
   }
 }

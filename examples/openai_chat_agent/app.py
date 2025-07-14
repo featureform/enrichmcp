@@ -7,15 +7,73 @@ conversation context using the agent's built-in memory.
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
+from importlib import metadata
+from typing import TYPE_CHECKING
 
 import httpx
 from dotenv import load_dotenv
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
-from mcp_use import MCPAgent, MCPClient
+from mcp.types import (
+    CreateMessageRequestParams,
+    CreateMessageResult,
+    ErrorData,
+    TextContent,
+)
+from mcp_use import MCPAgent, MCPClient, load_config_file
+from packaging.version import Version
+
+if TYPE_CHECKING:  # pragma: no cover - only for type hints
+    from mcp import ClientSession
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 SYSTEM_MESSAGE = "You are a helpful assistant that talks to the user and uses tools via MCP."
+
+
+def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
+    async def sampling_callback(
+        context: ClientSession, params: CreateMessageRequestParams
+    ) -> CreateMessageResult | ErrorData:
+        lc_messages = []
+        system_prompt = getattr(params, "systemPrompt", None)
+        if system_prompt:
+            lc_messages.append(SystemMessage(content=system_prompt))
+        for msg in params.messages:
+            content = msg.content.text
+            if msg.role == "assistant":
+                lc_messages.append(AIMessage(content=content))
+            else:
+                lc_messages.append(HumanMessage(content=content))
+
+        try:
+            logger.info(f"Sampling with messages: {lc_messages}")
+            max_tokens = getattr(params, "maxTokens", None)
+            stop_sequences = getattr(params, "stopSequences", None)
+            result_msg = await llm.ainvoke(
+                lc_messages,
+                temperature=params.temperature,
+                max_tokens=max_tokens,
+                stop=stop_sequences,
+            )
+        except Exception as exc:
+            logger.error(f"Failed to invoke llm for sampling: {exc}")
+            return ErrorData(code=400, message=str(exc))
+
+        text = getattr(result_msg, "content", str(result_msg))
+        model_name = getattr(llm, "model", "llm")
+        logger.info(f"Sampling result: {text}")
+        return CreateMessageResult(
+            content=TextContent(text=text, type="text"),
+            model=model_name,
+            role="assistant",
+        )
+
+    return sampling_callback
 
 
 async def ensure_ollama_running(model: str) -> None:
@@ -40,17 +98,33 @@ async def run_memory_chat() -> None:
     load_dotenv()
     config_file = os.path.join(os.path.dirname(__file__), "config.json")
 
-    print("Initializing chat...")
-    client = MCPClient.from_config_file(config_file)
-
     openai_key = os.getenv("OPENAI_API_KEY")
     ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
+
+    print("Initializing chat...")
 
     if openai_key:
         llm = ChatOpenAI(model="gpt-4o")
     else:
         await ensure_ollama_running(ollama_model)
         llm = ChatOllama(model=ollama_model)
+
+    try:
+        mcp_use_version = metadata.version("mcp_use")
+    except metadata.PackageNotFoundError:  # pragma: no cover - dev env only
+        mcp_use_version = "0"
+
+    if Version(mcp_use_version) > Version("1.3.6"):
+        client = MCPClient(
+            load_config_file(config_file),
+            sampling_callback=make_sampling_callback(llm),
+        )
+    else:
+        logger.warning(
+            "mcp-use %s does not support sampling, install >1.3.6. Disabling sampling callback",
+            mcp_use_version,
+        )
+        client = MCPClient(load_config_file(config_file))
 
     agent = MCPAgent(
         llm=llm,

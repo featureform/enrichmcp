@@ -63,22 +63,21 @@ async def plan_trip(
 ) -> list[Destination]:
     """Return three destinations that best match the given preferences."""
     ctx = app.get_context()
-
     bullet_list = "\n".join(f"- {d.name}: {d.summary}" for d in DESTINATIONS)
     prompt = (
         "Select the three best destinations from the list below based on the "
-        "given preferences. Reply with a JSON list of names only.\nPreferences: "
+        "given preferences. Reply with a JSON list of names only. "
+        "The text should be directly parsable with json.loads in Python. "
+        'Do NOT add ```json like markdown. Example response:\n["San Francisco"]'
+        "\n\n\nPreferences: "
         f"{preferences}\n\n{bullet_list}"
     )
-    result = await ctx.sampling(
+    result = await ctx.ask_llm(
         prompt,
         model_preferences=prefer_fast_model(),
         max_tokens=50,
     )
-    try:
-        names = json.loads(result.content.text)
-    except Exception:
-        return []
+    names = json.loads(result.content.text)
     return [d for d in DESTINATIONS if d.name in names]
 
 

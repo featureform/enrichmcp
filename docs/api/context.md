@@ -40,6 +40,22 @@ result = await ctx.ask_llm(
 print(result.content.text)
 ```
 
+## User Elicitation
+
+Call `ask_user()` when you need additional input from the client. It wraps the
+underlying MCP `elicit()` API:
+
+```python
+class BookingPreferences(BaseModel):
+    alternativeDate: str | None
+    checkAlternative: bool = False
+
+result = await ctx.ask_user(
+    message="No tables available. Try another date?",
+    schema=BookingPreferences,
+)
+```
+
 ## Extending Context
 
 For now, if you need context functionality, you can extend the base class:

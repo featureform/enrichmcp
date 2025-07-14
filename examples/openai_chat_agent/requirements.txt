@@ -4,3 +4,4 @@ langchain_ollama
 langchain_community
 mcp_use
 python-dotenv
+httpx
