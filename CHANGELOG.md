@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2025-07-14
+
+### Added
+- Server-side LLM sampling via `ask_llm()` with new `ask_user()` helper.
+- `prefer_medium_model()` for balanced model selection.
+- Expanded examples and tests including Redis cache and travel planner.
+
+### Changed
+- Removed automatic `EnrichContext` injection; use `app.get_context()`.
+- Improved chat agent and memory examples.
+
+### Fixed
+- Correct context usage in examples and `ask_llm` helper.
 ## [0.4.6] - 2025-07-10
 
 ### Added
