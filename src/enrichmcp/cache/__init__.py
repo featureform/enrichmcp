@@ -83,8 +83,21 @@ class MemoryCache(CacheBackend):
 class RedisCache(CacheBackend):
     """Redis-based cache backend."""
 
-    def __init__(self, url: str) -> None:
-        """Create a cache backed by the Redis instance at ``url``."""
+    def __init__(self, url: str, redis_client: Any | None = None) -> None:
+        """Initialize the cache.
+
+        Parameters
+        ----------
+        url:
+            Redis connection URL. Ignored if ``redis_client`` is provided.
+        redis_client:
+            Optional pre-configured redis client. Allows injecting a fake
+            instance such as ``fakeredis`` for tests without monkeypatching.
+        """
+
+        if redis_client is not None:
+            self._redis = redis_client
+            return
         if redis is None:  # pragma: no cover - optional dependency
             raise ImportError("redis package is required for RedisCache")
         self._redis = redis.from_url(url)
