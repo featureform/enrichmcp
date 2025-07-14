@@ -6,6 +6,7 @@ Provides a thin wrapper over FastMCP's Context for request handling.
 
 from typing import Literal
 
+from mcp.server.elicitation import ElicitationResult, ElicitSchemaModelT
 from mcp.server.fastmcp import Context  # pyright: ignore[reportMissingTypeArgument]
 from mcp.types import (
     CreateMessageResult,
@@ -106,6 +107,15 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
         """Alias for :meth:`ask_llm`."""
 
         return await self.ask_llm(messages, **kwargs)
+
+    async def ask_user(
+        self,
+        message: str,
+        schema: type[ElicitSchemaModelT],
+    ) -> ElicitationResult:
+        """Interactively ask the client for input using MCP elicitation."""
+
+        return await super().elicit(message=message, schema=schema)
 
 
 def prefer_fast_model() -> ModelPreferences:
