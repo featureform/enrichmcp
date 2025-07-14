@@ -17,6 +17,7 @@ from .mixin import EnrichSQLAlchemyMixin
 
 
 def _sa_to_enrich(instance: Any, model_cls: type) -> Any:
+    """Convert a SQLAlchemy instance to its EnrichModel counterpart."""
     data: dict[str, Any] = {}
     for name in model_cls.model_fields:
         if name in model_cls.relationship_fields():
@@ -32,6 +33,7 @@ def _register_default_resources(
     enrich_model: type,
     session_key: str,
 ) -> None:
+    """Register basic list and get resources for ``sa_model``."""
     model_name = sa_model.__name__.lower()
     list_name = f"list_{model_name}s"
     get_name = f"get_{model_name}"
@@ -89,6 +91,7 @@ def _register_relationship_resolvers(
     models: dict[str, type],
     session_key: str,
 ) -> None:
+    """Create default relationship resolvers for ``sa_model``."""
     mapper = inspect(sa_model)
     for rel in mapper.relationships:
         if rel.info.get("exclude"):
@@ -218,7 +221,11 @@ def include_sqlalchemy_models(
     *,
     session_key: str = "session_factory",
 ) -> dict[str, type]:
-    """Register SQLAlchemy models with automatic resources and resolvers."""
+    """Convert and register SQLAlchemy models on ``app``.
+
+    The returned mapping contains both the original SQLAlchemy class names and
+    the generated EnrichModel classes for easy lookup.
+    """
 
     models: dict[str, type] = {}
     for mapper in base.registry.mappers:
