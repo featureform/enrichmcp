@@ -210,8 +210,8 @@ async def get_user_orders(
     user_id: int,
     page: int = 1,
     page_size: int = 10,
-    ctx: EnrichContext
 ) -> PageResult[Order]:
+    ctx = app.get_context()
     """Get user orders with pagination."""
     db = ctx.request_context.lifespan_context["db"]
 

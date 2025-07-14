@@ -14,7 +14,7 @@ from typing import Any
 import aiosqlite
 from pydantic import Field
 
-from enrichmcp import CursorResult, EnrichContext, EnrichMCP, EnrichModel, Relationship
+from enrichmcp import CursorResult, EnrichMCP, EnrichModel, Relationship
 
 
 # Database helper class
@@ -378,8 +378,9 @@ class Order(EnrichModel):
 
 # Define relationship resolvers that use the database
 @User.orders.resolver
-async def by_user_id(user_id: int, ctx: EnrichContext) -> list["Order"]:
+async def by_user_id(user_id: int) -> list["Order"]:
     """Get all orders for a specific user from the database."""
+    ctx = app.get_context()
     # Access the database from the lifespan context
     db: Database = ctx.request_context.lifespan_context["db"]
 
@@ -405,8 +406,9 @@ async def by_user_id(user_id: int, ctx: EnrichContext) -> list["Order"]:
 
 
 @Order.user.resolver
-async def by_order_id(order_id: int, ctx: EnrichContext) -> User:
+async def by_order_id(order_id: int) -> User:
     """Get the user who placed a specific order."""
+    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     user_row = await db.get_order_user(order_id)
@@ -434,8 +436,9 @@ async def by_order_id(order_id: int, ctx: EnrichContext) -> User:
 
 
 @Order.products.resolver
-async def by_order_id_products(order_id: int, ctx: EnrichContext) -> list[Product]:
+async def by_order_id_products(order_id: int) -> list[Product]:
     """Get all products included in a specific order."""
+    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     product_rows = await db.get_order_products(order_id)
@@ -459,8 +462,9 @@ async def by_order_id_products(order_id: int, ctx: EnrichContext) -> list[Produc
 
 # Define root resources
 @app.retrieve
-async def list_users(ctx: EnrichContext) -> list[User]:
+async def list_users() -> list[User]:
     """List all users in the system."""
+    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     user_rows = await db.get_all_users()
@@ -483,8 +487,9 @@ async def list_users(ctx: EnrichContext) -> list[User]:
 
 
 @app.retrieve
-async def get_user(user_id: int, ctx: EnrichContext) -> User:
+async def get_user(user_id: int) -> User:
     """Get a specific user by ID."""
+    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     user_row = await db.get_user(user_id)
@@ -511,8 +516,9 @@ async def get_user(user_id: int, ctx: EnrichContext) -> User:
 
 
 @app.retrieve
-async def list_products(ctx: EnrichContext) -> list[Product]:
+async def list_products() -> list[Product]:
     """List all products in the catalog."""
+    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     product_rows = await db.get_all_products()
@@ -536,9 +542,10 @@ async def list_products(ctx: EnrichContext) -> list[Product]:
 
 @app.retrieve
 async def list_orders(
-    ctx: EnrichContext, status: str | None = None, cursor: str | None = None, limit: int = 10
+    status: str | None = None, cursor: str | None = None, limit: int = 10
 ) -> CursorResult[Order]:
     """List orders, optionally filtered by status."""
+    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     order_rows, next_cursor = await db.get_all_orders(status, cursor, limit)

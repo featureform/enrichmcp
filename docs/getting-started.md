@@ -153,11 +153,10 @@ if __name__ == "__main__":
 
 ## Using Context
 
-EnrichMCP provides automatic context injection for accessing logging, progress reporting, and lifespan resources:
+Access logging, progress reporting, and lifespan resources through the application context:
 
 ```python
 from contextlib import asynccontextmanager
-from enrichmcp import EnrichContext
 
 
 # Set up lifespan for database connection
@@ -176,7 +175,8 @@ app = EnrichMCP("My API", "Description", lifespan=lifespan)
 
 # Use context in resources and resolvers
 @app.retrieve
-async def get_user(user_id: int, ctx: EnrichContext) -> User:
+async def get_user(user_id: int) -> User:
+    ctx = app.get_context()
     # Logging
     await ctx.info(f"Fetching user {user_id}")
 
@@ -189,7 +189,7 @@ async def get_user(user_id: int, ctx: EnrichContext) -> User:
     return await db.get_user(user_id)
 ```
 
-Context is automatically injected when you add a parameter typed as `EnrichContext`.
+
 
 ## Parameter Hints
 
