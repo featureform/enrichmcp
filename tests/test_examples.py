@@ -14,6 +14,7 @@ EXAMPLES = [
     "basic_memory/app.py",
     "caching/app.py",
     "mutable_crud/app.py",
+    "server_side_llm_travel_planner/app.py",
 ]
 
 
