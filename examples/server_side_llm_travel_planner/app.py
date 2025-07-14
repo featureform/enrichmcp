@@ -69,7 +69,6 @@ async def plan_trip(
         "given preferences. Reply with a JSON list of names only.\nPreferences: "
         f"{preferences}\n\n{bullet_list}"
     )
-    app.get_context()
     result = await app.get_context().ask_llm(
         prompt,
         model_preferences=prefer_fast_model(),
