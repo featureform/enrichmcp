@@ -13,9 +13,20 @@ import httpx
 from dotenv import load_dotenv
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
-from mcp_use import MCPAgent, MCPClient
+from mcp.types import CreateMessageRequestParams, CreateMessageResult, ErrorData, TextContent
+from mcp_use import MCPAgent, MCPClient, load_config_file
 
 SYSTEM_MESSAGE = "You are a helpful assistant that talks to the user and uses tools via MCP."
+
+
+async def sampling_callback(
+    context: ClientSession, params: CreateMessageRequestParams
+) -> CreateMessageResult | ErrorData:
+    return CreateMessageResult(
+        content=TextContent(text='["Cape Town"]', type="text"),
+        model="gpt-4o-mini",
+        role="assistant",
+    )
 
 
 async def ensure_ollama_running(model: str) -> None:
@@ -41,7 +52,7 @@ async def run_memory_chat() -> None:
     config_file = os.path.join(os.path.dirname(__file__), "config.json")
 
     print("Initializing chat...")
-    client = MCPClient.from_config_file(config_file)
+    client = MCPClient(load_config_file(config_file), sampling_callback=sampling_callback)
 
     openai_key = os.getenv("OPENAI_API_KEY")
     ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
