@@ -63,7 +63,6 @@ async def plan_trip(
 ) -> list[Destination]:
     """Return three destinations that best match the given preferences."""
     ctx = app.get_context()
-
     bullet_list = "\n".join(f"- {d.name}: {d.summary}" for d in DESTINATIONS)
     prompt = (
         "Select the three best destinations from the list below based on the "
@@ -73,7 +72,7 @@ async def plan_trip(
         "\n\n\nPreferences: "
         f"{preferences}\n\n{bullet_list}"
     )
-    result = await app.get_context().ask_llm(
+    result = await ctx.ask_llm(
         prompt,
         model_preferences=prefer_fast_model(),
         max_tokens=50,
