@@ -39,10 +39,10 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
         context: ClientSession, params: CreateMessageRequestParams
     ) -> CreateMessageResult | ErrorData:
         lc_messages = []
-        if params.systemPrompt:
-            lc_messages.append(SystemMessage(content=params.systemPrompt))
+        system_prompt = getattr(params, "systemPrompt", None)
+        if system_prompt:
+            lc_messages.append(SystemMessage(content=system_prompt))
         for msg in params.messages:
-            logger.error(f"HERE2")
             content = msg.content.text
             if msg.role == "assistant":
                 lc_messages.append(AIMessage(content=content))
@@ -50,12 +50,14 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
                 lc_messages.append(HumanMessage(content=content))
 
         try:
-            logger.error(f'Sampling with messages: {lc_messages}')
+            logger.error(f"Sampling with messages: {lc_messages}")
+            max_tokens = getattr(params, "maxTokens", None)
+            stop_sequences = getattr(params, "stopSequences", None)
             result_msg = await llm.ainvoke(
                 lc_messages,
                 temperature=params.temperature,
-                max_tokens=params.maxTokens,
-                stop=params.stopSequences,
+                max_tokens=max_tokens,
+                stop=stop_sequences,
             )
         except Exception as exc:
             logger.error(f"Failed to invoke llm for sampling: {exc}")
@@ -63,7 +65,7 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
 
         text = getattr(result_msg, "content", str(result_msg))
         model_name = getattr(llm, "model", "llm")
-        logger.error(f'Sampling result: {text}')
+        logger.error(f"Sampling result: {text}")
         return CreateMessageResult(
             content=TextContent(text=text, type="text"),
             model=model_name,
@@ -117,7 +119,10 @@ async def run_memory_chat() -> None:
             sampling_callback=make_sampling_callback(llm),
         )
     else:
-        logger.warning("mcp-use %s does not support sampling, install >1.3.6. Disabling sampling callback", mcp_use_version)
+        logger.warning(
+            "mcp-use %s does not support sampling, install >1.3.6. Disabling sampling callback",
+            mcp_use_version,
+        )
         client = MCPClient(load_config_file(config_file))
 
     agent = MCPAgent(
