@@ -120,13 +120,32 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
 
 
 def prefer_fast_model() -> ModelPreferences:
-    """Model preferences optimized for speed and cost."""
+    """Model preferences optimized for speed and cost using small models."""
 
     return ModelPreferences(
-        hints=[ModelHint(name="gpt-4o-mini"), ModelHint(name="claude-3-haiku")],
+        hints=[
+            ModelHint(name="gpt-4o-mini-20240613"),
+            ModelHint(name="claude-3-haiku-20240307"),
+            ModelHint(name="llama-3-8b"),
+        ],
         costPriority=0.8,
         speedPriority=0.9,
         intelligencePriority=0.3,
+    )
+
+
+def prefer_medium_model() -> ModelPreferences:
+    """Balanced model preferences for general use."""
+
+    return ModelPreferences(
+        hints=[
+            ModelHint(name="gpt-4o-2024-05-13"),
+            ModelHint(name="claude-3-sonnet-20240229"),
+            ModelHint(name="llama-3-70b"),
+        ],
+        costPriority=0.5,
+        speedPriority=0.6,
+        intelligencePriority=0.6,
     )
 
 
@@ -134,7 +153,11 @@ def prefer_smart_model() -> ModelPreferences:
     """Model preferences optimized for intelligence and capability."""
 
     return ModelPreferences(
-        hints=[ModelHint(name="gpt-4o"), ModelHint(name="claude-3-opus")],
+        hints=[
+            ModelHint(name="o3"),
+            ModelHint(name="claude-3-opus-20240229"),
+            ModelHint(name="llama-3-405b"),
+        ],
         costPriority=0.2,
         speedPriority=0.3,
         intelligencePriority=0.9,

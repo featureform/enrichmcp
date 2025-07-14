@@ -16,7 +16,7 @@ tuning parameters.
 | `system_prompt` | Optional system prompt that defines overall behavior. |
 | `max_tokens` | Maximum number of tokens the client should generate. Defaults to 1000. |
 | `temperature` | Sampling temperature for controlling randomness. |
-| `model_preferences` | `ModelPreferences` object describing cost, speed and intelligence priorities. Use `prefer_fast_model()` or `prefer_smart_model()` as shortcuts. |
+| `model_preferences` | `ModelPreferences` object describing cost, speed and intelligence priorities. Use `prefer_fast_model()`, `prefer_medium_model()` or `prefer_smart_model()` as shortcuts. |
 | `allow_tools` | Controls what tools the LLM can see: `"none"`, `"thisServer"`, or `"allServers"`. |
 | `stop_sequences` | Strings that stop generation when encountered. |
 
@@ -27,11 +27,11 @@ speed or intelligence when the client chooses an LLM. Two convenience functions
 are provided:
 
 ```python
-from enrichmcp import prefer_fast_model, prefer_smart_model
+from enrichmcp import prefer_fast_model, prefer_medium_model, prefer_smart_model
 ```
 
-Use `prefer_fast_model()` when low latency and price are most important. Use
-`prefer_smart_model()` when you need the best reasoning capability.
+Use `prefer_fast_model()` when low latency and price are most important.
+`prefer_medium_model()` offers balanced quality and cost. Use `prefer_smart_model()` when you need the best reasoning capability.
 
 ### Tool Access
 

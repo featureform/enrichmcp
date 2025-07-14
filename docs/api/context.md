@@ -30,7 +30,7 @@ user, or global scopes.
 Use `ask_llm()` (or the `sampling()` alias) to request completions from the client-side LLM. See the [Server-Side LLM guide](../server_side_llm.md) for more details:
 
 ```python
-from enrichmcp import prefer_fast_model
+from enrichmcp import prefer_fast_model, prefer_medium_model, prefer_smart_model
 
 result = await ctx.ask_llm(
     "Summarize our latest sales numbers",
