@@ -39,9 +39,10 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
         context: ClientSession, params: CreateMessageRequestParams
     ) -> CreateMessageResult | ErrorData:
         lc_messages = []
-        if params.system_prompt:
-            lc_messages.append(SystemMessage(content=params.system_prompt))
+        if params.systemPrompt:
+            lc_messages.append(SystemMessage(content=params.systemPrompt))
         for msg in params.messages:
+            logger.error(f"HERE2")
             content = msg.content.text
             if msg.role == "assistant":
                 lc_messages.append(AIMessage(content=content))
@@ -49,17 +50,20 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
                 lc_messages.append(HumanMessage(content=content))
 
         try:
+            logger.error(f'Sampling with messages: {lc_messages}')
             result_msg = await llm.ainvoke(
                 lc_messages,
                 temperature=params.temperature,
-                max_tokens=params.max_tokens,
-                stop=params.stop_sequences,
+                max_tokens=params.maxTokens,
+                stop=params.stopSequences,
             )
-        except Exception as exc:  # pragma: no cover - runtime error handling
+        except Exception as exc:
+            logger.error(f"Failed to invoke llm for sampling: {exc}")
             return ErrorData(code=400, message=str(exc))
 
         text = getattr(result_msg, "content", str(result_msg))
         model_name = getattr(llm, "model", "llm")
+        logger.error(f'Sampling result: {text}')
         return CreateMessageResult(
             content=TextContent(text=text, type="text"),
             model=model_name,
@@ -102,20 +106,18 @@ async def run_memory_chat() -> None:
         await ensure_ollama_running(ollama_model)
         llm = ChatOllama(model=ollama_model)
 
-    sampling_cb = make_sampling_callback(llm)
-
     try:
         mcp_use_version = metadata.version("mcp_use")
     except metadata.PackageNotFoundError:  # pragma: no cover - dev env only
         mcp_use_version = "0"
 
-    if Version(mcp_use_version) > Version("1.3.7"):
+    if Version(mcp_use_version) > Version("1.3.6"):
         client = MCPClient(
             load_config_file(config_file),
-            sampling_callback=sampling_cb,
+            sampling_callback=make_sampling_callback(llm),
         )
     else:
-        logger.warning("mcp-use %s does not support sampling, disabling callback", mcp_use_version)
+        logger.warning("mcp-use %s does not support sampling, install >1.3.6. Disabling sampling callback", mcp_use_version)
         client = MCPClient(load_config_file(config_file))
 
     agent = MCPAgent(
