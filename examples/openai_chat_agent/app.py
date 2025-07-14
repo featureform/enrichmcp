@@ -30,6 +30,7 @@ if TYPE_CHECKING:  # pragma: no cover - only for type hints
     from mcp import ClientSession
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 SYSTEM_MESSAGE = "You are a helpful assistant that talks to the user and uses tools via MCP."
 
@@ -39,10 +40,10 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
         context: ClientSession, params: CreateMessageRequestParams
     ) -> CreateMessageResult | ErrorData:
         lc_messages = []
-        if params.systemPrompt:
-            lc_messages.append(SystemMessage(content=params.systemPrompt))
+        system_prompt = getattr(params, "systemPrompt", None)
+        if system_prompt:
+            lc_messages.append(SystemMessage(content=system_prompt))
         for msg in params.messages:
-            logger.error("HERE2")
             content = msg.content.text
             if msg.role == "assistant":
                 lc_messages.append(AIMessage(content=content))
@@ -50,12 +51,14 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
                 lc_messages.append(HumanMessage(content=content))
 
         try:
-            logger.error(f"Sampling with messages: {lc_messages}")
+            logger.info(f"Sampling with messages: {lc_messages}")
+            max_tokens = getattr(params, "maxTokens", None)
+            stop_sequences = getattr(params, "stopSequences", None)
             result_msg = await llm.ainvoke(
                 lc_messages,
                 temperature=params.temperature,
-                max_tokens=params.maxTokens,
-                stop=params.stopSequences,
+                max_tokens=max_tokens,
+                stop=stop_sequences,
             )
         except Exception as exc:
             logger.error(f"Failed to invoke llm for sampling: {exc}")
@@ -63,7 +66,7 @@ def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
 
         text = getattr(result_msg, "content", str(result_msg))
         model_name = getattr(llm, "model", "llm")
-        logger.error(f"Sampling result: {text}")
+        logger.info(f"Sampling result: {text}")
         return CreateMessageResult(
             content=TextContent(text=text, type="text"),
             model=model_name,

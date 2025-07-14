@@ -68,8 +68,9 @@ async def plan_trip(
         "Select the three best destinations from the list below based on the "
         "given preferences. Reply with a JSON list of names only. "
         "The text should be directly parsable with json.loads in Python. "
-        'Do NOT add ```json like markdown. Example response:\n["San Francisco"]\n\n\n'
-        f"Preferences: {preferences}\n\n{bullet_list}"
+        'Do NOT add ```json like markdown. Example response:\n["San Francisco"]'
+        "\n\n\nPreferences: "
+        f"{preferences}\n\n{bullet_list}"
     )
     result = await app.get_context().ask_llm(
         prompt,
