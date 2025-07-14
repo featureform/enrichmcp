@@ -6,6 +6,7 @@ conversation context using the agent's built-in memory.
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 import os
@@ -23,7 +24,7 @@ from mcp.types import (
     ErrorData,
     TextContent,
 )
-from mcp_use import MCPAgent, MCPClient, load_config_file
+from mcp_use import MCPAgent, MCPClient
 from packaging.version import Version
 
 if TYPE_CHECKING:  # pragma: no cover - only for type hints
@@ -33,6 +34,40 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 SYSTEM_MESSAGE = "You are a helpful assistant that talks to the user and uses tools via MCP."
+
+
+def list_available_examples() -> dict[str, str]:
+    """Return a mapping of example name to app path."""
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    examples: dict[str, str] = {}
+    for entry in os.scandir(base_dir):
+        if not entry.is_dir() or entry.name == "openai_chat_agent":
+            continue
+        app_path = os.path.join(entry.path, "app.py")
+        if os.path.exists(app_path):
+            examples[entry.name] = app_path
+    return examples
+
+
+def choose_example(examples: dict[str, str], preselected: str | None = None) -> str:
+    """Prompt the user to choose an example."""
+    names = sorted(examples)
+    if preselected and preselected in examples:
+        return preselected
+
+    print("Available examples:")
+    for idx, name in enumerate(names, 1):
+        print(f"  {idx}. {name}")
+
+    while True:
+        choice = input("Select example by number or name: ").strip()
+        if choice in examples:
+            return choice
+        if choice.isdigit():
+            index = int(choice) - 1
+            if 0 <= index < len(names):
+                return names[index]
+        print("Invalid selection, try again.")
 
 
 def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
@@ -96,7 +131,19 @@ async def ensure_ollama_running(model: str) -> None:
 async def run_memory_chat() -> None:
     """Run an interactive chat session with conversation memory enabled."""
     load_dotenv()
-    config_file = os.path.join(os.path.dirname(__file__), "config.json")
+    available_examples = list_available_examples()
+
+    parser = argparse.ArgumentParser(description="Interactive MCP Chat Agent")
+    parser.add_argument(
+        "--example",
+        help="Example to run (default: prompt for selection)",
+    )
+    args = parser.parse_args()
+
+    example_name = choose_example(available_examples, args.example)
+    server_path = available_examples[example_name]
+
+    config = {"mcpServers": {example_name: {"command": "python", "args": [server_path]}}}
 
     openai_key = os.getenv("OPENAI_API_KEY")
     ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
@@ -115,16 +162,13 @@ async def run_memory_chat() -> None:
         mcp_use_version = "0"
 
     if Version(mcp_use_version) > Version("1.3.6"):
-        client = MCPClient(
-            load_config_file(config_file),
-            sampling_callback=make_sampling_callback(llm),
-        )
+        client = MCPClient(config, sampling_callback=make_sampling_callback(llm))
     else:
         logger.warning(
             "mcp-use %s does not support sampling, install >1.3.6. Disabling sampling callback",
             mcp_use_version,
         )
-        client = MCPClient(load_config_file(config_file))
+        client = MCPClient(config)
 
     agent = MCPAgent(
         llm=llm,
