@@ -74,9 +74,10 @@ class MyContext(EnrichContext):
 
 # Use in resources
 @app.retrieve
-async def get_data(context: MyContext) -> dict:
+async def get_data() -> dict:
+    ctx = app.get_context()
     # Use your custom context
-    return await context.db.fetch_data()
+    return await ctx.db.fetch_data()
 ```
 
-Note: Full context support with dependency injection is planned for future releases.
+Note: Dependency injection is no longer supported; always call ``app.get_context()`` to access the current request context.

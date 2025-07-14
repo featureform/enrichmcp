@@ -12,6 +12,7 @@ class FieldDescription(BaseModel):
     mutable: bool = False
 
     def __str__(self) -> str:
+        """Return a Markdown bullet describing the field."""
         type_repr = self.type
         if self.mutable and "mutable" not in type_repr:
             type_repr = f"{type_repr}, mutable"
@@ -26,6 +27,7 @@ class RelationshipDescription(BaseModel):
     description: str
 
     def __str__(self) -> str:
+        """Return a Markdown bullet describing the relationship."""
         return f"- **{self.name}** → {self.target}: {self.description}"
 
 
@@ -38,6 +40,7 @@ class EntityDescription(BaseModel):
     relationships: list[RelationshipDescription] = Field(default_factory=list)
 
     def __str__(self) -> str:
+        """Return a Markdown section describing the entity."""
         lines = [f"## {self.name}", self.description, ""]
         if self.fields:
             lines.append("### Fields")
@@ -58,6 +61,7 @@ class ModelDescription(BaseModel):
     entities: list[EntityDescription] = Field(default_factory=list)
 
     def __str__(self) -> str:
+        """Return a Markdown document describing the entire model."""
         lines = [f"# Data Model: {self.title}"]
         if self.description:
             lines.append(self.description)

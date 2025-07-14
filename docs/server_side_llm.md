@@ -43,7 +43,8 @@ other resources.
 
 ```python
 @app.retrieve
-async def summarize(text: str, ctx: EnrichContext) -> str:
+async def summarize(text: str) -> str:
+    ctx = app.get_context()
     result = await ctx.ask_llm(
         f"Summarize this: {text}",
         model_preferences=prefer_fast_model(),

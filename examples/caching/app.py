@@ -3,14 +3,15 @@
 import asyncio
 import random
 
-from enrichmcp import EnrichContext, EnrichMCP
+from enrichmcp import EnrichMCP
 
 app = EnrichMCP("Caching API", description="Demo of request caching")
 
 
 @app.retrieve
-async def slow_square(n: int, ctx: EnrichContext) -> int:
+async def slow_square(n: int) -> int:
     """Return n squared using request-scoped caching."""
+    ctx = app.get_context()
 
     async def compute() -> int:
         await asyncio.sleep(0.1)
@@ -20,8 +21,9 @@ async def slow_square(n: int, ctx: EnrichContext) -> int:
 
 
 @app.retrieve
-async def fibonacci(n: int, ctx: EnrichContext) -> int:
+async def fibonacci(n: int) -> int:
     """Compute the n-th Fibonacci number with global caching."""
+    ctx = app.get_context()
 
     async def compute() -> int:
         await asyncio.sleep(0.1)
@@ -34,8 +36,9 @@ async def fibonacci(n: int, ctx: EnrichContext) -> int:
 
 
 @app.retrieve
-async def user_analytics(ctx: EnrichContext) -> dict:
+async def user_analytics() -> dict:
     """Return fake analytics for the user with user-scoped caching."""
+    ctx = app.get_context()
 
     async def compute() -> dict:
         await asyncio.sleep(0.1)

@@ -154,7 +154,7 @@ app.run()
 Build a complete data layer with custom logic:
 
 ```python
-from enrichmcp import EnrichMCP, EnrichModel, Relationship, EnrichContext
+from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from datetime import datetime
 from decimal import Decimal
 from pydantic import Field
@@ -254,10 +254,11 @@ async def calculate_lifetime_value(user_id: int) -> Decimal:
 
 # ML-powered field
 @User.churn_risk.resolver
-async def predict_churn_risk(user_id: int, context: EnrichContext) -> float:
+async def predict_churn_risk(user_id: int) -> float:
     """Run churn prediction model."""
+    ctx = app.get_context()
     features = await gather_user_features(user_id)
-    model = context.get("ml_models")["churn"]
+    model = ctx.get("ml_models")["churn"]
     return float(model.predict_proba(features)[0][1])
 
 app.run()
@@ -360,9 +361,10 @@ class UserProfile(EnrichModel):
     bio: str | None = Field(default=None, description="Short bio")
 
 @app.retrieve
-async def get_user_profile(user_id: int, context: EnrichContext) -> UserProfile:
+async def get_user_profile(user_id: int) -> UserProfile:
+    ctx = app.get_context()
     # Access context provided by MCP client
-    auth_user = context.get("authenticated_user_id")
+    auth_user = ctx.get("authenticated_user_id")
     if auth_user != user_id:
         raise PermissionError("Can only access your own profile")
     return await db.get_profile(user_id)
@@ -375,7 +377,8 @@ Reduce API overhead by storing results in a per-request, per-user, or global cac
 ```python
 
 @app.retrieve
-async def get_customer(cid: int, ctx: EnrichContext) -> Customer:
+async def get_customer(cid: int) -> Customer:
+    ctx = app.get_context()
     async def fetch() -> Customer:
         return await db.get_customer(cid)
 

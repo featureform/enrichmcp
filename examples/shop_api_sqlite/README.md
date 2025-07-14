@@ -47,13 +47,14 @@ async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
     await db.close()
 ```
 
-### Context Injection
+### Accessing Context
 
-Resources and resolvers receive context automatically when they have a parameter typed as `EnrichContext`:
+Call `app.get_context()` inside your resources or resolvers to work with the current request:
 
 ```python
 @app.retrieve
-async def get_user(user_id: int, ctx: EnrichContext) -> User:
+async def get_user(user_id: int) -> User:
+    ctx = app.get_context()
     # Access database from lifespan context
     db = ctx.request_context.lifespan_context["db"]
 

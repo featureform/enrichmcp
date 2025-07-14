@@ -43,6 +43,7 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
 
     @property
     def cache(self) -> ContextCache:
+        """Access the request-scoped cache."""
         if self._cache is None:
             raise ValueError("Cache is not configured")
         return self._cache

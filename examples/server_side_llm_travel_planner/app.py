@@ -62,6 +62,7 @@ async def plan_trip(
     preferences: Annotated[str, Field(description="Your travel preferences")],
 ) -> list[Destination]:
     """Return three destinations that best match the given preferences."""
+    ctx = app.get_context()
 
     bullet_list = "\n".join(f"- {d.name}: {d.summary}" for d in DESTINATIONS)
     prompt = (
