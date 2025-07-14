@@ -31,6 +31,7 @@ from .cache import MemoryCache, RedisCache
 from .context import (
     EnrichContext,
     prefer_fast_model,
+    prefer_medium_model,
     prefer_smart_model,
 )
 from .datamodel import (
@@ -85,6 +86,7 @@ __all__ = [
     "__version__",
     "combine_lifespans",
     "prefer_fast_model",
+    "prefer_medium_model",
     "prefer_smart_model",
 ]
 
