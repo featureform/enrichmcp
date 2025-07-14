@@ -195,8 +195,9 @@ class AppContext(EnrichContext):
 
 
 @app.retrieve
-async def get_customer(customer_id: int, context: AppContext) -> Customer:
+async def get_customer(customer_id: int) -> Customer:
     """Get customer using context."""
+    context = app.get_context()
     # Check cache first
     cached = await context.cache.get(f"customer:{customer_id}")
     if cached:
@@ -249,16 +250,16 @@ The `describe_model()` output will list these allowed values.
 
 ## Context and Lifespan Management
 
-EnrichMCP extends FastMCP's context system to provide automatic injection of logging, progress reporting, and shared resources:
+EnrichMCP extends FastMCP's context system to provide logging, progress reporting, and shared resources.
 
-### Context Injection
+### Accessing Context
 
-Any resource or resolver can receive context by adding a parameter typed as `EnrichContext`:
+Call ``app.get_context()`` inside resources or resolvers to work with the current request context:
 
 ```python
 @app.retrieve
-async def my_resource(param: str, ctx: EnrichContext) -> Result:
-    # Context is automatically injected
+async def my_resource(param: str) -> Result:
+    ctx = app.get_context()
     await ctx.info("Processing request")
     await ctx.report_progress(50, 100)
     return result
@@ -300,7 +301,8 @@ Access lifespan resources through the context:
 
 ```python
 @User.orders.resolver
-async def get_user_orders(user_id: int, ctx: EnrichContext) -> list[Order]:
+async def get_user_orders(user_id: int) -> list[Order]:
+    ctx = app.get_context()
     # Get database from lifespan context
     db = ctx.request_context.lifespan_context["db"]
 
@@ -327,7 +329,8 @@ from enrichmcp.errors import NotFoundError, ValidationError, AuthorizationError
 
 
 @app.retrieve
-async def get_order(order_id: int, context: AppContext) -> Order:
+async def get_order(order_id: int) -> Order:
+    context = app.get_context()
     order = await context.db.get_order(order_id)
 
     if not order:
