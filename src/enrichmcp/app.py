@@ -88,6 +88,11 @@ class EnrichMCP:
         # Register built-in resources
         self._register_builtin_resources()
 
+    def rebuild_models(self) -> None:
+        """Rebuild all registered models to resolve forward references."""
+        for entity_cls in self.entities.values():
+            entity_cls.model_rebuild()
+
     def data_model_tool_name(self) -> str:
         """Return the name of the built-in data model exploration tool."""
 
@@ -515,6 +520,10 @@ class EnrichMCP:
                 f"The following relationships are missing resolvers: {', '.join(unresolved)}. "
                 f"Define resolvers with @Entity.relationship.resolver"
             )
+
+        # Resolve any forward references now that all entities are registered
+        for entity_cls in self.entities.values():
+            entity_cls.model_rebuild()
 
         # Forward transport options to FastMCP
         if transport is not None:
