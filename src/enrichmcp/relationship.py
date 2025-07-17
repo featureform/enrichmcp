@@ -106,7 +106,12 @@ class Relationship:
                     name=resource_name,
                     description=resource_description,
                 )
-                return self.app._register_tool_def(func, tool_def)
+                try:
+                    return self.app._register_tool_def(func, tool_def)
+                except Exception:
+                    if hasattr(self.app, "rebuild_models"):
+                        self.app.rebuild_models()
+                    return self.app._register_tool_def(func, tool_def)
 
             return func
 
