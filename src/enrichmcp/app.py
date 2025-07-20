@@ -473,6 +473,20 @@ class EnrichMCP:
 
         return self._tool_decorator(ToolKind.DELETER, func, name=name, description=description)
 
+    # ------------------------------------------------------------------
+    # Direct FastMCP tool wrapper
+    # ------------------------------------------------------------------
+
+    def tool(self, *args: Any, **kwargs: Any) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Direct wrapper for :meth:`FastMCP.tool`.
+
+        ``name`` and ``description`` default to the wrapped function's
+        ``__name__`` and docstring. Prefer relying on those defaults unless a
+        custom name or description is required.
+        """
+
+        return self.mcp.tool(*args, **kwargs)
+
     def get_context(self) -> EnrichContext:
         """Return the current :class:`EnrichContext` for this app."""
 
