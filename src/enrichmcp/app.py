@@ -473,6 +473,16 @@ class EnrichMCP:
 
         return self._tool_decorator(ToolKind.DELETER, func, name=name, description=description)
 
+    def prompt(
+        self,
+        name: str | None = None,
+        title: str | None = None,
+        description: str | None = None,
+    ) -> Callable[[F], F]:
+        """Register a prompt via the underlying :class:`FastMCP` instance."""
+
+        return self.mcp.prompt(name=name, title=title, description=description)
+
     def get_context(self) -> EnrichContext:
         """Return the current :class:`EnrichContext` for this app."""
 
