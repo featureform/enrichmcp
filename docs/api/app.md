@@ -95,6 +95,26 @@ async def delete_user(uid: int) -> bool:
     ...
 ```
 
+### `tool(*args, **kwargs)`
+
+Direct wrapper for ``FastMCP.tool``. ``name`` and ``description`` default to the
+function name and docstring, which is the recommended style.
+
+```python
+@app.tool()
+async def raw_tool(x: int) -> int:
+    """Return the input unchanged."""
+    return x
+```
+
+Custom values can be provided when needed:
+
+```python
+@app.tool(name="custom", description="My raw tool")
+async def custom_tool(x: int) -> int:
+    return x
+```
+
 ### `get_context() -> EnrichContext`
 
 Return the current request context as an :class:`~enrichmcp.EnrichContext`.
