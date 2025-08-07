@@ -98,3 +98,10 @@ When working on pull requests in this repository, follow these steps to ensure t
 4. Execute the test suite using `make test`.
 
 These commands install all required packages, including development extras and pre-commit hooks, so subsequent commands run without additional setup.
+
+## 10. Decorator Conventions
+
+When defining tools with ``@app.tool`` (or ``FastMCP.tool``), call the decorator
+with empty parentheses (``@app.tool()``) and omit ``name`` and ``description``
+unless you need to override them. The defaults come from the function's
+``__name__`` and docstring, keeping code concise and documentation aligned.

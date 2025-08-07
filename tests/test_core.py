@@ -179,3 +179,38 @@ def test_get_context_propagates_errors():
         pytest.raises(RuntimeError),
     ):
         app.get_context()
+
+
+@pytest.mark.asyncio
+async def test_tool_wrapper():
+    """app.tool should call FastMCP.tool without extra behavior."""
+
+    app = EnrichMCP("Test API", description="desc")
+
+    with patch.object(app.mcp, "tool", wraps=app.mcp.tool) as mock_tool:
+
+        @app.tool(name="custom_tool", description="desc")
+        async def custom_tool(x: int) -> int:
+            return x
+
+    mock_tool.assert_called_once()
+    assert mock_tool.call_args.kwargs["name"] == "custom_tool"
+    assert mock_tool.call_args.kwargs["description"] == "desc"
+    assert "custom_tool" not in app.resources
+
+
+@pytest.mark.asyncio
+async def test_tool_wrapper_defaults():
+    """Defaults should use function name and docstring."""
+
+    app = EnrichMCP("Test API", description="desc")
+
+    @app.tool()
+    async def default_tool(x: int) -> int:
+        """Echo input."""
+        return x
+
+    tools = await app.mcp.list_tools()
+    tool = next(t for t in tools if t.name == "default_tool")
+    assert tool.description == "Echo input."
+    assert "default_tool" not in app.resources
