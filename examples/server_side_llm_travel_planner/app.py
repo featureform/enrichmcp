@@ -9,7 +9,7 @@ from enrichmcp import EnrichMCP, EnrichModel, prefer_fast_model
 
 app = EnrichMCP(
     title="Travel Planner",
-    description="Suggest destinations based on user preferences using LLM sampling",
+    instructions="Suggest destinations based on user preferences using LLM sampling",
 )
 
 

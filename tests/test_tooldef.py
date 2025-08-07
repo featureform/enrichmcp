@@ -8,7 +8,7 @@ from enrichmcp import EnrichMCP, EnrichModel, Relationship
 
 @pytest.mark.asyncio
 async def test_tool_description_prefixes() -> None:
-    app = EnrichMCP("My API", description="desc")
+    app = EnrichMCP("My API", instructions="desc")
 
     with patch.object(app.mcp, "tool", wraps=app.mcp.tool) as mock_tool:
 

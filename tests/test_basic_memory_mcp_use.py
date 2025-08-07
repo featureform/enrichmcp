@@ -27,7 +27,7 @@ async def test_basic_memory_mcp_use(tmp_path: Path) -> None:
             store = FileMemoryStore(Path(__file__).parent / "data")
             project = MemoryProject("demo", store)
 
-            app = EnrichMCP(title="Test", description="Desc")
+            app = EnrichMCP(title="Test", instructions="Desc")
 
             @app.entity
             class Note(MemoryNote):

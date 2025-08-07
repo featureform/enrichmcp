@@ -10,7 +10,7 @@ from enrichmcp import EnrichMCP
 
 def main():
     # Create the EnrichMCP application
-    app = EnrichMCP(title="Hello World API", description="A simple API that says hello!")
+    app = EnrichMCP(title="Hello World API", instructions="A simple API that says hello!")
 
     # Define a hello world resource
     @app.retrieve(description="Say hello to the world")

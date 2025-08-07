@@ -9,7 +9,7 @@ from enrichmcp import (
 
 def test_entity_requires_description_via_parameter():
     """Test that entity requires a description via parameter."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should work with a description
     @app.entity(description="Test entity description")
@@ -23,7 +23,7 @@ def test_entity_requires_description_via_parameter():
 
 def test_entity_accepts_class_docstring():
     """Test that entity accepts a class docstring as description."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should work with a class docstring
     @app.entity
@@ -39,7 +39,7 @@ def test_entity_accepts_class_docstring():
 
 def test_entity_raises_error_without_description():
     """Test that entity raises error without description."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should fail without a description
     with pytest.raises(ValueError) as exc_info:
@@ -55,7 +55,7 @@ def test_entity_raises_error_without_description():
 
 def test_resource_requires_description_via_parameter():
     """Test that resource requires a description via parameter."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should work with a description
     @app.retrieve(description="Test resource description")
@@ -67,7 +67,7 @@ def test_resource_requires_description_via_parameter():
 
 def test_resource_accepts_function_docstring():
     """Test that resource accepts a function docstring as description."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should work with a function docstring
     @app.retrieve()
@@ -80,7 +80,7 @@ def test_resource_accepts_function_docstring():
 
 def test_resource_raises_error_without_description():
     """Test that resource raises error without description."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should fail without a description
     with pytest.raises(ValueError) as exc_info:
@@ -95,7 +95,7 @@ def test_resource_raises_error_without_description():
 
 def test_resource_with_custom_name_and_description():
     """Test resource with custom name and description."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should work with custom name and description
     @app.retrieve(name="custom_name", description="Custom resource description")

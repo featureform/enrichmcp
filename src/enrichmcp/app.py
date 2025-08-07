@@ -59,24 +59,39 @@ class EnrichMCP:
     def __init__(
         self,
         title: str,
-        description: str,
+        instructions: str | None = None,
         *,
         lifespan: Any = None,
         cache_backend: CacheBackend | None = None,
+        description: str | None = None,
     ):
         """
         Initialize the EnrichMCP application.
 
         Args:
             title: API title shown in documentation
-            description: Description of the API
+            instructions: Instructions for interacting with the API
             lifespan: Optional async context manager for startup/shutdown lifecycle
         """
+        if description is not None:
+            warnings.warn(
+                "The 'description' parameter is deprecated; use 'instructions' instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if instructions is None:
+                instructions = description
+        if instructions is None:
+            raise TypeError("instructions is required")
+
         self.title = title
-        self.description = description
+        self.instructions = instructions
         self._cache_id = uuid4().hex[:8]
         self.cache_backend = cache_backend or MemoryCache()
-        self.mcp = FastMCP(title, description=description, lifespan=lifespan)
+        # FastMCP renamed the ``description`` parameter to ``instructions`` in
+        # mcp-python 0.1.4. ``EnrichMCP`` now follows this naming but continues
+        # to accept the old parameter name for backward compatibility.
+        self.mcp = FastMCP(name=title, instructions=instructions, lifespan=lifespan)
         self.name = title  # Required for mcp install
 
         # Registries
@@ -106,7 +121,7 @@ class EnrichMCP:
         tool_name = self.data_model_tool_name()
         tool_description = (
             "IMPORTANT: Call this tool at the start of an agent session before"
-            f" using other tools on the {self.title} server. {self.description} "
+            f" using other tools on the {self.title} server. {self.instructions} "
             "This provides a comprehensive overview of the API structure, including"
             " all entities, their fields, relationships, and semantic meanings. "
             "You don't need to call it again if its response is already in context."
@@ -118,7 +133,7 @@ class EnrichMCP:
             model_description = self.describe_model()
             return DataModelSummary(
                 title=self.title,
-                description=self.description,
+                description=self.instructions,
                 entity_count=len(self.entities),
                 entities=list(self.entities.keys()),
                 model=model_description,
@@ -249,7 +264,7 @@ class EnrichMCP:
 
     def describe_model_struct(self) -> ModelDescription:
         """Return a structured description of the entire data model."""
-        desc = ModelDescription(title=self.title, description=self.description)
+        desc = ModelDescription(title=self.title, description=self.instructions)
 
         for entity_name, entity_cls in sorted(self.entities.items()):
             entity_desc = EntityDescription(

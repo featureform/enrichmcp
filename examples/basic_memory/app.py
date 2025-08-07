@@ -23,7 +23,7 @@ from enrichmcp import EnrichMCP
 store = FileMemoryStore(Path(__file__).parent / "data")
 project = MemoryProject("demo", store)
 
-app = EnrichMCP(title="Basic Memory API", description="Manage simple notes")
+app = EnrichMCP(title="Basic Memory API", instructions="Manage simple notes")
 
 
 @app.entity

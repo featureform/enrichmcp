@@ -6,7 +6,7 @@ from enrichmcp import DataModelSummary, EnrichMCP, EnrichModel
 
 @pytest.mark.asyncio
 async def test_explore_data_model_returns_summary() -> None:
-    app = EnrichMCP("My API", description="Demo server")
+    app = EnrichMCP("My API", instructions="Demo server")
 
     @app.entity(description="Test entity")
     class Item(EnrichModel):

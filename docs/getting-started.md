@@ -72,7 +72,7 @@ from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
 
 # Create the application
-app = EnrichMCP(title="Book Catalog API", description="A simple book catalog for AI agents")
+app = EnrichMCP(title="Book Catalog API", instructions="A simple book catalog for AI agents")
 
 
 # Define entities
@@ -254,7 +254,7 @@ class Product(Base):
 
 
 lifespan = sqlalchemy_lifespan(Base, engine, cleanup_db_file=True)
-app = EnrichMCP("My ORM API", lifespan=lifespan)
+app = EnrichMCP("My ORM API", instructions="ORM API", lifespan=lifespan)
 include_sqlalchemy_models(app, Base)
 app.run()
 ```

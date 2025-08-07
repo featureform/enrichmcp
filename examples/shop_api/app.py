@@ -15,7 +15,7 @@ from enrichmcp import EnrichMCP, EnrichModel, PageResult, Relationship
 # Create the application
 app = EnrichMCP(
     title="E-Commerce Shop API",
-    description=(
+    instructions=(
         "An e-commerce API with users, products, and orders including fraud detection patterns."
     ),
 )
