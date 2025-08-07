@@ -7,7 +7,7 @@ from enrichmcp import EnrichContext, EnrichMCP, EnrichParameter
 
 @pytest.mark.asyncio
 async def test_enrichparameter_hints_appended():
-    app = EnrichMCP("Test", description="desc")
+    app = EnrichMCP("Test", instructions="desc")
     with patch.object(app.mcp, "tool", wraps=app.mcp.tool) as mock_tool:
 
         @app.retrieve(description="Base desc")

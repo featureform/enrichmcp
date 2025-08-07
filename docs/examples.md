@@ -12,7 +12,7 @@ from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
 
 # Create the application
-app = EnrichMCP(title="Book Catalog API", description="A simple book catalog for AI agents")
+app = EnrichMCP(title="Book Catalog API", instructions="A simple book catalog for AI agents")
 
 
 # Define entities
@@ -155,7 +155,7 @@ from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
 
 app = EnrichMCP(
-    title="Task Management API", description="Simple task tracking system for AI agents"
+    title="Task Management API", instructions="Simple task tracking system for AI agents"
 )
 
 
@@ -332,7 +332,7 @@ A recipe API demonstrating many-to-many style relationships:
 from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
 
-app = EnrichMCP(title="Recipe API", description="A collection of recipes with ingredients")
+app = EnrichMCP(title="Recipe API", instructions="A collection of recipes with ingredients")
 
 
 @app.entity

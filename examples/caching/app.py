@@ -5,7 +5,7 @@ import random
 
 from enrichmcp import EnrichMCP
 
-app = EnrichMCP("Caching API", description="Demo of request caching")
+app = EnrichMCP("Caching API", instructions="Demo of request caching")
 
 
 @app.retrieve

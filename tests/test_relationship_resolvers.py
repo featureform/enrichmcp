@@ -13,7 +13,7 @@ from enrichmcp.relationship import Relationship
 def test_relationship_resolver_type_validation():
     """Test that relationship resolver type validation works correctly."""
 
-    app = EnrichMCP(title="Test API", description="Test API for type validation")
+    app = EnrichMCP(title="Test API", instructions="Test API for type validation")
 
     @app.entity
     class Item(EnrichModel):
@@ -62,7 +62,7 @@ def test_relationship_resolver_type_validation():
 def test_unresolved_relationship_validation():
     """Test that app.run() fails if a relationship is missing a resolver."""
 
-    app = EnrichMCP(title="Test API", description="Test API for relationship validation")
+    app = EnrichMCP(title="Test API", instructions="Test API for relationship validation")
 
     @app.entity
     class Item(EnrichModel):

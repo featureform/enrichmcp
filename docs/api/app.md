@@ -11,19 +11,19 @@ The `EnrichMCP` class is the main entry point for creating an enrichmcp applicat
 
 ## Class Reference
 
-### `EnrichMCP(title: str, description: str)`
+### `EnrichMCP(title: str, instructions: str)`
 
 Creates a new enrichmcp application.
 
 **Parameters:**
 - `title`: The name of your API
-- `description`: A description of what your API provides
+- `instructions`: Instructions for interacting with your API
 
 **Example:**
 ```python
 from enrichmcp import EnrichMCP
 
-app = EnrichMCP(title="My API", description="API for AI agents to access my data")
+app = EnrichMCP(title="My API", instructions="API for AI agents to access my data")
 ```
 
 ## Methods
@@ -120,7 +120,7 @@ async def custom_tool(x: int) -> int:
 Return the current request context as an :class:`~enrichmcp.EnrichContext`.
 
 ```python
-app = EnrichMCP("My API", description="desc")
+app = EnrichMCP("My API", instructions="desc")
 ctx = app.get_context()
 assert ctx.fastmcp is app.mcp
 ```
@@ -208,7 +208,7 @@ from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
 
 # Create app
-app = EnrichMCP(title="Bookstore API", description="API for managing books and authors")
+app = EnrichMCP(title="Bookstore API", instructions="API for managing books and authors")
 
 
 # Define entities

@@ -12,7 +12,7 @@ from enrichmcp import (
 
 def test_describe_model_empty():
     """Test describe_model with no entities."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Get the structured model description
     model = app.describe_model_struct()
@@ -26,7 +26,7 @@ def test_describe_model_empty():
 
 def test_describe_model_with_entities():
     """Test describe_model with multiple entities and relationships."""
-    app = EnrichMCP("Social Network", description="A social network data model")
+    app = EnrichMCP("Social Network", instructions="A social network data model")
 
     # Define some entities
     @app.entity(description="User entity for the social network")
@@ -85,7 +85,7 @@ def test_describe_model_with_entities():
 
 def test_describe_model_with_complex_types():
     """Test describe_model with complex field types."""
-    app = EnrichMCP("Content Management", description="A CMS data model")
+    app = EnrichMCP("Content Management", instructions="A CMS data model")
 
     # Define an entity with complex types
     @app.entity(description="Article entity with complex field types")
@@ -125,7 +125,7 @@ def test_describe_model_with_complex_types():
 
 def test_describe_model_with_literal_type():
     """Test describe_model with Literal field types."""
-    app = EnrichMCP("Enum API", description="A model with Literal fields")
+    app = EnrichMCP("Enum API", instructions="A model with Literal fields")
 
     @app.entity(description="Entity using Literal")
     class Item(EnrichModel):

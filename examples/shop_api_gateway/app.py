@@ -26,7 +26,7 @@ async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
 
 app = EnrichMCP(
     title="Shop API Gateway",
-    description="EnrichMCP front-end for a FastAPI backend",
+    instructions="EnrichMCP front-end for a FastAPI backend",
     lifespan=lifespan,
 )
 

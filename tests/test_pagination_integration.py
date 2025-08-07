@@ -21,7 +21,7 @@ from enrichmcp import (
 @pytest.fixture
 def app():
     """Create test app with entities."""
-    app = EnrichMCP(title="Test API", description="Test API")
+    app = EnrichMCP(title="Test API", instructions="Test API")
 
     # Define entities with forward references like in SQLite example
     @app.entity

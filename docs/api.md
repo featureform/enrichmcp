@@ -10,7 +10,7 @@ The main application class that manages entities, relationships, and resources.
 ```python
 from enrichmcp import EnrichMCP
 
-app = EnrichMCP(title="My API", description="API for AI agents")
+app = EnrichMCP(title="My API", instructions="API for AI agents")
 ```
 
 ### [EnrichModel](api/entity.md)

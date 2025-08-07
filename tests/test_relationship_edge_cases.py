@@ -81,7 +81,7 @@ def test_relationship_is_compatible_type():
 
 def test_resolver_with_missing_types():
     """Test resolvers with missing type annotations."""
-    app = EnrichMCP(title="Test API", description="Test API for type validation")
+    app = EnrichMCP(title="Test API", instructions="Test API for type validation")
 
     @app.entity
     class Item(EnrichModel):
@@ -123,7 +123,7 @@ def test_resolver_with_missing_types():
 
 def test_resolver_with_string_types():
     """Test resolvers with string type annotations."""
-    app = EnrichMCP(title="Test API", description="Test API for string types")
+    app = EnrichMCP(title="Test API", instructions="Test API for string types")
 
     # Define entity with string type annotation
     @app.entity
@@ -151,7 +151,7 @@ def test_resolver_with_string_types():
 
 def test_resolver_with_union_type():
     """Test resolvers with Union type annotations."""
-    app = EnrichMCP(title="Test API", description="Test API for Union types")
+    app = EnrichMCP(title="Test API", instructions="Test API for Union types")
 
     @app.entity
     class Item(EnrichModel):

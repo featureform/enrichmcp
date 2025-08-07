@@ -267,7 +267,7 @@ lifespan = sqlalchemy_lifespan(Base, engine, seed=seed_database, cleanup_db_file
 
 app = EnrichMCP(
     title="Shop API (SQLAlchemy)",
-    description="E-commerce shop API using SQLAlchemy models",
+    instructions="E-commerce shop API using SQLAlchemy models",
     lifespan=lifespan,
 )
 

@@ -4,7 +4,7 @@ from enrichmcp import EnrichMCP
 
 
 def main() -> None:
-    app = EnrichMCP(title="Hello HTTP API", description="A simple HTTP example")
+    app = EnrichMCP(title="Hello HTTP API", instructions="A simple HTTP example")
 
     @app.retrieve(description="Say hello over HTTP")
     async def hello_http() -> dict[str, str]:

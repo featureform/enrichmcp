@@ -322,7 +322,7 @@ async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
 # Create the application with lifespan
 app = EnrichMCP(
     title="E-Commerce Shop API (SQLite)",
-    description="E-commerce API with SQLite database backend.",
+    instructions="E-commerce API with SQLite database backend.",
     lifespan=lifespan,
 )
 

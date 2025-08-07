@@ -6,7 +6,7 @@ from enrichmcp import EnrichMCP, EnrichModel
 
 app = EnrichMCP(
     title="Customer CRUD API",
-    description="Demonstrates mutability and CRUD decorators",
+    instructions="Demonstrates mutability and CRUD decorators",
 )
 
 

@@ -12,7 +12,7 @@ from enrichmcp import (
 
 def test_field_requires_description():
     """Test that entity fields require descriptions."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     # Should work with field descriptions
     @app.entity(description="User entity")
@@ -36,7 +36,7 @@ def test_field_requires_description():
 
 def test_describe_method():
     """Test the describe method of EnrichModel."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.entity(description="User entity for testing")
     class User(EnrichModel):
@@ -66,7 +66,7 @@ def test_describe_method():
 
 def test_describe_method_with_complex_types():
     """Test the describe method with complex field types."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.entity(description="Blog post entity")
     class Post(EnrichModel):

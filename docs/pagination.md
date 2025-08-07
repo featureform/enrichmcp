@@ -8,7 +8,7 @@ EnrichMCP provides comprehensive pagination support for both page-based and curs
 from enrichmcp import EnrichMCP, EnrichModel, PageResult, CursorResult
 from pydantic import Field
 
-app = EnrichMCP(title="My API", description="API with pagination")
+app = EnrichMCP(title="My API", instructions="API with pagination")
 
 
 @app.entity

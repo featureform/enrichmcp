@@ -13,7 +13,7 @@ from enrichmcp import (
 @pytest.mark.asyncio
 async def test_app_entity_decorator():
     """Test app.entity decorator."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.entity(description="Test entity")
     class TestEntity(EnrichModel):
@@ -28,7 +28,7 @@ async def test_app_entity_decorator():
 @pytest.mark.asyncio
 async def test_entity_decorator_without_parens():
     """Test app.entity decorator without parentheses."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.entity
     class TestEntityNoParens(EnrichModel):
@@ -47,7 +47,7 @@ async def test_entity_decorator_without_parens():
 @pytest.mark.asyncio
 async def test_entity_with_description():
     """Test app.entity decorator with description override."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.entity(description="Custom entity description")
     class UserWithDescription(EnrichModel):
@@ -67,7 +67,7 @@ async def test_entity_with_description():
 @pytest.mark.asyncio
 async def test_resource_decorator():
     """Test resource decorator."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.retrieve(description="Get user resource")
     async def get_user(*, id: int) -> dict:
@@ -83,7 +83,7 @@ async def test_resource_decorator():
 @pytest.mark.asyncio
 async def test_resource_decorator_without_parens():
     """Test resource decorator without parentheses."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.retrieve
     async def get_user_no_parens(*, id: int) -> dict:
@@ -100,7 +100,7 @@ async def test_resource_decorator_without_parens():
 @pytest.mark.asyncio
 async def test_resource_decorator_empty_parens():
     """Test resource decorator with empty parentheses."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.retrieve()
     async def get_user_empty_parens(*, id: int) -> dict:
@@ -117,7 +117,7 @@ async def test_resource_decorator_empty_parens():
 @pytest.mark.asyncio
 async def test_resource_with_description():
     """Test resource decorator with description override."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     @app.retrieve(name="custom_name", description="Custom resource description")
     async def get_data() -> dict:
@@ -135,7 +135,7 @@ async def test_resource_with_description():
 @pytest.mark.asyncio
 async def test_resource_without_description_fails():
     """Test that resource decorator fails without description."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     with pytest.raises(ValueError, match="must have a description"):
 
@@ -148,7 +148,7 @@ async def test_resource_without_description_fails():
 @pytest.mark.asyncio
 async def test_entity_without_description_fails():
     """Test that entity decorator fails without description."""
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
 
     with pytest.raises(ValueError, match="must have a description"):
 
@@ -161,7 +161,7 @@ async def test_entity_without_description_fails():
 def test_get_context_returns_enrich_context():
     """app.get_context should return an EnrichContext"""
 
-    app = EnrichMCP("Test API", description="Test API description")
+    app = EnrichMCP("Test API", instructions="Test API description")
     ctx = app.get_context()
 
     assert isinstance(ctx, EnrichContext)
@@ -172,7 +172,7 @@ def test_get_context_returns_enrich_context():
 
 
 def test_get_context_propagates_errors():
-    app = EnrichMCP("Test API", description="desc")
+    app = EnrichMCP("Test API", instructions="desc")
 
     with (
         patch.object(app.mcp, "get_context", side_effect=RuntimeError("boom")),
@@ -185,7 +185,7 @@ def test_get_context_propagates_errors():
 async def test_tool_wrapper():
     """app.tool should call FastMCP.tool without extra behavior."""
 
-    app = EnrichMCP("Test API", description="desc")
+    app = EnrichMCP("Test API", instructions="desc")
 
     with patch.object(app.mcp, "tool", wraps=app.mcp.tool) as mock_tool:
 
@@ -203,7 +203,7 @@ async def test_tool_wrapper():
 async def test_tool_wrapper_defaults():
     """Defaults should use function name and docstring."""
 
-    app = EnrichMCP("Test API", description="desc")
+    app = EnrichMCP("Test API", instructions="desc")
 
     @app.tool()
     async def default_tool(x: int) -> int:

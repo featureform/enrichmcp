@@ -6,7 +6,7 @@ from enrichmcp import EnrichMCP, EnrichModel
 
 @pytest.mark.asyncio
 async def test_patch_model_generation_and_mutable_fields():
-    app = EnrichMCP("Test API", description="desc")
+    app = EnrichMCP("Test API", instructions="desc")
 
     @app.entity
     class Customer(EnrichModel):
@@ -25,7 +25,7 @@ async def test_patch_model_generation_and_mutable_fields():
 
 @pytest.mark.asyncio
 async def test_crud_decorators_register_resources():
-    app = EnrichMCP("API", description="desc")
+    app = EnrichMCP("API", instructions="desc")
 
     @app.entity
     class Item(EnrichModel):
