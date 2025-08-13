@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from enrichmcp import EnrichMCP
 from enrichmcp.cache import ContextCache, MemoryCache
 
 
@@ -89,3 +90,25 @@ def test_build_namespace_and_ttl(monkeypatch):
     with pytest.raises(ValueError):
         cache._build_namespace("bad")
     assert cache._ttl("unknown", None) is None
+
+
+@pytest.mark.asyncio
+async def test_cache_across_tool_calls():
+    app = EnrichMCP(title="CacheTest", instructions="test")
+    calls = {"count": 0}
+
+    @app.retrieve
+    async def add_one(n: int) -> int:
+        """Add one to n using request-scoped cache."""
+
+        ctx = app.get_context()
+
+        async def compute() -> int:
+            calls["count"] += 1
+            return n + 1
+
+        return await ctx.cache.get_or_set(f"add:{n}", compute)
+
+    await app.mcp.call_tool("add_one", {"n": 1})
+    await app.mcp.call_tool("add_one", {"n": 1})
+    assert calls["count"] == 1
