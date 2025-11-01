@@ -49,7 +49,7 @@ jobs:
         run: twine check dist/*
 
       - name: Store the distribution packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: python-package-distributions
           path: dist/
