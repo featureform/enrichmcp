@@ -88,6 +88,11 @@ class EnrichMCP:
         self.instructions = instructions
         self._cache_id = uuid4().hex[:8]
         self.cache_backend = cache_backend or MemoryCache()
+        self._context_cache = ContextCache(
+            self.cache_backend,
+            self._cache_id,
+            uuid4().hex,
+        )
         # FastMCP renamed the ``description`` parameter to ``instructions`` in
         # mcp-python 0.1.4. ``EnrichMCP`` now follows this naming but continues
         # to accept the old parameter name for backward compatibility.
@@ -377,6 +382,7 @@ class EnrichMCP:
 
         desc = self._append_enrichparameter_hints(tool_def.final_description(self), fn)
         self.resources[tool_def.name] = fn
+
         mcp_tool = self.mcp.tool(name=tool_def.name, description=desc)
         return mcp_tool(fn)
 
@@ -507,13 +513,11 @@ class EnrichMCP:
 
         base_ctx = self.mcp.get_context()
         request_ctx = getattr(base_ctx, "_request_context", None)
-        rid = str(getattr(request_ctx, "request_id", "")) if request_ctx else ""
-        request_id = rid if rid else uuid4().hex
         ctx = EnrichContext.model_construct(
             _request_context=request_ctx,
             _fastmcp=getattr(base_ctx, "_fastmcp", None),
         )
-        ctx._cache = ContextCache(self.cache_backend, self._cache_id, request_id)
+        ctx._cache = self._context_cache
         return ctx
 
     def run(
