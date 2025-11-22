@@ -1,20 +1,69 @@
-"""
-Shop API Example with SQLite Database
+"""Shop API Example with SQLite Database
 
 This example demonstrates using EnrichMCP with a real SQLite database,
 showing how to use context injection and lifespan management.
 """
 
-from collections.abc import AsyncIterator
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiosqlite
 from pydantic import Field
 
 from enrichmcp import CursorResult, EnrichMCP, EnrichModel, Relationship
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from fastmcp import Context
+
+
+def parse_sqlite_datetime(timestamp_str: str | datetime) -> datetime:
+    """Parse SQLite timestamp string to timezone-aware datetime object.
+
+    SQLite CURRENT_TIMESTAMP produces format like '2023-12-01 10:30:45'
+    which needs to be converted to proper timezone-aware datetime object
+    for MCP compatibility.
+
+    Args:
+        timestamp_str: Either a string timestamp from SQLite or already a datetime object
+
+    Returns:
+        datetime: Timezone-aware datetime object (UTC)
+    """
+
+    # If it's already a datetime object, ensure it's timezone-aware
+    if isinstance(timestamp_str, datetime):
+        if timestamp_str.tzinfo is None:
+            # Assume naive datetime is UTC
+            return timestamp_str.replace(tzinfo=UTC)
+        return timestamp_str
+
+    # If it's a string, parse it and make it timezone-aware
+    if isinstance(timestamp_str, str):
+        try:
+            # Try ISO format first (in case it's already properly formatted)
+            dt = datetime.fromisoformat(timestamp_str)
+        except ValueError:
+            # Handle SQLite's default timestamp format
+            try:
+                dt = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                # Fallback for other possible formats
+                dt = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+
+        # Ensure the datetime is timezone-aware (assume UTC for SQLite timestamps)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+
+        return dt
+
+    # If we get here, we have an unexpected type
+    raise TypeError(f"Expected str or datetime, got {type(timestamp_str)}: {timestamp_str}")
 
 
 # Database helper class
@@ -55,7 +104,7 @@ class Database:
                 is_verified BOOLEAN DEFAULT 0,
                 risk_score REAL DEFAULT 0.0
             )
-            """
+            """,
         )
 
         await cursor.execute(
@@ -69,7 +118,7 @@ class Database:
                 stock INTEGER DEFAULT 0,
                 fraud_risk TEXT DEFAULT 'low'
             )
-            """
+            """,
         )
 
         await cursor.execute(
@@ -84,7 +133,7 @@ class Database:
                 risk_score REAL DEFAULT 0.0,
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
-            """
+            """,
         )
 
         await cursor.execute(
@@ -97,7 +146,7 @@ class Database:
                 FOREIGN KEY (order_id) REFERENCES orders (id),
                 FOREIGN KEY (product_id) REFERENCES products (id)
             )
-            """
+            """,
         )
 
         await self.conn.commit()
@@ -237,7 +286,10 @@ class Database:
         return [dict(row) for row in rows]
 
     async def get_all_orders(
-        self, status: str | None = None, cursor: str | None = None, limit: int = 50
+        self,
+        status: str | None = None,
+        cursor: str | None = None,
+        limit: int = 50,
     ) -> tuple[list[dict], str | None]:
         """Get orders with cursor pagination, optionally filtered by status."""
         if not self.conn:
@@ -255,7 +307,8 @@ class Database:
                 )
             else:
                 await db_cursor.execute(
-                    "SELECT * FROM orders ORDER BY created_at DESC, id DESC LIMIT ?", (limit + 1,)
+                    "SELECT * FROM orders ORDER BY created_at DESC, id DESC LIMIT ?",
+                    (limit + 1,),
                 )
         else:
             # Parse cursor (timestamp:id format)
@@ -311,7 +364,10 @@ async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
     finally:
         # Cleanup
         await db.close()
-        print("🔒 Closed database connection")
+        # Use proper logging instead of print to avoid stdout issues
+        import logging
+
+        logging.getLogger(__name__).info("🔒 Closed database connection")
 
         # Delete the database file to keep examples clean
         if db_path.exists():
@@ -328,7 +384,7 @@ app = EnrichMCP(
 
 
 # Define entities
-@app.entity
+@app.entity()
 class User(EnrichModel):
     """Customer account in the e-commerce system."""
 
@@ -341,10 +397,10 @@ class User(EnrichModel):
     risk_score: float = Field(description="Risk score from 0.0 to 1.0")
 
     # Relationships
-    orders: list["Order"] = Relationship(description="All orders placed by this user")
+    orders: list[Order] = Relationship(description="All orders placed by this user")
 
 
-@app.entity
+@app.entity()
 class Product(EnrichModel):
     """Product available for purchase in the store."""
 
@@ -357,7 +413,7 @@ class Product(EnrichModel):
     fraud_risk: str = Field(description="Fraud risk level: low, medium, or high")
 
 
-@app.entity
+@app.entity()
 class Order(EnrichModel):
     """Customer order containing one or more products."""
 
@@ -366,7 +422,7 @@ class Order(EnrichModel):
     user_id: int = Field(description="Customer who placed the order")
     created_at: datetime = Field(description="Order placement timestamp")
     status: str = Field(
-        description="Order status: pending, shipped, delivered, cancelled, or flagged"
+        description="Order status: pending, shipped, delivered, cancelled, or flagged",
     )
     total_amount: float = Field(description="Total order value in USD")
     risk_score: float = Field(description="Calculated risk score from 0.0 to 1.0")
@@ -378,9 +434,8 @@ class Order(EnrichModel):
 
 # Define relationship resolvers that use the database
 @User.orders.resolver
-async def by_user_id(user_id: int) -> list["Order"]:
+async def by_user_id(user_id: int, ctx: Context) -> list[Order]:
     """Get all orders for a specific user from the database."""
-    ctx = app.get_context()
     # Access the database from the lifespan context
     db: Database = ctx.request_context.lifespan_context["db"]
 
@@ -395,20 +450,19 @@ async def by_user_id(user_id: int) -> list["Order"]:
                 id=row["id"],
                 order_number=row["order_number"],
                 user_id=row["user_id"],
-                created_at=datetime.fromisoformat(row["created_at"]),
+                created_at=parse_sqlite_datetime(row["created_at"]),
                 status=row["status"],
                 total_amount=row["total_amount"],
                 risk_score=row["risk_score"],
-            )
+            ),
         )
 
     return orders
 
 
 @Order.user.resolver
-async def by_order_id(order_id: int) -> User:
+async def by_order_id(order_id: int, ctx: Context) -> User:
     """Get the user who placed a specific order."""
-    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     user_row = await db.get_order_user(order_id)
@@ -419,7 +473,7 @@ async def by_order_id(order_id: int) -> User:
             username="unknown",
             email="unknown@example.com",
             full_name="Unknown User",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
             is_verified=False,
             risk_score=0.0,
         )
@@ -429,16 +483,15 @@ async def by_order_id(order_id: int) -> User:
         username=user_row["username"],
         email=user_row["email"],
         full_name=user_row["full_name"],
-        created_at=datetime.fromisoformat(user_row["created_at"]),
+        created_at=parse_sqlite_datetime(user_row["created_at"]),
         is_verified=bool(user_row["is_verified"]),
         risk_score=user_row["risk_score"],
     )
 
 
 @Order.products.resolver
-async def by_order_id_products(order_id: int) -> list[Product]:
+async def by_order_id_products(order_id: int, ctx: Context) -> list[Product]:
     """Get all products included in a specific order."""
-    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     product_rows = await db.get_order_products(order_id)
@@ -454,17 +507,16 @@ async def by_order_id_products(order_id: int) -> list[Product]:
                 price=row["price"],
                 stock=row["stock"],
                 fraud_risk=row["fraud_risk"],
-            )
+            ),
         )
 
     return products
 
 
 # Define root resources
-@app.retrieve
-async def list_users() -> list[User]:
+@app.retrieve()
+async def list_users(ctx: Context) -> list[User]:
     """List all users in the system."""
-    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     user_rows = await db.get_all_users()
@@ -477,19 +529,18 @@ async def list_users() -> list[User]:
                 username=row["username"],
                 email=row["email"],
                 full_name=row["full_name"],
-                created_at=datetime.fromisoformat(row["created_at"]),
+                created_at=parse_sqlite_datetime(row["created_at"]),
                 is_verified=bool(row["is_verified"]),
                 risk_score=row["risk_score"],
-            )
+            ),
         )
 
     return users
 
 
-@app.retrieve
-async def get_user(user_id: int) -> User:
+@app.retrieve()
+async def get_user(user_id: int, ctx: Context) -> User:
     """Get a specific user by ID."""
-    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     user_row = await db.get_user(user_id)
@@ -499,7 +550,7 @@ async def get_user(user_id: int) -> User:
             username="not_found",
             email="notfound@example.com",
             full_name="User Not Found",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
             is_verified=False,
             risk_score=0.0,
         )
@@ -509,16 +560,15 @@ async def get_user(user_id: int) -> User:
         username=user_row["username"],
         email=user_row["email"],
         full_name=user_row["full_name"],
-        created_at=datetime.fromisoformat(user_row["created_at"]),
+        created_at=parse_sqlite_datetime(user_row["created_at"]),
         is_verified=bool(user_row["is_verified"]),
         risk_score=user_row["risk_score"],
     )
 
 
-@app.retrieve
-async def list_products() -> list[Product]:
+@app.retrieve()
+async def list_products(ctx: Context) -> list[Product]:
     """List all products in the catalog."""
-    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     product_rows = await db.get_all_products()
@@ -534,18 +584,20 @@ async def list_products() -> list[Product]:
                 price=row["price"],
                 stock=row["stock"],
                 fraud_risk=row["fraud_risk"],
-            )
+            ),
         )
 
     return products
 
 
-@app.retrieve
+@app.retrieve()
 async def list_orders(
-    status: str | None = None, cursor: str | None = None, limit: int = 10
+    ctx: Context,
+    status: str | None = None,
+    cursor: str | None = None,
+    limit: int = 10,
 ) -> CursorResult[Order]:
     """List orders, optionally filtered by status."""
-    ctx = app.get_context()
     db: Database = ctx.request_context.lifespan_context["db"]
 
     order_rows, next_cursor = await db.get_all_orders(status, cursor, limit)
@@ -557,11 +609,11 @@ async def list_orders(
                 id=row["id"],
                 order_number=row["order_number"],
                 user_id=row["user_id"],
-                created_at=datetime.fromisoformat(row["created_at"]),
+                created_at=parse_sqlite_datetime(row["created_at"]),
                 status=row["status"],
                 total_amount=row["total_amount"],
                 risk_score=row["risk_score"],
-            )
+            ),
         )
 
     return CursorResult.create(items=orders, next_cursor=next_cursor, page_size=limit)

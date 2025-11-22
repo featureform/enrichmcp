@@ -13,6 +13,9 @@ import os
 from importlib import metadata
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
 import httpx
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -70,9 +73,14 @@ def choose_example(examples: dict[str, str], preselected: str | None = None) -> 
         print("Invalid selection, try again.")
 
 
-def make_sampling_callback(llm: ChatOpenAI | ChatOllama):
+def make_sampling_callback(
+    llm: ChatOpenAI | ChatOllama,
+) -> Callable[
+    [ClientSession, CreateMessageRequestParams], Awaitable[CreateMessageResult | ErrorData]
+]:
     async def sampling_callback(
-        context: ClientSession, params: CreateMessageRequestParams
+        context: ClientSession,
+        params: CreateMessageRequestParams,
     ) -> CreateMessageResult | ErrorData:
         lc_messages = []
         system_prompt = getattr(params, "systemPrompt", None)

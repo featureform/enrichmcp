@@ -34,7 +34,20 @@ async def test_example_runs(example):
     )
     async with ClientSessionGroup() as group:
         session = await group.connect_to_server(params)
-        await session.list_tools()
+        tools_result = await session.list_tools()
+
+        # Test that tools actually work by calling one
+        if tools_result.tools:
+            # Try to call a simple tool that doesn't need parameters
+            simple_tool_names = ["hello_world", "list_users", "list_products", "explore_data_model"]
+            simple_tools = [t for t in tools_result.tools if t.name in simple_tool_names]
+            if simple_tools:
+                tool = simple_tools[0]
+                # Only call tools that actually don't require parameters
+                if not tool.inputSchema or not tool.inputSchema.get("required"):
+                    result = await session.call_tool(tool.name, {})
+                    # Basic validation that the tool returned something
+                    assert result is not None
 
     # Clean up database file if created by shop_api_sqlite example
     if db_path.exists():

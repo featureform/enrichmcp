@@ -28,7 +28,10 @@ class TestPaginationParams:
     def test_custom_params(self):
         """Test custom pagination parameters."""
         params = PaginationParams(
-            page=2, page_size=25, order_by="created_at", order_direction="desc"
+            page=2,
+            page_size=25,
+            order_by="created_at",
+            order_direction="desc",
         )
         assert params.page == 2
         assert params.page_size == 25

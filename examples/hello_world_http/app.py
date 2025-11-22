@@ -4,6 +4,7 @@ from enrichmcp import EnrichMCP
 
 
 def main() -> None:
+    """Run the Hello HTTP API server."""
     app = EnrichMCP(title="Hello HTTP API", instructions="A simple HTTP example")
 
     @app.retrieve(description="Say hello over HTTP")

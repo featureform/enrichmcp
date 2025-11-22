@@ -51,7 +51,7 @@ from enrichmcp import EnrichModel
 from pydantic import Field
 
 
-@app.entity
+@app.entity()
 class Customer(EnrichModel):
     """Represents a customer account."""
 
@@ -82,7 +82,7 @@ Relationships define how entities connect to each other:
 from enrichmcp import Relationship
 
 
-@app.entity
+@app.entity()
 class Order(EnrichModel):
     """Customer order."""
 
@@ -149,7 +149,7 @@ async def get_orders(customer_id: int, limit: int = 10, offset: int = 0) -> list
 Resources are the entry points for AI agents:
 
 ```python
-@app.retrieve
+@app.retrieve()
 async def get_customer(customer_id: int) -> Customer:
     """Retrieve a customer by ID.
 
@@ -162,7 +162,7 @@ async def get_customer(customer_id: int) -> Customer:
     return customer
 
 
-@app.retrieve
+@app.retrieve()
 async def search_customers(query: str, status: str | None = None) -> list[Customer]:
     """Search for customers by name or email.
 
@@ -183,21 +183,28 @@ async def search_customers(query: str, status: str | None = None) -> list[Custom
 Context provides shared resources across your API:
 
 ```python
-from enrichmcp import EnrichContext
+from fastmcp import Context
+from enrichmcp import get_enrich_context
 
 
-class AppContext(EnrichContext):
-    """Application-specific context."""
+# Use FastMCP's Context directly with dependency injection
+@app.retrieve()
+async def my_resource(ctx: Context) -> dict:
+    """Access context via dependency injection."""
+    db = ctx.request_context.lifespan_context["db"]
+    return {"result": "success"}
 
-    db: Database
-    cache: Cache
-    user: User | None = None
+
+# Or use the helper function when dependency injection isn't available
+def helper_function():
+    """Access context via helper function."""
+    ctx = get_enrich_context()
+    db = ctx.request_context.lifespan_context["db"]
 
 
-@app.retrieve
-async def get_customer(customer_id: int) -> Customer:
+@app.retrieve()
+async def get_customer(customer_id: int, context: Context) -> Customer:
     """Get customer using context."""
-    context = app.get_context()
     # Check cache first
     cached = await context.cache.get(f"customer:{customer_id}")
     if cached:
@@ -237,7 +244,7 @@ enrichmcp leverages Pydantic for comprehensive validation:
 
 ```python
 # This automatically validates inputs
-@app.retrieve
+@app.retrieve()
 async def create_customer(
     email: EmailStr,  # Validates email format
     age: int = Field(ge=18, le=150),  # Range validation
@@ -254,12 +261,14 @@ EnrichMCP extends FastMCP's context system to provide logging, progress reportin
 
 ### Accessing Context
 
-Call ``app.get_context()`` inside resources or resolvers to work with the current request context:
+Use dependency injection to access the current request context:
 
 ```python
-@app.retrieve
-async def my_resource(param: str) -> Result:
-    ctx = app.get_context()
+from fastmcp import Context
+
+
+@app.retrieve()
+async def my_resource(param: str, ctx: Context) -> Result:
     await ctx.info("Processing request")
     await ctx.report_progress(50, 100)
     return result
@@ -301,8 +310,7 @@ Access lifespan resources through the context:
 
 ```python
 @User.orders.resolver
-async def get_user_orders(user_id: int) -> list[Order]:
-    ctx = app.get_context()
+async def get_user_orders(user_id: int, ctx: Context) -> list[Order]:
     # Get database from lifespan context
     db = ctx.request_context.lifespan_context["db"]
 
@@ -328,9 +336,8 @@ Use semantic errors that AI agents understand:
 from enrichmcp.errors import NotFoundError, ValidationError, AuthorizationError
 
 
-@app.retrieve
-async def get_order(order_id: int) -> Order:
-    context = app.get_context()
+@app.retrieve()
+async def get_order(order_id: int, context: Context) -> Order:
     order = await context.db.get_order(order_id)
 
     if not order:

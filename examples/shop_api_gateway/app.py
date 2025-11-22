@@ -5,15 +5,19 @@ and expose an agent-friendly API. All resolvers make HTTP requests to the
 backend, acting as a lightweight API gateway.
 """
 
-from collections.abc import AsyncIterator
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import Any
+from datetime import datetime  # noqa: TC003
+from typing import TYPE_CHECKING, Any
 
 import httpx
 from pydantic import Field
 
-from enrichmcp import EnrichMCP, EnrichModel, Relationship
+from enrichmcp import EnrichMCP, EnrichModel, Relationship, get_enrich_context
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 BACKEND_URL = "http://localhost:8001"
 
@@ -31,7 +35,7 @@ app = EnrichMCP(
 )
 
 
-@app.entity
+@app.entity()
 class User(EnrichModel):
     """Customer account."""
 
@@ -41,10 +45,10 @@ class User(EnrichModel):
     full_name: str = Field(description="Full name")
     created_at: datetime = Field(description="Account created")
 
-    orders: list["Order"] = Relationship(description="Orders for the user")
+    orders: list[Order] = Relationship(description="Orders for the user")
 
 
-@app.entity
+@app.entity()
 class Product(EnrichModel):
     """Product for sale."""
 
@@ -54,7 +58,7 @@ class Product(EnrichModel):
     price: float = Field(description="Price in USD")
 
 
-@app.entity
+@app.entity()
 class Order(EnrichModel):
     """Customer order."""
 
@@ -71,11 +75,11 @@ class Order(EnrichModel):
 
 async def _client() -> httpx.AsyncClient:
     """Helper to get the shared HTTP client."""
-    ctx = app.get_context()
+    ctx = get_enrich_context()
     return ctx.request_context.lifespan_context["client"]
 
 
-@app.retrieve
+@app.retrieve()
 async def list_users() -> list[User]:
     """Fetch all users from the backend service."""
     client = await _client()
@@ -84,7 +88,7 @@ async def list_users() -> list[User]:
     return [User(**u) for u in resp.json()]
 
 
-@app.retrieve
+@app.retrieve()
 async def get_user(user_id: int) -> User:
     """Return a single user by ID."""
     client = await _client()
@@ -93,7 +97,7 @@ async def get_user(user_id: int) -> User:
     return User(**resp.json())
 
 
-@app.retrieve
+@app.retrieve()
 async def list_products() -> list[Product]:
     """Retrieve all products available for sale."""
     client = await _client()
@@ -102,7 +106,7 @@ async def list_products() -> list[Product]:
     return [Product(**p) for p in resp.json()]
 
 
-@app.retrieve
+@app.retrieve()
 async def get_product(product_id: int) -> Product:
     """Get a single product by ID."""
     client = await _client()
@@ -111,7 +115,7 @@ async def get_product(product_id: int) -> Product:
     return Product(**resp.json())
 
 
-@app.retrieve
+@app.retrieve()
 async def list_orders(
     user_id: int | None = None,
 ) -> list[Order]:
@@ -123,7 +127,7 @@ async def list_orders(
     return [Order(**o) for o in resp.json()]
 
 
-@app.retrieve
+@app.retrieve()
 async def get_order(order_id: int) -> Order:
     """Retrieve a specific order."""
     client = await _client()
@@ -133,12 +137,12 @@ async def get_order(order_id: int) -> Order:
 
 
 @User.orders.resolver
-async def get_orders_for_user(user_id: int) -> list["Order"]:
+async def get_orders_for_user(user_id: int) -> list[Order]:
     return await list_orders(user_id=user_id)
 
 
 @Order.user.resolver
-async def get_order_user(user_id: int) -> "User":
+async def get_order_user(user_id: int) -> User:
     return await get_user(user_id=user_id)
 
 

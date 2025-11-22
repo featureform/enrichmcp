@@ -55,8 +55,8 @@ async def test_mcp_client_autogen_pagination(tmp_path: Path) -> None:
 
             if __name__ == "__main__":
                 app.run()
-            """
-        )
+            """,
+        ),
     )
 
     config = {"mcpServers": {"app": {"command": sys.executable, "args": [str(script)]}}}
@@ -65,7 +65,7 @@ async def test_mcp_client_autogen_pagination(tmp_path: Path) -> None:
 
     result = await session.connector.call_tool(
         "get_userenrichmodel_orders",
-        {"page": 1, "page_size": 2, "kwargs": {"user_id": 1}},
+        {"page": 1, "page_size": 2, "user_id": 1},
     )
     data = json.loads(result.content[0].text)
     assert len(data["items"]) == 2
@@ -73,7 +73,7 @@ async def test_mcp_client_autogen_pagination(tmp_path: Path) -> None:
 
     result2 = await session.connector.call_tool(
         "get_userenrichmodel_orders",
-        {"page": 2, "page_size": 2, "kwargs": {"user_id": 1}},
+        {"page": 2, "page_size": 2, "user_id": 1},
     )
     data2 = json.loads(result2.content[0].text)
     assert len(data2["items"]) == 1

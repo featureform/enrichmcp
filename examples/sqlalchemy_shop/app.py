@@ -1,7 +1,9 @@
 """SQLAlchemy Shop API Example with automatic resolvers."""
 
+from __future__ import annotations
+
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -27,23 +29,27 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(
-        primary_key=True, info={"description": "Unique user identifier"}
+        primary_key=True,
+        info={"description": "Unique user identifier"},
     )
     username: Mapped[str] = mapped_column(
-        unique=True, info={"description": "User's unique username"}
+        unique=True,
+        info={"description": "User's unique username"},
     )
     email: Mapped[str] = mapped_column(unique=True, info={"description": "User's email address"})
     full_name: Mapped[str] = mapped_column(info={"description": "User's full name"})
     is_active: Mapped[bool] = mapped_column(
-        default=True, info={"description": "Whether the user account is active"}
+        default=True,
+        info={"description": "Whether the user account is active"},
     )
     created_at: Mapped[datetime] = mapped_column(
-        info={"description": "When the user account was created"}
+        info={"description": "When the user account was created"},
     )
 
     # Relationships
-    orders: Mapped[list["Order"]] = relationship(
-        back_populates="user", info={"description": "All orders placed by this user"}
+    orders: Mapped[list[Order]] = relationship(
+        back_populates="user",
+        info={"description": "All orders placed by this user"},
     )
 
 
@@ -53,22 +59,26 @@ class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(
-        primary_key=True, info={"description": "Unique product identifier"}
+        primary_key=True,
+        info={"description": "Unique product identifier"},
     )
     name: Mapped[str] = mapped_column(info={"description": "Product name"})
     description: Mapped[str | None] = mapped_column(
-        nullable=True, info={"description": "Product description"}
+        nullable=True,
+        info={"description": "Product description"},
     )
     price: Mapped[float] = mapped_column(info={"description": "Product price in USD"})
     stock_quantity: Mapped[int] = mapped_column(
-        default=0, info={"description": "Current stock level"}
+        default=0,
+        info={"description": "Current stock level"},
     )
     category: Mapped[str] = mapped_column(info={"description": "Product category"})
     created_at: Mapped[datetime] = mapped_column(info={"description": "When the product was added"})
 
     # Relationships
-    order_items: Mapped[list["OrderItem"]] = relationship(
-        back_populates="product", info={"description": "Order items containing this product"}
+    order_items: Mapped[list[OrderItem]] = relationship(
+        back_populates="product",
+        info={"description": "Order items containing this product"},
     )
 
 
@@ -78,34 +88,39 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(
-        primary_key=True, info={"description": "Unique order identifier"}
+        primary_key=True,
+        info={"description": "Unique order identifier"},
     )
     order_number: Mapped[str] = mapped_column(
-        unique=True, info={"description": "Human-readable order number"}
+        unique=True,
+        info={"description": "Human-readable order number"},
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), info={"description": "ID of the user who placed the order"}
+        ForeignKey("users.id"),
+        info={"description": "ID of the user who placed the order"},
     )
     status: Mapped[str] = mapped_column(
-        info={"description": "Order status (pending, processing, shipped, delivered, cancelled)"}
+        info={"description": "Order status (pending, processing, shipped, delivered, cancelled)"},
     )
     total_amount: Mapped[float] = mapped_column(info={"description": "Total order amount in USD"})
     created_at: Mapped[datetime] = mapped_column(info={"description": "When the order was placed"})
     updated_at: Mapped[datetime] = mapped_column(
-        info={"description": "When the order was last updated"}
+        info={"description": "When the order was last updated"},
     )
 
     # Additional fields
     shipping_address: Mapped[str | None] = mapped_column(
-        nullable=True, info={"description": "Shipping address"}
+        nullable=True,
+        info={"description": "Shipping address"},
     )
     notes: Mapped[str | None] = mapped_column(nullable=True, info={"description": "Order notes"})
 
     # Relationships
     user: Mapped[User] = relationship(
-        back_populates="orders", info={"description": "Customer who placed this order"}
+        back_populates="orders",
+        info={"description": "Customer who placed this order"},
     )
-    items: Mapped[list["OrderItem"]] = relationship(
+    items: Mapped[list[OrderItem]] = relationship(
         back_populates="order",
         cascade="all, delete-orphan",
         info={"description": "Items in this order"},
@@ -118,28 +133,33 @@ class OrderItem(Base):
     __tablename__ = "order_items"
 
     id: Mapped[int] = mapped_column(
-        primary_key=True, info={"description": "Unique order item identifier"}
+        primary_key=True,
+        info={"description": "Unique order item identifier"},
     )
     order_id: Mapped[int] = mapped_column(
-        ForeignKey("orders.id"), info={"description": "ID of the parent order"}
+        ForeignKey("orders.id"),
+        info={"description": "ID of the parent order"},
     )
     product_id: Mapped[int] = mapped_column(
-        ForeignKey("products.id"), info={"description": "ID of the product"}
+        ForeignKey("products.id"),
+        info={"description": "ID of the product"},
     )
     quantity: Mapped[int] = mapped_column(info={"description": "Quantity ordered"})
     unit_price: Mapped[float] = mapped_column(
-        info={"description": "Price per unit at time of order"}
+        info={"description": "Price per unit at time of order"},
     )
     total_price: Mapped[float] = mapped_column(
-        info={"description": "Total price for this line item"}
+        info={"description": "Total price for this line item"},
     )
 
     # Relationships
     order: Mapped[Order] = relationship(
-        back_populates="items", info={"description": "Parent order"}
+        back_populates="items",
+        info={"description": "Parent order"},
     )
     product: Mapped[Product] = relationship(
-        back_populates="order_items", info={"description": "Product details"}
+        back_populates="order_items",
+        info={"description": "Product details"},
     )
 
 
@@ -152,19 +172,18 @@ engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}")
 # Seed database with sample data
 async def seed_database(session: AsyncSession) -> None:
     """Populate the database with example data."""
-
     users = [
         User(
             username="john_doe",
             email="john@example.com",
             full_name="John Doe",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
         ),
         User(
             username="jane_smith",
             email="jane@example.com",
             full_name="Jane Smith",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
         ),
     ]
     session.add_all(users)
@@ -176,7 +195,7 @@ async def seed_database(session: AsyncSession) -> None:
             price=999.99,
             stock_quantity=50,
             category="Electronics",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
         ),
         Product(
             name="Wireless Mouse",
@@ -184,7 +203,7 @@ async def seed_database(session: AsyncSession) -> None:
             price=29.99,
             stock_quantity=200,
             category="Electronics",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
         ),
         Product(
             name="USB-C Cable",
@@ -192,7 +211,7 @@ async def seed_database(session: AsyncSession) -> None:
             price=19.99,
             stock_quantity=500,
             category="Accessories",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
         ),
         Product(
             name="Coffee Maker",
@@ -200,7 +219,7 @@ async def seed_database(session: AsyncSession) -> None:
             price=79.99,
             stock_quantity=30,
             category="Appliances",
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
         ),
     ]
     session.add_all(products)
@@ -211,8 +230,8 @@ async def seed_database(session: AsyncSession) -> None:
         user_id=users[0].id,
         status="delivered",
         total_amount=1029.98,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         shipping_address="123 Main St, City, State 12345",
     )
     order2 = Order(
@@ -220,8 +239,8 @@ async def seed_database(session: AsyncSession) -> None:
         user_id=users[1].id,
         status="processing",
         total_amount=99.98,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         shipping_address="456 Oak Ave, Town, State 67890",
     )
     session.add_all([order1, order2])

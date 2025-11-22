@@ -22,10 +22,10 @@ enrichmcp is built around three core concepts:
 
 ### 1. Entities
 
-Entities are Pydantic models that represent your domain objects. They're decorated with `@app.entity` and include rich descriptions for AI agents:
+Entities are Pydantic models that represent your domain objects. They're decorated with `@app.entity()` and include rich descriptions for AI agents:
 
 ```python
-@app.entity
+@app.entity()
 class Product(EnrichModel):
     """Represents a product in the catalog."""
 
@@ -39,7 +39,7 @@ class Product(EnrichModel):
 Relationships connect entities together, allowing AI agents to traverse your data graph:
 
 ```python
-@app.entity
+@app.entity()
 class Order(EnrichModel):
     """Customer order containing products."""
 
@@ -76,7 +76,7 @@ app = EnrichMCP(title="Book Catalog API", instructions="A simple book catalog fo
 
 
 # Define entities
-@app.entity
+@app.entity()
 class Author(EnrichModel):
     """Represents a book author."""
 
@@ -88,7 +88,7 @@ class Author(EnrichModel):
     books: list["Book"] = Relationship(description="Books written by this author")
 
 
-@app.entity
+@app.entity()
 class Book(EnrichModel):
     """Represents a book in the catalog."""
 
@@ -126,7 +126,7 @@ async def get_book_author(book_id: int) -> Author:
 
 
 # Define root resources
-@app.retrieve
+@app.retrieve()
 async def list_books() -> list[Book]:
     """List all books in the catalog."""
     return [
@@ -140,7 +140,7 @@ async def list_books() -> list[Book]:
     ]
 
 
-@app.retrieve
+@app.retrieve()
 async def get_author(author_id: int) -> Author:
     """Get a specific author by ID."""
     return Author(id=author_id, name="Jane Doe", bio="Bestselling author")
@@ -158,6 +158,8 @@ Access logging, progress reporting, and lifespan resources through the applicati
 ```python
 from contextlib import asynccontextmanager
 
+from fastmcp import Context
+
 
 # Set up lifespan for database connection
 @asynccontextmanager
@@ -174,9 +176,8 @@ app = EnrichMCP("My API", "Description", lifespan=lifespan)
 
 
 # Use context in resources and resolvers
-@app.retrieve
-async def get_user(user_id: int) -> User:
-    ctx = app.get_context()
+@app.retrieve()
+async def get_user(user_id: int, ctx: Context) -> User:
     # Logging
     await ctx.info(f"Fetching user {user_id}")
 
@@ -198,7 +199,8 @@ You can attach descriptions and examples to resource parameters using `EnrichPar
 ```python
 from enrichmcp import EnrichParameter
 
-@app.retrieve
+
+@app.retrieve()
 async def greet(name: str = EnrichParameter(description="user name", examples=["bob"])) -> str:
     return f"Hello {name}"
 ```

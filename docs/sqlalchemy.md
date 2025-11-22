@@ -19,11 +19,12 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/db")
 
 
-
 class Base(DeclarativeBase, EnrichSQLAlchemyMixin):
     pass
 
+
 # define SQLAlchemy models inheriting from Base
+
 
 class User(Base):
     __tablename__ = "users"

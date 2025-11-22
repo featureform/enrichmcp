@@ -36,6 +36,7 @@ class MemoryNote(EnrichModel):
         The full body of the note.
     tags:
         Optional list of tag strings for free-form categorisation.
+
     """
 
     id: str = Field(description="Unique note identifier")

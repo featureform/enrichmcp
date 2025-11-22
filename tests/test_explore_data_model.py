@@ -15,7 +15,7 @@ async def test_explore_data_model_returns_summary() -> None:
     tool_name = "explore_my_api_data_model"
     assert tool_name in app.resources
 
-    summary = await app.resources[tool_name]()
+    summary = await app.resources[tool_name].fn()
     assert isinstance(summary, DataModelSummary)
     assert summary.title == "My API"
     assert summary.description == "Demo server"
@@ -29,7 +29,7 @@ async def test_explore_data_model_returns_summary() -> None:
     assert "**Entity count:** 1" in summary_text
     assert "- Item" in summary_text
 
-    tools = await app.mcp.list_tools()
-    tool = next(t for t in tools if t.name == tool_name)
+    tools = await app.mcp.get_tools()
+    tool = tools[tool_name]
     assert "start of an agent session" in tool.description
     assert "Demo server" in tool.description

@@ -1,11 +1,12 @@
 from unittest.mock import Mock
 
 import pytest
+from fastmcp import Context
 from sqlalchemy import ForeignKey, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from enrichmcp import EnrichContext, EnrichMCP
+from enrichmcp import EnrichMCP
 from enrichmcp.sqlalchemy import (
     EnrichSQLAlchemyMixin,
     include_sqlalchemy_models,
@@ -23,7 +24,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, info={"description": "ID"})
     name: Mapped[str] = mapped_column(info={"description": "Name"})
     orders: Mapped[list["Order"]] = relationship(
-        back_populates="user", info={"description": "Orders"}
+        back_populates="user",
+        info={"description": "Orders"},
     )
 
 
@@ -54,16 +56,17 @@ async def test_relationship_resolver_validation():
     app, lifespan = create_app()
     async with lifespan(app) as ctx:
         session_factory = ctx["session_factory"]
-        mock_ctx = Mock(spec=EnrichContext)
+        mock_ctx = Mock(spec=Context)
         mock_ctx.request_context = Mock()
         mock_ctx.request_context.lifespan_context = {"session_factory": session_factory}
 
         get_orders = app.resources["get_userenrichmodel_orders"]
 
         with pytest.raises(ValueError):
-            await get_orders(user_id=1, page=0, page_size=1, ctx=mock_ctx)
+            await get_orders.fn(user_id=1, page=0, page_size=1, ctx=mock_ctx)
 
-        empty = await get_orders(page=1, page_size=1, ctx=mock_ctx)
+        # Non-existent user
+        empty = await get_orders.fn(user_id=999, page=1, page_size=1, ctx=mock_ctx)
         assert empty.items == []
         assert not empty.has_next
 

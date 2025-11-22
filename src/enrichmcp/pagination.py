@@ -1,5 +1,4 @@
-"""
-Pagination support for enrichmcp.
+"""Pagination support for enrichmcp.
 
 Provides pagination result types and utilities for handling paginated data
 in MCP resources and relationship resolvers.

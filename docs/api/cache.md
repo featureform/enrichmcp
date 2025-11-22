@@ -1,6 +1,6 @@
 # Cache
 
-EnrichMCP includes a simple caching system available from `EnrichContext.cache`.
+EnrichMCP includes a simple caching system available from FastMCP's `Context.cache`.
 It stores values in namespaces scoped to the current **request**, **authenticated user**, or **application**.
 The cache uses pluggable backends so you can keep data in memory or an external store like Redis.
 

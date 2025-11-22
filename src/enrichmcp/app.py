@@ -1,5 +1,4 @@
-"""
-Main application module for enrichmcp.
+"""Main application module for enrichmcp.
 
 Provides the EnrichMCP class for creating MCP applications.
 """
@@ -12,14 +11,15 @@ from typing import (
     Literal,
     Protocol,
     TypeVar,
-    cast,
     get_args,
     get_origin,
+    overload,
     runtime_checkable,
 )
 from uuid import uuid4
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
+from fastmcp.tools import FunctionTool
 from pydantic import BaseModel, Field, create_model
 
 from .cache import CacheBackend, ContextCache, MemoryCache
@@ -33,7 +33,7 @@ from .datamodel import (
 )
 from .entity import EnrichModel
 from .parameter import EnrichParameter
-from .relationship import Relationship
+from .relationship import Relationship  # noqa: TC001
 from .tool import ToolDef, ToolKind
 
 # Type variables
@@ -49,8 +49,7 @@ class DecoratorCallable(Protocol):
 
 
 class EnrichMCP:
-    """
-    Main application class for enrichmcp.
+    """Main application class for enrichmcp.
 
     This class serves as the entry point for creating MCP applications
     with entity support.
@@ -65,13 +64,13 @@ class EnrichMCP:
         cache_backend: CacheBackend | None = None,
         description: str | None = None,
     ):
-        """
-        Initialize the EnrichMCP application.
+        """Initialize the EnrichMCP application.
 
         Args:
             title: API title shown in documentation
             instructions: Instructions for interacting with the API
             lifespan: Optional async context manager for startup/shutdown lifecycle
+
         """
         if description is not None:
             warnings.warn(
@@ -98,7 +97,7 @@ class EnrichMCP:
         self.entities: dict[str, type[EnrichModel]] = {}
         self.resolvers: dict[tuple[str, str], dict[str, Any]] = {}
         self.relationships: dict[str, set[Relationship]] = {}
-        self.resources: dict[str, Callable[..., Any]] = {}
+        self.resources: dict[str, FunctionTool] = {}
 
         # Register built-in resources
         self._register_builtin_resources()
@@ -110,14 +109,10 @@ class EnrichMCP:
 
     def data_model_tool_name(self) -> str:
         """Return the name of the built-in data model exploration tool."""
-
         return f"explore_{self.name.lower().replace(' ', '_')}_data_model"
 
     def _register_builtin_resources(self) -> None:
-        """
-        Register built-in resources for the API.
-        """
-
+        """Register built-in resources for the API."""
         tool_name = self.data_model_tool_name()
         tool_description = (
             "IMPORTANT: Call this tool at the start of an agent session before"
@@ -144,11 +139,24 @@ class EnrichMCP:
                 ),
             )
 
+    @overload
+    def entity(self, cls: type[T]) -> type[T]: ...
+
+    @overload
     def entity(
-        self, cls: type[EnrichModel] | None = None, *, description: str | None = None
-    ) -> DecoratorCallable:
-        """
-        Register a model class as an entity.
+        self,
+        cls: None = None,
+        *,
+        description: str | None = None,
+    ) -> Callable[[type[T]], type[T]]: ...
+
+    def entity(
+        self,
+        cls: type[T] | None = None,
+        *,
+        description: str | None = None,
+    ) -> type[T] | Callable[[type[T]], type[T]]:
+        """Register a model class as an entity.
 
         This can be used as a decorator with or without arguments:
 
@@ -170,16 +178,17 @@ class EnrichMCP:
 
         Raises:
             ValueError: If neither description nor class docstring is provided
+
         """
 
-        def decorator(cls: type[EnrichModel]) -> type[EnrichModel]:
+        def decorator(cls: type[T]) -> type[T]:
             # Type hint already ensures this is an EnrichModel subclass
 
             # Check for description
             if not description and not cls.__doc__:
                 raise ValueError(
                     f"Entity '{cls.__name__}' must have a description. "
-                    f"Provide it via @app.entity(description=...) or class docstring."
+                    f"Provide it via @app.entity(description=...) or class docstring.",
                 )
 
             # Store the description if provided
@@ -196,7 +205,7 @@ class EnrichMCP:
                 if not field.description:
                     raise ValueError(
                         f"Field '{field_name}' in entity '{cls.__name__}' must have a description. "
-                        f"Use Field(..., description=...) to provide one."
+                        f"Use Field(..., description=...) to provide one.",
                     )
 
             # Register the entity
@@ -205,16 +214,12 @@ class EnrichMCP:
             # Store a reference to the app in the class
             cls._app = self  # pyright: ignore[reportAttributeAccessIssue]
 
-            # Add relationship fields as class attributes
-            for field_name, field in cls.model_fields.items():
-                if isinstance(field.default, Relationship):
-                    relationship = field.default
-                    relationship.app = self
-                    relationship.field_name = field_name
-                    relationship.owner_cls = cls
-
-                    # Add the relationship as a class attribute
-                    setattr(cls, field_name, relationship)
+            # Set up relationship metadata (relationships are already descriptors via metaclass)
+            relationships = getattr(cls, "_relationships", {})
+            for field_name, relationship in relationships.items():
+                relationship.app = self
+                relationship.field_name = field_name
+                relationship.owner_cls = cls
 
             # Find and register relationships
             self._register_relationships(cls)
@@ -227,11 +232,11 @@ class EnrichMCP:
         return decorator(cls) if cls else decorator
 
     def _register_relationships(self, cls: type[EnrichModel]) -> None:
-        """
-        Register relationships for an entity class.
+        """Register relationships for an entity class.
 
         Args:
             cls: The entity class to process
+
         """
         self.relationships[cls.__name__] = cls.relationships()
 
@@ -298,24 +303,23 @@ class EnrichMCP:
                         type=field_type,
                         description=field.description or "",
                         mutable=bool(extra.get("mutable")),
-                    )
+                    ),
                 )
 
-            for field_name in entity_cls.relationship_fields():
-                field = entity_cls.model_fields[field_name]
-                rel = field.default
+            relationships = getattr(entity_cls, "_relationships", {})
+            for field_name, rel in relationships.items():
                 target_type = "Any"
-                if field.annotation is not None:
-                    target_type = str(field.annotation)
-                    if hasattr(field.annotation, "__name__"):
-                        target_type = field.annotation.__name__
+                if hasattr(rel, "_annotation") and rel._annotation is not None:
+                    target_type = str(rel._annotation)
+                    if hasattr(rel._annotation, "__name__"):
+                        target_type = rel._annotation.__name__
 
                 entity_desc.relationships.append(
                     RelationshipDescription(
                         name=field_name,
                         target=target_type,
                         description=rel.description,
-                    )
+                    ),
                 )
 
             desc.entities.append(entity_desc)
@@ -328,7 +332,6 @@ class EnrichMCP:
 
     def _append_enrichparameter_hints(self, description: str, fn: Callable[..., Any]) -> str:
         """Append ``EnrichParameter`` metadata to a description string."""
-
         hints: list[str] = []
         try:
             sig = inspect.signature(fn)
@@ -372,31 +375,31 @@ class EnrichMCP:
 
         return description
 
-    def _register_tool_def(self, fn: Callable[..., Any], tool_def: ToolDef) -> Callable[..., Any]:
+    def _register_tool_def(self, fn: F, tool_def: ToolDef) -> FunctionTool:  # type: ignore[reportInvalidTypeVarUse]
         """Register ``fn`` as a tool using ``tool_def``."""
-
         desc = self._append_enrichparameter_hints(tool_def.final_description(self), fn)
-        self.resources[tool_def.name] = fn
         mcp_tool = self.mcp.tool(name=tool_def.name, description=desc)
-        return mcp_tool(fn)
+        function_tool = mcp_tool(fn)  # type: ignore[return-value]
+        self.resources[tool_def.name] = function_tool
+        return function_tool
 
     def _tool_decorator(
         self,
         kind: ToolKind,
-        func: Callable[..., Any] | None = None,
+        func: F | None = None,
         *,
         name: str | None = None,
         description: str | None = None,
-    ) -> Callable[..., Any] | DecoratorCallable:
+    ) -> FunctionTool | Callable[[F], FunctionTool]:
         """Return a decorator that registers a tool of the given ``kind``."""
 
-        def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+        def decorator(fn: F) -> FunctionTool:
             tool_name = name or fn.__name__
             tool_desc = description or fn.__doc__
             if not tool_desc:
                 raise ValueError(
                     f"Resource '{tool_name}' must have a description. "
-                    "Provide it via the decorator or function docstring."
+                    "Provide it via the decorator or function docstring.",
                 )
 
             if tool_desc == fn.__doc__ and tool_desc:
@@ -408,17 +411,28 @@ class EnrichMCP:
         if func is not None:
             return decorator(func)
 
-        return cast("DecoratorCallable", decorator)
+        return decorator  # type: ignore[return-value]
 
+    @overload
+    def retrieve(self, func: F) -> FunctionTool: ...  # type: ignore[reportInvalidTypeVarUse]
+
+    @overload
     def retrieve(
         self,
-        func: Callable[..., Any] | None = None,
+        func: None = None,
         *,
         name: str | None = None,
         description: str | None = None,
-    ) -> Callable[..., Any] | DecoratorCallable:
-        """
-        Register a function as an MCP resource.
+    ) -> Callable[[F], FunctionTool]: ...  # type: ignore[reportInvalidTypeVarUse]
+
+    def retrieve(
+        self,
+        func: F | None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> FunctionTool | Callable[[F], FunctionTool]:
+        """Register a function as an MCP resource.
 
         Can be used as:
             @app.retrieve
@@ -441,8 +455,8 @@ class EnrichMCP:
 
         Raises:
             ValueError: If no description is provided (neither in decorator nor docstring)
-        """
 
+        """
         return self._tool_decorator(ToolKind.RETRIEVER, func, name=name, description=description)
 
     def resource(self, *args: Any, **kwargs: Any) -> Any:
@@ -455,37 +469,70 @@ class EnrichMCP:
         return self.retrieve(*args, **kwargs)
 
     # CRUD helper decorators
+    @overload
+    def create(self, func: F) -> FunctionTool: ...  # type: ignore[reportInvalidTypeVarUse]
+
+    @overload
     def create(
         self,
-        func: Callable[..., Any] | None = None,
+        func: None = None,
         *,
         name: str | None = None,
         description: str | None = None,
-    ) -> Callable[..., Any] | DecoratorCallable:
-        """Register a create operation."""
+    ) -> Callable[[F], FunctionTool]: ...  # type: ignore[reportInvalidTypeVarUse]
 
+    def create(
+        self,
+        func: F | None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> FunctionTool | Callable[[F], FunctionTool]:
+        """Register a create operation."""
         return self._tool_decorator(ToolKind.CREATOR, func, name=name, description=description)
+
+    @overload
+    def update(self, func: F) -> FunctionTool: ...  # type: ignore[reportInvalidTypeVarUse]
+
+    @overload
+    def update(
+        self,
+        func: None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Callable[[F], FunctionTool]: ...  # type: ignore[reportInvalidTypeVarUse]
 
     def update(
         self,
-        func: Callable[..., Any] | None = None,
+        func: F | None = None,
         *,
         name: str | None = None,
         description: str | None = None,
-    ) -> Callable[..., Any] | DecoratorCallable:
+    ) -> FunctionTool | Callable[[F], FunctionTool]:
         """Register an update operation."""
-
         return self._tool_decorator(ToolKind.UPDATER, func, name=name, description=description)
+
+    @overload
+    def delete(self, func: F) -> FunctionTool: ...  # type: ignore[reportInvalidTypeVarUse]
+
+    @overload
+    def delete(
+        self,
+        func: None = None,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Callable[[F], FunctionTool]: ...  # type: ignore[reportInvalidTypeVarUse]
 
     def delete(
         self,
-        func: Callable[..., Any] | None = None,
+        func: F | None = None,
         *,
         name: str | None = None,
         description: str | None = None,
-    ) -> Callable[..., Any] | DecoratorCallable:
+    ) -> FunctionTool | Callable[[F], FunctionTool]:
         """Register a delete operation."""
-
         return self._tool_decorator(ToolKind.DELETER, func, name=name, description=description)
 
     # ------------------------------------------------------------------
@@ -499,28 +546,46 @@ class EnrichMCP:
         ``__name__`` and docstring. Prefer relying on those defaults unless a
         custom name or description is required.
         """
-
         return self.mcp.tool(*args, **kwargs)
 
     def get_context(self) -> EnrichContext:
-        """Return the current :class:`EnrichContext` for this app."""
+        """Return the current :class:`EnrichContext` for this app.
 
-        base_ctx = self.mcp.get_context()
-        request_ctx = getattr(base_ctx, "_request_context", None)
-        rid = str(getattr(request_ctx, "request_id", "")) if request_ctx else ""
-        request_id = rid if rid else uuid4().hex
-        ctx = EnrichContext.model_construct(
-            _request_context=request_ctx,
-            _fastmcp=getattr(base_ctx, "_fastmcp", None),
-        )
-        ctx._cache = ContextCache(self.cache_backend, self._cache_id, request_id)
-        return ctx
+        Note: This method is deprecated in FastMCP 2.0. Use dependency injection instead:
+
+        @app.tool()
+        async def my_tool(ctx: Context) -> str:
+            # Use ctx directly
+            return "result"
+        """
+        from fastmcp.server.dependencies import get_context
+
+        try:
+            base_ctx = get_context()
+            request_ctx = getattr(base_ctx, "_request_context", None)
+            rid = str(getattr(request_ctx, "request_id", "")) if request_ctx else ""
+            request_id = rid if rid else uuid4().hex
+            ctx = EnrichContext.model_construct(
+                _request_context=request_ctx,
+                _fastmcp=getattr(base_ctx, "_fastmcp", None),
+            )
+            ctx._cache = ContextCache(self.cache_backend, self._cache_id, request_id)
+            return ctx
+        except RuntimeError as e:
+            # Context not available outside of request
+            raise RuntimeError(
+                "Context is not available outside of a request. "
+                "Use dependency injection instead: add 'ctx: Context' parameter to your function.",
+            ) from e
 
     def run(
-        self, *, transport: str | None = None, mount_path: str | None = None, **options: Any
+        self,
+        *,
+        transport: str | None = None,
+        mount_path: str | None = None,
+        **options: Any,
     ) -> Any:
-        """
-        Start the MCP server.
+        """Start the MCP server.
 
         Args:
             transport: Transport protocol to use when starting the server.
@@ -534,20 +599,20 @@ class EnrichMCP:
 
         Raises:
             ValueError: If any relationships are missing resolvers
+
         """
         # Check that all relationships have resolvers
         unresolved: list[str] = []
         for entity_name, entity_cls in self.entities.items():
-            for field_name, field in entity_cls.model_fields.items():
-                if field_name in entity_cls.relationship_fields():
-                    relationship = field.default
-                    if not relationship.is_resolved():
-                        unresolved.append(f"{entity_name}.{field_name}")
+            relationships = getattr(entity_cls, "_relationships", {})
+            for field_name, relationship in relationships.items():
+                if not relationship.is_resolved():
+                    unresolved.append(f"{entity_name}.{field_name}")
 
         if unresolved:
             raise ValueError(
                 f"The following relationships are missing resolvers: {', '.join(unresolved)}. "
-                f"Define resolvers with @Entity.relationship.resolver"
+                f"Define resolvers with @Entity.relationship.resolver",
             )
 
         # Resolve any forward references now that all entities are registered

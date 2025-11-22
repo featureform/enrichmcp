@@ -38,7 +38,7 @@ Decorator to register a Pydantic model as an entity.
 
 **Example:**
 ```python
-@app.entity
+@app.entity()
 class User(EnrichModel):
     """User in the system."""
 
@@ -58,7 +58,7 @@ Register a function as an MCP resource.
 
 **Example:**
 ```python
-@app.retrieve
+@app.retrieve()
 async def list_users() -> list[User]:
     """List all users in the system."""
     return await fetch_all_users()
@@ -66,13 +66,12 @@ async def list_users() -> list[User]:
 
 ### `create(func=None, *, name=None, description=None)`
 
-Register an entity creation operation. Works like `@app.retrieve` but
+Register an entity creation operation. Works like `@app.retrieve()` but
 indicates a create action.
 
 ```python
-@app.create
-async def create_user(email: str) -> User:
-    ...
+@app.create()
+async def create_user(email: str) -> User: ...
 ```
 
 ### `update(func=None, *, name=None, description=None)`
@@ -80,9 +79,8 @@ async def create_user(email: str) -> User:
 Register an entity update using a patch model containing mutable fields.
 
 ```python
-@app.update
-async def update_user(uid: int, patch: User.PatchModel) -> User:
-    ...
+@app.update()
+async def update_user(uid: int, patch: User.PatchModel) -> User: ...
 ```
 
 ### `delete(func=None, *, name=None, description=None)`
@@ -90,9 +88,8 @@ async def update_user(uid: int, patch: User.PatchModel) -> User:
 Register an entity deletion operation.
 
 ```python
-@app.delete
-async def delete_user(uid: int) -> bool:
-    ...
+@app.delete()
+async def delete_user(uid: int) -> bool: ...
 ```
 
 ### `tool(*args, **kwargs)`
@@ -115,14 +112,34 @@ async def custom_tool(x: int) -> int:
     return x
 ```
 
-### `get_context() -> EnrichContext`
+### Context Access
 
-Return the current request context as an :class:`~enrichmcp.EnrichContext`.
+Access FastMCP's Context via dependency injection or helper function.
 
+**Recommended: Use dependency injection**
 ```python
-app = EnrichMCP("My API", instructions="desc")
-ctx = app.get_context()
-assert ctx.fastmcp is app.mcp
+from fastmcp import Context
+
+
+@app.retrieve()
+async def my_tool(ctx: Context) -> dict:
+    # Access lifespan context (database, etc.)
+    db = ctx.request_context.lifespan_context["db"]
+
+    # Use FastMCP's built-in logging
+    await ctx.info("Processing request")
+
+    return {"result": "success"}
+```
+
+**Alternative: Use helper function**
+```python
+from enrichmcp import get_enrich_context
+
+
+def helper_function():
+    ctx = get_enrich_context()
+    db = ctx.request_context.lifespan_context["db"]
 ```
 
 ### `run(**options)`
@@ -185,7 +202,7 @@ The app validates all relationships have resolvers before starting:
 
 ```python
 # This will raise ValueError on app.run()
-@app.entity
+@app.entity()
 class User(EnrichModel):
     orders: list[Order] = Relationship(description="User's orders")
     # Missing: @User.orders.resolver
@@ -212,7 +229,7 @@ app = EnrichMCP(title="Bookstore API", instructions="API for managing books and 
 
 
 # Define entities
-@app.entity
+@app.entity()
 class Author(EnrichModel):
     """Book author."""
 
@@ -222,7 +239,7 @@ class Author(EnrichModel):
     books: list["Book"] = Relationship(description="Books by this author")
 
 
-@app.entity
+@app.entity()
 class Book(EnrichModel):
     """Book in the catalog."""
 
@@ -249,7 +266,7 @@ async def get_book_author(book_id: int) -> Author:
 
 
 # Define resources
-@app.retrieve
+@app.retrieve()
 async def list_authors() -> list[Author]:
     """List all authors."""
     # Implementation here

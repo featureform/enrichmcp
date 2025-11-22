@@ -1,13 +1,12 @@
-"""
-Context module for enrichmcp.
+"""Context module for enrichmcp.
 
 Provides a thin wrapper over FastMCP's Context for request handling.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from mcp.server.elicitation import ElicitationResult, ElicitSchemaModelT
-from mcp.server.fastmcp import Context  # pyright: ignore[reportMissingTypeArgument]
+from mcp.server.fastmcp import Context
 from mcp.types import (
     CreateMessageResult,
     ModelHint,
@@ -19,9 +18,28 @@ from mcp.types import (
 from .cache import ContextCache
 
 
-class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
+def get_enrich_context() -> Context[Any, Any, Any]:
+    """Get FastMCP Context directly.
+
+    This function provides a clean way to access FastMCP's Context
+    in auto-generated functions or when dependency injection isn't available.
+
+    Uses the standard FastMCP 2.0 pattern: ctx.request_context.lifespan_context
     """
-    Thin wrapper over FastMCP's Context.
+    from fastmcp.server.dependencies import get_context as get_fastmcp_context
+
+    try:
+        return get_fastmcp_context()
+    except RuntimeError:
+        # No active context - this should only happen in tests
+        raise RuntimeError(
+            "No active FastMCP context. This function should only be called "
+            "within MCP request handlers. For tests, mock get_context() instead.",
+        ) from None
+
+
+class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
+    """Thin wrapper over FastMCP's Context.
 
     This context is automatically injected into resource and resolver functions
     that have a parameter typed with EnrichContext. It provides access to:
@@ -37,6 +55,7 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
             ctx.info(f"Fetching user {user_id}")
             db = ctx.request_context.lifespan_context["db"]
             return await db.get_user(user_id)
+
     """
 
     _cache: ContextCache | None = None
@@ -53,10 +72,10 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
     # ------------------------------------------------------------------
 
     def _convert_messages(
-        self, messages: str | list[str | SamplingMessage]
+        self,
+        messages: str | list[str | SamplingMessage],
     ) -> list[SamplingMessage]:
         """Convert plain strings to ``SamplingMessage`` objects."""
-
         if isinstance(messages, str):
             messages = [messages]
 
@@ -69,7 +88,7 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
                     SamplingMessage(
                         role="user",
                         content=TextContent(type="text", text=msg),
-                    )
+                    ),
                 )
             else:
                 raise TypeError("messages must be str or SamplingMessage")
@@ -87,7 +106,6 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
         stop_sequences: list[str] | None = None,
     ) -> CreateMessageResult:
         """Request LLM sampling via the connected client."""
-
         sampling_messages = self._convert_messages(messages)
         session = self.session
         return await session.create_message(
@@ -106,7 +124,6 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
         **kwargs,
     ) -> CreateMessageResult:
         """Alias for :meth:`ask_llm`."""
-
         return await self.ask_llm(messages, **kwargs)
 
     async def ask_user(
@@ -115,13 +132,11 @@ class EnrichContext(Context):  # pyright: ignore[reportMissingTypeArgument]
         schema: type[ElicitSchemaModelT],
     ) -> ElicitationResult:
         """Interactively ask the client for input using MCP elicitation."""
-
         return await super().elicit(message=message, schema=schema)
 
 
 def prefer_fast_model() -> ModelPreferences:
     """Model preferences optimized for speed and cost using small models."""
-
     return ModelPreferences(
         hints=[
             ModelHint(name="gpt-4o-mini-20240613"),
@@ -136,7 +151,6 @@ def prefer_fast_model() -> ModelPreferences:
 
 def prefer_medium_model() -> ModelPreferences:
     """Balanced model preferences for general use."""
-
     return ModelPreferences(
         hints=[
             ModelHint(name="gpt-4o-2024-05-13"),
@@ -151,7 +165,6 @@ def prefer_medium_model() -> ModelPreferences:
 
 def prefer_smart_model() -> ModelPreferences:
     """Model preferences optimized for intelligence and capability."""
-
     return ModelPreferences(
         hints=[
             ModelHint(name="o3"),

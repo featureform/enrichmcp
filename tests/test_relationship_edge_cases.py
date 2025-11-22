@@ -1,7 +1,5 @@
 # ruff: noqa: UP007
-"""
-Tests for relationship type validation and edge cases.
-"""
+"""Tests for relationship type validation and edge cases."""
 
 from typing import Any, Optional, Union
 

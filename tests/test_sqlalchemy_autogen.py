@@ -1,11 +1,12 @@
 from unittest.mock import Mock
 
 import pytest
+from fastmcp import Context
 from sqlalchemy import ForeignKey
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from enrichmcp import EnrichContext, EnrichMCP
+from enrichmcp import EnrichMCP
 from enrichmcp.sqlalchemy import (
     EnrichSQLAlchemyMixin,
     include_sqlalchemy_models,
@@ -25,7 +26,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, info={"description": "ID"})
     name: Mapped[str] = mapped_column(info={"description": "Name"})
     orders: Mapped[list["Order"]] = relationship(
-        back_populates="user", info={"description": "Orders"}
+        back_populates="user",
+        info={"description": "Orders"},
     )
 
 
@@ -58,30 +60,30 @@ async def test_auto_resources_and_resolvers():
     app, lifespan = create_app()
     async with lifespan(app) as ctx:
         session_factory = ctx["session_factory"]
-        mock_ctx = Mock(spec=EnrichContext)
+        mock_ctx = Mock(spec=Context)
         mock_ctx.request_context = Mock()
         mock_ctx.request_context.lifespan_context = {"session_factory": session_factory}
 
         list_users = app.resources["list_users"]
-        result = await list_users(ctx=mock_ctx)
+        result = await list_users.fn(ctx=mock_ctx)
         assert result.total_items == 1
         assert result.items[0].name == "Alice"
 
         get_user = app.resources["get_user"]
-        single = await get_user(user_id=1, ctx=mock_ctx)
+        single = await get_user.fn(user_id=1, ctx=mock_ctx)
         assert single.name == "Alice"
 
         # Relationship resolver pagination
         get_orders = app.resources["get_userenrichmodel_orders"]
 
-        first = await get_orders(user_id=1, page=1, page_size=2, ctx=mock_ctx)
+        first = await get_orders.fn(user_id=1, page=1, page_size=2, ctx=mock_ctx)
         assert len(first.items) == 2
         assert first.page == 1
         assert first.page_size == 2
         assert first.has_next
         assert first.total_items is None
 
-        second = await get_orders(user_id=1, page=2, page_size=2, ctx=mock_ctx)
+        second = await get_orders.fn(user_id=1, page=2, page_size=2, ctx=mock_ctx)
         assert len(second.items) == 1
         assert not second.has_next
         assert second.total_items is None

@@ -1,5 +1,4 @@
-"""
-EnrichMCP: A framework for exposing structured data to AI agents.
+"""EnrichMCP: A framework for exposing structured data to AI agents.
 
 This library provides a clean, declarative API for defining data models
 as entities with relationships between them, making it easier for AI
@@ -24,12 +23,13 @@ except ImportError:
 # Public exports
 from typing import TYPE_CHECKING
 
+from fastmcp import Context
 from mcp.types import ModelPreferences
 
 from .app import EnrichMCP
 from .cache import MemoryCache, RedisCache
 from .context import (
-    EnrichContext,
+    get_enrich_context,
     prefer_fast_model,
     prefer_medium_model,
     prefer_smart_model,
@@ -63,10 +63,10 @@ else:
     has_sqlalchemy = True
 
 __all__ = [
+    "Context",
     "CursorParams",
     "CursorResult",
     "DataModelSummary",
-    "EnrichContext",
     "EnrichMCP",
     "EnrichModel",
     "EnrichParameter",
@@ -85,6 +85,7 @@ __all__ = [
     "ToolKind",
     "__version__",
     "combine_lifespans",
+    "get_enrich_context",
     "prefer_fast_model",
     "prefer_medium_model",
     "prefer_smart_model",

@@ -21,7 +21,7 @@ from enrichmcp import EnrichModel
 from pydantic import Field
 
 
-@app.entity
+@app.entity()
 class User(EnrichModel):
     id: int = Field(description="User ID")
     name: str = Field(description="Username")
@@ -38,8 +38,8 @@ class User(EnrichModel):
     orders: list["Order"] = Relationship(description="User's orders")
 ```
 
-### [EnrichContext](api/context.md)
-Context object with request scoped utilities including caching.
+### [Context](api/context.md)
+FastMCP's Context object with request scoped utilities including logging, progress reporting, and lifespan context access.
 
 ### [EnrichParameter](api/parameter.md)
 Attach metadata like descriptions and examples to function parameters.
@@ -53,10 +53,10 @@ Currently uses standard Python exceptions and Pydantic validation.
 ## Key Concepts
 
 ### Entity Registration
-Entities must be registered with the app using the `@app.entity` decorator:
+Entities must be registered with the app using the `@app.entity()` decorator:
 
 ```python
-@app.entity
+@app.entity()
 class Product(EnrichModel):
     """Product in our catalog."""
 
@@ -78,7 +78,7 @@ async def get_user_orders(user_id: int) -> list["Order"]:
 Resources are the entry points for AI agents:
 
 ```python
-@app.retrieve
+@app.retrieve()
 async def list_users() -> list[User]:
     """List all users in the system."""
     return fetch_all_users()

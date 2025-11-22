@@ -1,5 +1,4 @@
-"""
-Entity module for enrichmcp.
+"""Entity module for enrichmcp.
 
 Provides the base class for entity models.
 """
@@ -8,15 +7,91 @@ from collections.abc import Callable
 from typing import Any, Literal, cast, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict
+from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.main import IncEx
 from typing_extensions import override
 
 from .relationship import Relationship
 
 
-class EnrichModel(BaseModel):
-    """
-    Base class for all EnrichMCP entity models.
+class RelationshipDescriptor:
+    """Descriptor that provides access to relationship metadata and navigation."""
+
+    def __init__(self, relationship: Relationship):
+        self.relationship = relationship
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Called when the descriptor is assigned to a class attribute."""
+        self.name = name
+        self.relationship.__set_name__(owner, name)
+
+    def __get__(self, obj: Any, objtype: type | None = None) -> Any:
+        """Handle both class and instance access."""
+        if obj is None:
+            # Class access (User.orders) - return relationship for resolver registration
+            return self.relationship
+        else:
+            # Instance access (user.orders) - return relationship proxy for navigation
+            # For now, delegate to the relationship's __get__ method
+            # Use type(obj) if objtype is None
+            owner_type = objtype if objtype is not None else type(obj)
+            return self.relationship.__get__(obj, owner_type)
+
+    def __set__(self, obj: Any, value: Any) -> None:
+        """Prevent setting relationship fields directly."""
+        raise AttributeError(f"Cannot set relationship field '{self.name}' directly")
+
+
+class EnrichModelMeta(ModelMetaclass):
+    """Metaclass that strips relationship fields before Pydantic processes them."""
+
+    def __new__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any
+    ) -> type:
+        # Collect relationships from parent classes first
+        parent_relationships: dict[str, Relationship] = {}
+        for base in bases:
+            if hasattr(base, "_relationships"):
+                parent_relationships.update(base._relationships)
+
+        # Extract relationships from current class before Pydantic sees them
+        current_relationships: dict[str, Relationship] = {}
+        annotations = namespace.get("__annotations__", {}).copy()
+
+        # Find relationship fields in the namespace
+        for field_name in list(annotations.keys()):
+            field_value = namespace.get(field_name)
+            if isinstance(field_value, Relationship):
+                # Store the relationship metadata and preserve the annotation
+                field_value._annotation = annotations[field_name]
+                current_relationships[field_name] = field_value
+
+                # Remove from annotations and namespace so Pydantic doesn't see them
+                del annotations[field_name]
+                del namespace[field_name]
+
+        # Update the annotations in the namespace
+        namespace["__annotations__"] = annotations
+
+        # Let Pydantic create the model class normally (without relationship fields)
+        model_class = super().__new__(cls, name, bases, namespace, **kwargs)
+
+        # Combine parent and current relationships
+        all_relationships = {**parent_relationships, **current_relationships}
+        model_class._relationships = all_relationships
+
+        # Add relationship descriptors back to the class
+        for field_name, relationship in all_relationships.items():
+            descriptor = RelationshipDescriptor(relationship)
+            setattr(model_class, field_name, descriptor)
+            # Manually call __set_name__ since setattr doesn't trigger it
+            descriptor.__set_name__(model_class, field_name)
+
+        return model_class
+
+
+class EnrichModel(BaseModel, metaclass=EnrichModelMeta):
+    """Base class for all EnrichMCP entity models.
 
     All entity models must inherit from this class to be
     registered with EnrichMCP.
@@ -26,12 +101,15 @@ class EnrichModel(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         ignored_types=(Relationship,),
+        # Ensure datetime objects are serialized to ISO format for MCP compatibility
+        ser_json_temporal="iso8601",
     )
 
     @classmethod
     def relationship_fields(cls) -> set[str]:
         """Return names of fields that represent relationships."""
-        return {k for k, v in cls.model_fields.items() if isinstance(v.default, Relationship)}
+        # Use the new _relationships metadata instead of checking model_fields
+        return set(getattr(cls, "_relationships", {}).keys())
 
     @classmethod
     def mutable_fields(cls) -> set[str]:
@@ -53,9 +131,8 @@ class EnrichModel(BaseModel):
     @classmethod
     def relationships(cls) -> set[Relationship]:
         """Return ``Relationship`` objects declared on the model."""
-        return {
-            v.default for _, v in cls.model_fields.items() if isinstance(v.default, Relationship)
-        }
+        # Use the new _relationships metadata
+        return set(getattr(cls, "_relationships", {}).values())
 
     @classmethod
     def _add_fields_to_incex(cls, original: IncEx | None, fields_to_add: set[str]) -> IncEx:
@@ -84,11 +161,11 @@ class EnrichModel(BaseModel):
                 del self.__dict__[field]
 
     def describe(self) -> str:
-        """
-        Generate a human-readable description of this model.
+        """Generate a human-readable description of this model.
 
         Returns:
             A formatted string containing model details, fields, and relationships.
+
         """
         lines: list[str] = []
 
@@ -136,17 +213,16 @@ class EnrichModel(BaseModel):
 
         # Relationships section
         rel_lines: list[str] = []
-        rel_fields = self.__class__.relationship_fields()
-        for name in rel_fields:
-            field = self.__class__.model_fields[name]
-            rel = field.default
-            # Get target type and description
+        relationships = getattr(self.__class__, "_relationships", {})
+        for name, rel in relationships.items():
+            # Get target type from the relationship's annotation
+            # (stored during metaclass processing)
             target_type = "Any"  # Default type if annotation is None
-            if field.annotation is not None:
-                if hasattr(field.annotation, "__name__"):
-                    target_type = field.annotation.__name__
+            if hasattr(rel, "_annotation") and rel._annotation is not None:
+                if hasattr(rel._annotation, "__name__"):
+                    target_type = rel._annotation.__name__
                 else:
-                    target_type = str(field.annotation)
+                    target_type = str(rel._annotation)
             rel_desc = rel.description
 
             rel_lines.append(f"- **{name}** → {target_type}: {rel_desc}")

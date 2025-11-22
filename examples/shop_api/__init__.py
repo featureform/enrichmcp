@@ -1,0 +1,1 @@
+# Shop API example package

@@ -16,7 +16,7 @@ app = EnrichMCP(title="Book Catalog API", instructions="A simple book catalog fo
 
 
 # Define entities
-@app.entity
+@app.entity()
 class Author(EnrichModel):
     """Represents a book author."""
 
@@ -29,7 +29,7 @@ class Author(EnrichModel):
     books: list["Book"] = Relationship(description="Books written by this author")
 
 
-@app.entity
+@app.entity()
 class Book(EnrichModel):
     """Represents a book in the catalog."""
 
@@ -110,13 +110,13 @@ async def get_book_author(book_id: int) -> "Author":
 
 
 # Define root resources
-@app.retrieve
+@app.retrieve()
 async def list_authors() -> list[Author]:
     """List all authors in the catalog."""
     return [Author(**author_data) for author_data in AUTHORS]
 
 
-@app.retrieve
+@app.retrieve()
 async def get_author(author_id: int) -> Author:
     """Get a specific author by ID."""
     author_data = next((a for a in AUTHORS if a["id"] == author_id), None)
@@ -126,13 +126,13 @@ async def get_author(author_id: int) -> Author:
     return Author(id=-1, name="Not Found", bio="Author not found", birth_date=date(1900, 1, 1))
 
 
-@app.retrieve
+@app.retrieve()
 async def list_books() -> list[Book]:
     """List all books in the catalog."""
     return [Book(**book_data) for book_data in BOOKS]
 
 
-@app.retrieve
+@app.retrieve()
 async def search_books(title_contains: str) -> list[Book]:
     """Search for books by title."""
     matching_books = [book for book in BOOKS if title_contains.lower() in book["title"].lower()]
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 A todo/task management API showing nested relationships:
 
 ```python
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from enrichmcp import EnrichMCP, EnrichModel, Relationship
 from pydantic import Field
@@ -175,7 +175,7 @@ class Status(str, Enum):
 
 
 # Entities
-@app.entity
+@app.entity()
 class Project(EnrichModel):
     """A project containing multiple tasks."""
 
@@ -188,7 +188,7 @@ class Project(EnrichModel):
     tasks: list["Task"] = Relationship(description="Tasks in this project")
 
 
-@app.entity
+@app.entity()
 class Task(EnrichModel):
     """An individual task or todo item."""
 
@@ -277,19 +277,19 @@ async def get_task_project(task_id: int) -> "Project":
         id=-1,
         name="Unknown Project",
         description="Project not found",
-        created_at=datetime.now(),
+        created_at=datetime.now(timezone.utc),
         due_date=None,
     )
 
 
 # Resources
-@app.retrieve
+@app.retrieve()
 async def list_projects() -> list[Project]:
     """List all projects."""
     return [Project(**project_data) for project_data in PROJECTS]
 
 
-@app.retrieve
+@app.retrieve()
 async def list_tasks(status: Status | None = None, priority: Priority | None = None) -> list[Task]:
     """List tasks with optional filtering."""
     filtered_tasks = TASKS
@@ -303,7 +303,7 @@ async def list_tasks(status: Status | None = None, priority: Priority | None = N
     return [Task(**task_data) for task_data in filtered_tasks]
 
 
-@app.retrieve
+@app.retrieve()
 async def get_project_summary(project_id: int) -> dict:
     """Get summary statistics for a project."""
     project_tasks = [t for t in TASKS if t["project_id"] == project_id]
@@ -335,7 +335,7 @@ from pydantic import Field
 app = EnrichMCP(title="Recipe API", instructions="A collection of recipes with ingredients")
 
 
-@app.entity
+@app.entity()
 class Recipe(EnrichModel):
     """A cooking recipe."""
 
@@ -350,7 +350,7 @@ class Recipe(EnrichModel):
     ingredients: list["Ingredient"] = Relationship(description="Ingredients used in this recipe")
 
 
-@app.entity
+@app.entity()
 class Ingredient(EnrichModel):
     """A cooking ingredient."""
 
@@ -421,13 +421,13 @@ async def get_ingredient_recipes(ingredient_id: int) -> list["Recipe"]:
 
 
 # Resources
-@app.retrieve
+@app.retrieve()
 async def list_recipes() -> list[Recipe]:
     """List all recipes."""
     return [Recipe(**recipe_data) for recipe_data in RECIPES]
 
 
-@app.retrieve
+@app.retrieve()
 async def search_recipes_by_ingredient(ingredient_name: str) -> list[Recipe]:
     """Find recipes containing a specific ingredient."""
     # Find ingredient
@@ -442,7 +442,7 @@ async def search_recipes_by_ingredient(ingredient_name: str) -> list[Recipe]:
     return await get_ingredient_recipes(ingredient["id"])
 
 
-@app.retrieve
+@app.retrieve()
 async def get_quick_recipes(max_time: int = 30) -> list[Recipe]:
     """Get recipes that can be made quickly."""
     quick_recipes = [
@@ -456,10 +456,10 @@ if __name__ == "__main__":
 ```
 
 These examples demonstrate:
-- Basic entity definition with `@app.entity`
+- Basic entity definition with `@app.entity()`
 - Relationship definition with `Relationship()`
 - Resolver implementation with `@Entity.field.resolver`
-- Resource creation with `@app.retrieve`
+- Resource creation with `@app.retrieve()`
 - Simple in-memory data storage
 - Filtering and searching patterns
 

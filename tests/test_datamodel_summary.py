@@ -21,7 +21,7 @@ def test_datamodelsummary_str_no_entities() -> None:
             str(model),
             "",
             "HINT",
-        ]
+        ],
     )
     assert str(summary) == expected
 

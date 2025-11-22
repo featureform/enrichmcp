@@ -66,6 +66,7 @@ nav:
   - Server-Side LLM: server_side_llm.md
   - Examples: examples.md
   - SQLAlchemy: sqlalchemy.md
+  - Pagination: pagination.md
   - API Reference:
     - Overview: api.md
     - EnrichMCP: api/app.md
@@ -73,6 +74,7 @@ nav:
     - Relationships: api/relationship.md
     - Context: api/context.md
     - Cache: api/cache.md
+    - Parameters: api/parameter.md
     - Errors: api/errors.md
 
 extra:

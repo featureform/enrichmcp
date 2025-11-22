@@ -1,5 +1,4 @@
-"""
-Hello World example for EnrichMCP.
+"""Hello World example for EnrichMCP.
 
 This is the simplest possible EnrichMCP application with a single resource
 that returns "Hello, World!".
@@ -8,16 +7,15 @@ that returns "Hello, World!".
 from enrichmcp import EnrichMCP
 
 
-def main():
+def main() -> None:
+    """Run the Hello World API server."""
     # Create the EnrichMCP application
     app = EnrichMCP(title="Hello World API", instructions="A simple API that says hello!")
 
     # Define a hello world resource
     @app.retrieve(description="Say hello to the world")
     async def hello_world() -> dict:
-        """
-        A simple resource that returns a hello world message.
-        """
+        """Return a hello world message."""
         return {"message": "Hello, World!", "status": "success"}
 
     # Run the server

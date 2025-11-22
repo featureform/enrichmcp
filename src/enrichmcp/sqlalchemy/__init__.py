@@ -1,5 +1,4 @@
-"""
-SQLAlchemy integration for EnrichMCP.
+"""SQLAlchemy integration for EnrichMCP.
 
 This module provides utilities to convert SQLAlchemy models to EnrichModel representations.
 """

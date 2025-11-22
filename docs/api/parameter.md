@@ -7,6 +7,7 @@ are appended to the generated tool description.
 ```python
 from enrichmcp import EnrichParameter
 
+
 @app.retrieve
 async def greet(name: str = EnrichParameter(description="user name", examples=["bob"])) -> str:
     return f"Hello {name}"

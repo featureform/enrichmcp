@@ -182,13 +182,14 @@ def test_model_with_invalid_exclude_type():
 
 
 def test_relationship_not_set_on_instance():
-    """Relationship defaults should be removed after initialization."""
+    """Relationship fields are now descriptors, not instance attributes."""
     user = User(id=1, name="John Doe", email="john@example.com")
 
     # Relationship field should not be stored in the instance dict
     assert "address" not in user.__dict__
 
-    # Attribute shouldn't exist on the instance
-    assert not hasattr(user, "address")
-    with pytest.raises(AttributeError):
-        _ = user.address
+    # With the new descriptor approach, the attribute exists (as a descriptor)
+    assert hasattr(user, "address")
+
+    # But accessing it returns the relationship's __get__ result (None when not resolved)
+    assert user.address is None

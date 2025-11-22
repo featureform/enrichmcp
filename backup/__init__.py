@@ -1,5 +1,4 @@
-"""
-enrichmcp - A Python-first Framework for Exposing Structured Data to AI Agents.
+"""enrichmcp - A Python-first Framework for Exposing Structured Data to AI Agents.
 
 Powered by Pydantic & the Model-Context Protocol.
 """

@@ -1,5 +1,4 @@
-"""
-Relationship module for enrichmcp.
+"""Relationship module for enrichmcp.
 
 Provides field factories for defining entity relationships.
 """
@@ -17,14 +16,31 @@ from .tool import ToolDef, ToolKind
 T = TypeVar("T")
 
 
+class RelationshipProxy:
+    """Proxy object returned for instance access to relationships."""
+
+    def __init__(self, relationship: "Relationship", instance: Any):
+        self.relationship = relationship
+        self.instance = instance
+
+    async def __call__(self) -> Any:
+        """Call the relationship resolver to get the related data."""
+        # For now, this is a placeholder - actual resolution would happen here
+        # This would call the registered resolver with the instance's key field
+        return []
+
+    def __repr__(self) -> str:
+        return f"RelationshipProxy({self.relationship.description})"
+
+
 class Relationship:
-    """
-    Define a relationship between entities using a descriptor pattern.
+    """Define a relationship between entities using a descriptor pattern.
 
     This allows for the @Entity.field.resolver pattern.
 
     Args:
         description: Description of the relationship
+
     """
 
     def __init__(self, *, description: str):
@@ -40,8 +56,11 @@ class Relationship:
         self.field_name = name
         self.owner_cls = owner
 
-        # Get the type annotation from the owner class
-        if hasattr(owner, "__annotations__") and name in owner.__annotations__:
+        # Get the type annotation - first try _annotation (set by metaclass),
+        # then owner.__annotations__
+        if hasattr(self, "_annotation") and self._annotation is not None:
+            self.target_type = self._annotation
+        elif hasattr(owner, "__annotations__") and name in owner.__annotations__:
             self.target_type = owner.__annotations__[name]
 
         # Try to get app reference (will be set later if not available now)
@@ -58,10 +77,12 @@ class Relationship:
         return None
 
     def resolver(
-        self, func: Callable[..., Any] | None = None, *, name: str | None = None
+        self,
+        func: Callable[..., Any] | None = None,
+        *,
+        name: str | None = None,
     ) -> Callable[..., Any]:
-        """
-        Register a resolver function for this relationship.
+        """Register a resolver function for this relationship.
 
         Can be used as:
             @User.posts.resolver
@@ -121,9 +142,7 @@ class Relationship:
         return decorator(func)
 
     def _validate_resolver_return_type(self, func: Callable[..., Any]) -> None:
-        """
-        Validate that the resolver's return type matches the relationship's type annotation.
-        """
+        """Validate that the resolver's return type matches the relationship's type annotation."""
         if not self.target_type:
             return  # Can't validate without a target type
 
@@ -140,7 +159,7 @@ class Relationship:
             func_name = getattr(func, "__name__", "resolver")
             raise TypeError(
                 f"Resolver {func_name} returns {return_type} which is incompatible with "
-                f"relationship type {self.target_type}"
+                f"relationship type {self.target_type}",
             )
 
     # Method removed as it's no longer needed with the simplified validation approach
