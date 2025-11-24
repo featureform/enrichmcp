@@ -195,13 +195,6 @@ async def my_resource(ctx: Context) -> dict:
     return {"result": "success"}
 
 
-# Or use the helper function when dependency injection isn't available
-def helper_function():
-    """Access context via helper function."""
-    ctx = get_enrich_context()
-    db = ctx.request_context.lifespan_context["db"]
-
-
 @app.retrieve()
 async def get_customer(customer_id: int, context: Context) -> Customer:
     """Get customer using context."""

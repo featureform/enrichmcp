@@ -50,8 +50,8 @@ def _register_default_resources(
         page_size: int = 20,
     ) -> PageResult[enrich_model]:  # type: ignore[name-defined]
         if ctx is None:
-            ctx = get_enrich_context()
-        session_factory = ctx.request_context.lifespan_context[session_key]
+            ctx = get_enrich_context()  # pyright: ignore[reportAssignmentType]
+        session_factory = ctx.request_context.lifespan_context[session_key]  # pyright: ignore[reportOptionalMemberAccess]
         async with session_factory() as session:
             total = await session.scalar(select(func.count()).select_from(sa_model))
             result = await session.execute(

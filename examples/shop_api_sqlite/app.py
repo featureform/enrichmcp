@@ -12,14 +12,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import aiosqlite
+from fastmcp import Context  # noqa: TC002
 from pydantic import Field
 
 from enrichmcp import CursorResult, EnrichMCP, EnrichModel, Relationship
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
-
-    from fastmcp import Context
 
 
 def parse_sqlite_datetime(timestamp_str: str | datetime) -> datetime:
