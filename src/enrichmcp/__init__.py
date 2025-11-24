@@ -23,7 +23,6 @@ except ImportError:
 # Public exports
 from typing import TYPE_CHECKING
 
-from fastmcp import Context
 from mcp.types import ModelPreferences
 
 from .app import EnrichMCP
@@ -63,7 +62,6 @@ else:
     has_sqlalchemy = True
 
 __all__ = [
-    "Context",
     "CursorParams",
     "CursorResult",
     "DataModelSummary",

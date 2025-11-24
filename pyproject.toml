@@ -70,7 +70,7 @@ dev = [
     "aiosqlite>=0.19.0",
     "sqlalchemy>=2.0.0",
     "sqlalchemy2-stubs>=0.0.2a5",
-    "mcp_use>=1.0.0",
+    "mcp_use>=1.0.0,!=1.4.1",
 ]
 sqlalchemy = [
     "sqlalchemy>=2.0.0",
@@ -81,7 +81,7 @@ all = [
     "sqlalchemy>=2.0.0",
     "sqlalchemy2-stubs>=0.0.2a5",
     "aiosqlite>=0.19.0",
-    "mcp_use>=1.0.0",
+    "mcp_use>=1.0.0,!=1.4.1",
 ]
 
 [tool.setuptools.packages.find]
