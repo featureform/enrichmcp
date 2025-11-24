@@ -2,6 +2,6 @@ enrichmcp[all]
 langchain_openai
 langchain_ollama
 langchain_community
-mcp_use
+mcp_use>=1.4.0
 python-dotenv
 httpx
