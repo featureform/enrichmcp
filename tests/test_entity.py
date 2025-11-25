@@ -188,7 +188,7 @@ def test_relationship_not_set_on_instance():
     # Relationship field should not be stored in the instance dict
     assert "address" not in user.__dict__
 
-    # With the new descriptor approach, the attribute exists (as a descriptor)
+    # The attribute exists (as a descriptor)
     assert hasattr(user, "address")
 
     # But accessing it returns the relationship's __get__ result (None when not resolved)

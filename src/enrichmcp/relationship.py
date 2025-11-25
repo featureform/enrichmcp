@@ -16,23 +16,6 @@ from .tool import ToolDef, ToolKind
 T = TypeVar("T")
 
 
-class RelationshipProxy:
-    """Proxy object returned for instance access to relationships."""
-
-    def __init__(self, relationship: "Relationship", instance: Any):
-        self.relationship = relationship
-        self.instance = instance
-
-    async def __call__(self) -> Any:
-        """Call the relationship resolver to get the related data."""
-        # For now, this is a placeholder - actual resolution would happen here
-        # This would call the registered resolver with the instance's key field
-        return []
-
-    def __repr__(self) -> str:
-        return f"RelationshipProxy({self.relationship.description})"
-
-
 class Relationship:
     """Define a relationship between entities using a descriptor pattern.
 

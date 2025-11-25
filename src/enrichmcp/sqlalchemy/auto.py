@@ -50,8 +50,10 @@ def _register_default_resources(
         page_size: int = 20,
     ) -> PageResult[enrich_model]:  # type: ignore[name-defined]
         if ctx is None:
-            ctx = get_enrich_context()  # pyright: ignore[reportAssignmentType]
-        session_factory = ctx.request_context.lifespan_context[session_key]  # pyright: ignore[reportOptionalMemberAccess]
+            ctx = get_enrich_context()
+        if ctx.request_context is None:
+            raise RuntimeError("No request context available")
+        session_factory = ctx.request_context.lifespan_context[session_key]
         async with session_factory() as session:
             total = await session.scalar(select(func.count()).select_from(sa_model))
             result = await session.execute(
@@ -78,6 +80,8 @@ def _register_default_resources(
 async def {get_name}({param_name}: int, ctx: "Context | None" = None) -> enrich_model | None:
     if ctx is None:
         ctx = get_enrich_context()
+    if ctx.request_context is None:
+        raise RuntimeError("No request context available")
     session_factory = ctx.request_context.lifespan_context[session_key]
     async with session_factory() as session:
         obj = await session.get(sa_model, {param_name})

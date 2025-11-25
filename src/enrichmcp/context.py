@@ -1,10 +1,10 @@
 """Context utilities for enrichmcp."""
 
-from mcp.server.fastmcp import Context
+from fastmcp import Context
 from mcp.types import ModelHint, ModelPreferences
 
 
-def get_enrich_context() -> Context:  # pyright: ignore[reportMissingTypeArgument]
+def get_enrich_context() -> Context:
     """Get FastMCP Context directly.
 
     This function provides a clean way to access FastMCP's Context
@@ -15,7 +15,7 @@ def get_enrich_context() -> Context:  # pyright: ignore[reportMissingTypeArgumen
     from fastmcp.server.dependencies import get_context as get_fastmcp_context
 
     try:
-        return get_fastmcp_context()  # pyright: ignore[reportReturnType]
+        return get_fastmcp_context()
     except RuntimeError:
         # No active context - this should only happen in tests
         raise RuntimeError(

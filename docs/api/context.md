@@ -91,31 +91,4 @@ async def analyze_data(ctx: Context) -> dict:
     return {"analysis": result.content.text}
 ```
 
-## User Elicitation
-
-Use `elicit()` to request structured input from users:
-
-```python
-from pydantic import BaseModel
-
-
-class BookingPreferences(BaseModel):
-    alternative_date: str | None
-    check_alternative: bool = False
-
-
-@app.retrieve()
-async def book_table(ctx: Context) -> dict:
-    result = await ctx.elicit(
-        "No tables available. Try another date?",
-        response_type=BookingPreferences,
-    )
-
-    if result.action == "accept":
-        preferences = result.data
-        return {"booking": preferences}
-    else:
-        return {"cancelled": True}
-```
-
 For more details, see the [FastMCP Context documentation](https://gofastmcp.com/servers/context).

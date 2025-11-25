@@ -62,6 +62,5 @@ async def test_single_relationship_resolver():
         assert user.name == "Bob"
         none = await resolver.fn(order_id=99, ctx=mctx)
         assert none is None
-        # direct parameter call
         again = await resolver.fn(order_id=1, ctx=mctx)
         assert again.name == "Bob"

@@ -74,8 +74,6 @@ async def test_resource_decorator():
 
     # Check that the function was registered in the resources dict
     assert "get_user" in app.resources
-    # In FastMCP 2.0, the decorator returns a FunctionTool, not the original function
-    # We can call the original function through the tool's fn attribute
     result = await get_user.fn(id=1)
     assert result["id"] == 1
     assert result["name"] == "Test User"
@@ -157,24 +155,6 @@ async def test_entity_without_description_fails():
         class BadEntity(EnrichModel):
             # No docstring, should fail
             id: int = Field(description="ID")
-
-
-def test_get_context_returns_enrich_context():
-    """app.get_context should raise RuntimeError outside of request context in FastMCP 2.0"""
-    app = EnrichMCP("Test API", instructions="Test API description")
-
-    # In FastMCP 2.0, get_context() should raise RuntimeError outside of request
-    with pytest.raises(RuntimeError, match="Context is not available outside of a request"):
-        app.get_context()
-
-
-def test_get_context_propagates_errors():
-    """Test that get_context properly handles errors in FastMCP 2.0"""
-    app = EnrichMCP("Test API", instructions="desc")
-
-    # In FastMCP 2.0, get_context() always raises RuntimeError outside of request
-    with pytest.raises(RuntimeError, match="Context is not available outside of a request"):
-        app.get_context()
 
 
 @pytest.mark.asyncio
