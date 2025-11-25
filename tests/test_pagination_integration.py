@@ -105,7 +105,6 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_page_based_resource(self, app, mock_context, sample_users):
         """Test page-based pagination in resource."""
-        _ = app._test_user
 
         @app.retrieve
         async def list_users(
@@ -166,7 +165,6 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_cursor_based_resource(self, app, mock_context, sample_users):
         """Test cursor-based pagination in resource."""
-        _ = app._test_user
 
         @app.retrieve
         async def list_users_cursor(
@@ -222,7 +220,6 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_pagination_with_filtering(self, app, mock_context, sample_users):
         """Test pagination combined with filtering."""
-        _ = app._test_user
 
         @app.retrieve
         async def search_users(
@@ -267,7 +264,6 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_empty_page_result(self, app, mock_context):
         """Test pagination with no results."""
-        _ = app._test_user
 
         @app.retrieve
         async def list_empty_users(
@@ -314,7 +310,7 @@ class TestPaginatedRelationships:
             ctx: Context,
             page: int = 1,
             page_size: int = 5,
-        ) -> PageResult[Order]:  # noqa: F821
+        ) -> PageResult[Any]:
             """Get user orders with pagination."""
             # Filter orders for the user
             user_orders = [order for order in sample_orders if order.user_id == user_id]
@@ -371,7 +367,7 @@ class TestPaginatedRelationships:
             ctx: Context,
             cursor: str | None = None,
             page_size: int = 3,
-        ) -> CursorResult[Order]:  # noqa: F821
+        ) -> CursorResult[Any]:
             """Get user orders with cursor pagination."""
             user_orders = [order for order in sample_orders if order.user_id == user_id]
 
@@ -427,7 +423,6 @@ class TestPaginationParams:
     @pytest.mark.asyncio
     async def test_pagination_params_helper(self, app, mock_context, sample_users):
         """Test using PaginationParams helper class."""
-        _ = app._test_user
 
         @app.retrieve
         async def list_users_with_params(
@@ -472,7 +467,6 @@ class TestPaginationParams:
     @pytest.mark.asyncio
     async def test_cursor_params_helper(self, app, mock_context, sample_users):
         """Test using CursorParams helper class."""
-        _ = app._test_user
 
         @app.retrieve
         async def list_users_with_cursor_params(
