@@ -26,17 +26,17 @@ project = MemoryProject("demo", store)
 app = EnrichMCP(title="Basic Memory API", instructions="Manage simple notes")
 
 
-@app.entity
+@app.entity()
 class Note(MemoryNote):
     """A note stored in the demo project."""
 
 
-@app.entity
+@app.entity()
 class NoteSummary(MemoryNoteSummary):
     """Minimal note information returned from :func:`list_notes`."""
 
 
-@app.create
+@app.create()
 async def create_note(
     title: str,
     content: str,
@@ -54,7 +54,7 @@ async def create_note(
     return Note.model_validate(note.model_dump())
 
 
-@app.retrieve
+@app.retrieve()
 async def get_note(note_id: str) -> Note:
     """Retrieve a single note by its identifier.
 
@@ -67,10 +67,11 @@ async def get_note(note_id: str) -> Note:
     return note
 
 
-@app.retrieve
+@app.retrieve()
 async def list_notes(page: int = 1, page_size: int = 10) -> list[NoteSummary]:
-    """Return a paginated list of memory notes that have been made in previous conversations
-    that have details and memories about the user. It's typically a good idea to
+    """Return a paginated list of memory notes that have been made in previous conversations.
+
+    These notes contain details and memories about the user. It's typically a good idea to
     use this if you think there may have been relevant information or you can
     personalize based on the conversation or question using past memory.
     """

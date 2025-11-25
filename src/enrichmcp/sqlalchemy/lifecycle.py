@@ -31,7 +31,6 @@ def sqlalchemy_lifespan(
     cleanup_db_file: bool = False,
 ) -> Lifespan:
     """Create a lifespan that sets up tables and yields a session factory."""
-
     session_kwargs = session_kwargs or {}
 
     @asynccontextmanager
@@ -39,7 +38,10 @@ def sqlalchemy_lifespan(
         async with engine.begin() as conn:
             await conn.run_sync(base.metadata.create_all)
         session_factory = async_sessionmaker(
-            engine, class_=AsyncSession, expire_on_commit=False, **session_kwargs
+            engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            **session_kwargs,
         )
         if seed is not None:
             async with session_factory() as session:

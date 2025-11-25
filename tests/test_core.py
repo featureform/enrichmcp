@@ -4,7 +4,6 @@ import pytest
 from pydantic import Field
 
 from enrichmcp import (
-    EnrichContext,
     EnrichMCP,
     EnrichModel,
 )
@@ -75,7 +74,7 @@ async def test_resource_decorator():
 
     # Check that the function was registered in the resources dict
     assert "get_user" in app.resources
-    result = await get_user(id=1)
+    result = await get_user.fn(id=1)
     assert result["id"] == 1
     assert result["name"] == "Test User"
 
@@ -92,7 +91,7 @@ async def test_resource_decorator_without_parens():
 
     # Check that the function was registered in the resources dict
     assert "get_user_no_parens" in app.resources
-    result = await get_user_no_parens(id=1)
+    result = await get_user_no_parens.fn(id=1)
     assert result["id"] == 1
     assert result["name"] == "Test User"
 
@@ -109,7 +108,7 @@ async def test_resource_decorator_empty_parens():
 
     # Check that the function was registered in the resources dict
     assert "get_user_empty_parens" in app.resources
-    result = await get_user_empty_parens(id=1)
+    result = await get_user_empty_parens.fn(id=1)
     assert result["id"] == 1
     assert result["name"] == "Test User"
 
@@ -128,7 +127,7 @@ async def test_resource_with_description():
     assert "custom_name" in app.resources
 
     # Check that it still works
-    result = await get_data()
+    result = await get_data.fn()
     assert result["status"] == "ok"
 
 
@@ -158,33 +157,9 @@ async def test_entity_without_description_fails():
             id: int = Field(description="ID")
 
 
-def test_get_context_returns_enrich_context():
-    """app.get_context should return an EnrichContext"""
-
-    app = EnrichMCP("Test API", instructions="Test API description")
-    ctx = app.get_context()
-
-    assert isinstance(ctx, EnrichContext)
-    assert ctx.fastmcp is app.mcp
-
-    with pytest.raises(ValueError):
-        _ = ctx.request_context
-
-
-def test_get_context_propagates_errors():
-    app = EnrichMCP("Test API", instructions="desc")
-
-    with (
-        patch.object(app.mcp, "get_context", side_effect=RuntimeError("boom")),
-        pytest.raises(RuntimeError),
-    ):
-        app.get_context()
-
-
 @pytest.mark.asyncio
 async def test_tool_wrapper():
     """app.tool should call FastMCP.tool without extra behavior."""
-
     app = EnrichMCP("Test API", instructions="desc")
 
     with patch.object(app.mcp, "tool", wraps=app.mcp.tool) as mock_tool:
@@ -193,16 +168,18 @@ async def test_tool_wrapper():
         async def custom_tool(x: int) -> int:
             return x
 
-    mock_tool.assert_called_once()
-    assert mock_tool.call_args.kwargs["name"] == "custom_tool"
-    assert mock_tool.call_args.kwargs["description"] == "desc"
+    # FastMCP 2.0 calls tool() twice: once to create decorator, once to apply it
+    assert mock_tool.call_count == 2
+    # Check the first call (creating the decorator)
+    first_call = mock_tool.call_args_list[0]
+    assert first_call.kwargs["name"] == "custom_tool"
+    assert first_call.kwargs["description"] == "desc"
     assert "custom_tool" not in app.resources
 
 
 @pytest.mark.asyncio
 async def test_tool_wrapper_defaults():
     """Defaults should use function name and docstring."""
-
     app = EnrichMCP("Test API", instructions="desc")
 
     @app.tool()
@@ -210,7 +187,7 @@ async def test_tool_wrapper_defaults():
         """Echo input."""
         return x
 
-    tools = await app.mcp.list_tools()
-    tool = next(t for t in tools if t.name == "default_tool")
+    tools = await app.mcp.get_tools()
+    tool = tools["default_tool"]
     assert tool.description == "Echo input."
     assert "default_tool" not in app.resources

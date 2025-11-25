@@ -1,15 +1,18 @@
 """Integration tests for pagination with resources and relationships."""
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from fastmcp import Context
 from pydantic import Field
 
 from enrichmcp import (
     CursorParams,
     CursorResult,
-    EnrichContext,
     EnrichMCP,
     EnrichModel,
     PageResult,
@@ -33,11 +36,11 @@ def app():
         created_at: datetime = Field(description="Creation timestamp")
 
         # Relationships - using different types for different tests
-        orders: list["Order"] = Relationship(description="User orders")
-        orders_paginated: PageResult["Order"] = Relationship(
-            description="User orders with pagination"
+        orders: list[Order] = Relationship(description="User orders")
+        orders_paginated: PageResult[Order] = Relationship(
+            description="User orders with pagination",
         )
-        orders_cursor: CursorResult["Order"] = Relationship(description="User orders with cursor")
+        orders_cursor: CursorResult[Order] = Relationship(description="User orders with cursor")
 
     @app.entity
     class Order(EnrichModel):
@@ -65,7 +68,7 @@ def app():
 @pytest.fixture
 def mock_context():
     """Create mock context."""
-    ctx = Mock(spec=EnrichContext)
+    ctx = Mock(spec=Context)
     ctx.request_context = Mock()
     ctx.request_context.lifespan_context = {"db": Mock()}
     return ctx
@@ -102,12 +105,13 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_page_based_resource(self, app, mock_context, sample_users):
         """Test page-based pagination in resource."""
-        user_cls = app._test_user
 
         @app.retrieve
         async def list_users(
-            ctx: EnrichContext, page: int = 1, page_size: int = 10
-        ) -> PageResult[user_cls]:
+            ctx: Context,
+            page: int = 1,
+            page_size: int = 10,
+        ) -> PageResult[Any]:
             """List users with page-based pagination."""
             # Simulate database pagination
             start_idx = (page - 1) * page_size
@@ -125,7 +129,7 @@ class TestPaginatedResources:
             )
 
         # Test first page
-        result = await list_users(ctx=mock_context, page=1, page_size=10)
+        result = await list_users.fn(ctx=mock_context, page=1, page_size=10)
 
         assert isinstance(result, PageResult)
         assert len(result.items) == 10
@@ -141,7 +145,7 @@ class TestPaginatedResources:
         assert result.items[9].id == 10
 
         # Test middle page
-        result = await list_users(ctx=mock_context, page=5, page_size=10)
+        result = await list_users.fn(ctx=mock_context, page=5, page_size=10)
 
         assert result.page == 5
         assert result.has_next is True
@@ -150,7 +154,7 @@ class TestPaginatedResources:
         assert result.items[9].id == 50
 
         # Test last page
-        result = await list_users(ctx=mock_context, page=10, page_size=10)
+        result = await list_users.fn(ctx=mock_context, page=10, page_size=10)
 
         assert result.page == 10
         assert result.has_next is False
@@ -161,12 +165,13 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_cursor_based_resource(self, app, mock_context, sample_users):
         """Test cursor-based pagination in resource."""
-        user_cls = app._test_user
 
         @app.retrieve
         async def list_users_cursor(
-            ctx: EnrichContext, cursor: str | None = None, page_size: int = 10
-        ) -> CursorResult[user_cls]:
+            ctx: Context,
+            cursor: str | None = None,
+            page_size: int = 10,
+        ) -> CursorResult[Any]:
             """List users with cursor-based pagination."""
             # Simulate cursor-based pagination
             start_idx = 0 if cursor is None else int(cursor)
@@ -176,11 +181,13 @@ class TestPaginatedResources:
             next_cursor = str(end_idx) if end_idx < len(sample_users) else None
 
             return CursorResult.create(
-                items=page_users, next_cursor=next_cursor, page_size=page_size
+                items=page_users,
+                next_cursor=next_cursor,
+                page_size=page_size,
             )
 
         # Test first page (no cursor)
-        result = await list_users_cursor(ctx=mock_context, cursor=None, page_size=10)
+        result = await list_users_cursor.fn(ctx=mock_context, cursor=None, page_size=10)
 
         assert isinstance(result, CursorResult)
         assert len(result.items) == 10
@@ -193,7 +200,7 @@ class TestPaginatedResources:
         assert result.items[9].id == 10
 
         # Test second page using cursor
-        result = await list_users_cursor(ctx=mock_context, cursor="10", page_size=10)
+        result = await list_users_cursor.fn(ctx=mock_context, cursor="10", page_size=10)
 
         assert len(result.items) == 10
         assert result.has_next is True
@@ -202,7 +209,7 @@ class TestPaginatedResources:
         assert result.items[9].id == 20
 
         # Test last page
-        result = await list_users_cursor(ctx=mock_context, cursor="90", page_size=10)
+        result = await list_users_cursor.fn(ctx=mock_context, cursor="90", page_size=10)
 
         assert len(result.items) == 10
         assert result.has_next is False
@@ -213,12 +220,14 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_pagination_with_filtering(self, app, mock_context, sample_users):
         """Test pagination combined with filtering."""
-        user_cls = app._test_user
 
         @app.retrieve
         async def search_users(
-            ctx: EnrichContext, name_contains: str, page: int = 1, page_size: int = 5
-        ) -> PageResult[user_cls]:
+            ctx: Context,
+            name_contains: str,
+            page: int = 1,
+            page_size: int = 5,
+        ) -> PageResult[Any]:
             """Search users with pagination."""
             # Filter users by name
             filtered_users = [
@@ -241,7 +250,7 @@ class TestPaginatedResources:
             )
 
         # Search for users containing "1" (User 1, User 10, User 11, etc.)
-        result = await search_users(ctx=mock_context, name_contains="1", page=1, page_size=5)
+        result = await search_users.fn(ctx=mock_context, name_contains="1", page=1, page_size=5)
 
         assert isinstance(result, PageResult)
         assert len(result.items) == 5
@@ -255,18 +264,23 @@ class TestPaginatedResources:
     @pytest.mark.asyncio
     async def test_empty_page_result(self, app, mock_context):
         """Test pagination with no results."""
-        user_cls = app._test_user
 
         @app.retrieve
         async def list_empty_users(
-            ctx: EnrichContext, page: int = 1, page_size: int = 10
-        ) -> PageResult[user_cls]:
+            ctx: Context,
+            page: int = 1,
+            page_size: int = 10,
+        ) -> PageResult[Any]:
             """List users that returns empty results."""
             return PageResult.create(
-                items=[], page=page, page_size=page_size, has_next=False, total_items=0
+                items=[],
+                page=page,
+                page_size=page_size,
+                has_next=False,
+                total_items=0,
             )
 
-        result = await list_empty_users(ctx=mock_context, page=1, page_size=10)
+        result = await list_empty_users.fn(ctx=mock_context, page=1, page_size=10)
 
         assert isinstance(result, PageResult)
         assert len(result.items) == 0
@@ -284,11 +298,19 @@ class TestPaginatedRelationships:
     async def test_paginated_one_to_many_relationship(self, app, mock_context, sample_orders):
         """Test paginated one-to-many relationship resolver."""
         user_cls = app._test_user
+        order_cls = app._test_order
+
+        # Add classes to globals for type resolution
+        globals()["Order"] = order_cls
+        globals()["PageResult"] = PageResult
 
         @user_cls.orders_paginated.resolver
         async def get_user_orders(
-            user_id: int, ctx: EnrichContext, page: int = 1, page_size: int = 5
-        ) -> PageResult["Order"]:  # noqa: F821
+            user_id: int,
+            ctx: Context,
+            page: int = 1,
+            page_size: int = 5,
+        ) -> PageResult[Any]:
             """Get user orders with pagination."""
             # Filter orders for the user
             user_orders = [order for order in sample_orders if order.user_id == user_id]
@@ -309,7 +331,7 @@ class TestPaginatedRelationships:
             )
 
         # Test getting orders for user 1 (should have 5 orders: 1, 11, 21, 31, 41)
-        result = await get_user_orders(user_id=1, ctx=mock_context, page=1, page_size=3)
+        result = await get_user_orders.fn(user_id=1, ctx=mock_context, page=1, page_size=3)
 
         assert isinstance(result, PageResult)
         assert len(result.items) == 3
@@ -322,7 +344,7 @@ class TestPaginatedRelationships:
             assert order.user_id == 1
 
         # Test second page
-        result = await get_user_orders(user_id=1, ctx=mock_context, page=2, page_size=3)
+        result = await get_user_orders.fn(user_id=1, ctx=mock_context, page=2, page_size=3)
 
         assert len(result.items) == 2  # Remaining orders
         assert result.page == 2
@@ -333,14 +355,19 @@ class TestPaginatedRelationships:
     async def test_paginated_relationship_with_cursor(self, app, mock_context, sample_orders):
         """Test cursor-based pagination in relationship resolver."""
         user_cls = app._test_user
+        order_cls = app._test_order
+
+        # Add classes to globals for type resolution
+        globals()["Order"] = order_cls
+        globals()["CursorResult"] = CursorResult
 
         @user_cls.orders_cursor.resolver
         async def get_user_orders_cursor(
             user_id: int,
-            ctx: EnrichContext,
+            ctx: Context,
             cursor: str | None = None,
             page_size: int = 3,
-        ) -> CursorResult["Order"]:  # noqa: F821
+        ) -> CursorResult[Any]:
             """Get user orders with cursor pagination."""
             user_orders = [order for order in sample_orders if order.user_id == user_id]
 
@@ -355,11 +382,18 @@ class TestPaginatedRelationships:
             next_cursor = str(end_idx) if end_idx < len(user_orders) else None
 
             return CursorResult.create(
-                items=page_orders, next_cursor=next_cursor, page_size=page_size
+                items=page_orders,
+                next_cursor=next_cursor,
+                page_size=page_size,
             )
 
         # Test first page
-        result = await get_user_orders_cursor(user_id=1, ctx=mock_context, cursor=None, page_size=3)
+        result = await get_user_orders_cursor.fn(
+            user_id=1,
+            ctx=mock_context,
+            cursor=None,
+            page_size=3,
+        )
 
         assert isinstance(result, CursorResult)
         assert len(result.items) == 3
@@ -371,7 +405,12 @@ class TestPaginatedRelationships:
             assert order.user_id == 1
 
         # Test second page
-        result = await get_user_orders_cursor(user_id=1, ctx=mock_context, cursor="3", page_size=3)
+        result = await get_user_orders_cursor.fn(
+            user_id=1,
+            ctx=mock_context,
+            cursor="3",
+            page_size=3,
+        )
 
         assert len(result.items) == 2  # Remaining orders
         assert result.has_next is False
@@ -384,12 +423,12 @@ class TestPaginationParams:
     @pytest.mark.asyncio
     async def test_pagination_params_helper(self, app, mock_context, sample_users):
         """Test using PaginationParams helper class."""
-        user_cls = app._test_user
 
         @app.retrieve
         async def list_users_with_params(
-            ctx: EnrichContext, pagination: PaginationParams | None = None
-        ) -> PageResult[user_cls]:
+            ctx: Context,
+            pagination: PaginationParams | None = None,
+        ) -> PageResult[Any]:
             """List users using PaginationParams helper."""
             if pagination is None:
                 pagination = PaginationParams()
@@ -411,7 +450,7 @@ class TestPaginationParams:
             )
 
         # Test with default pagination
-        result = await list_users_with_params(ctx=mock_context, pagination=None)
+        result = await list_users_with_params.fn(ctx=mock_context, pagination=None)
 
         assert len(result.items) == 50  # Default page_size
         assert result.page == 1
@@ -419,7 +458,7 @@ class TestPaginationParams:
 
         # Test with custom pagination
         params = PaginationParams(page=3, page_size=20)
-        result = await list_users_with_params(ctx=mock_context, pagination=params)
+        result = await list_users_with_params.fn(ctx=mock_context, pagination=params)
 
         assert len(result.items) == 20
         assert result.page == 3
@@ -428,12 +467,12 @@ class TestPaginationParams:
     @pytest.mark.asyncio
     async def test_cursor_params_helper(self, app, mock_context, sample_users):
         """Test using CursorParams helper class."""
-        user_cls = app._test_user
 
         @app.retrieve
         async def list_users_with_cursor_params(
-            ctx: EnrichContext, cursor_params: CursorParams | None = None
-        ) -> CursorResult[user_cls]:
+            ctx: Context,
+            cursor_params: CursorParams | None = None,
+        ) -> CursorResult[Any]:
             """List users using CursorParams helper."""
             if cursor_params is None:
                 cursor_params = CursorParams()
@@ -445,11 +484,13 @@ class TestPaginationParams:
             next_cursor = str(end_idx) if end_idx < len(sample_users) else None
 
             return CursorResult.create(
-                items=page_users, next_cursor=next_cursor, page_size=cursor_params.page_size
+                items=page_users,
+                next_cursor=next_cursor,
+                page_size=cursor_params.page_size,
             )
 
         # Test with default cursor params
-        result = await list_users_with_cursor_params(ctx=mock_context, cursor_params=None)
+        result = await list_users_with_cursor_params.fn(ctx=mock_context, cursor_params=None)
 
         assert len(result.items) == 50  # Default page_size
         assert result.has_next is True
@@ -457,7 +498,7 @@ class TestPaginationParams:
 
         # Test with custom cursor params
         params = CursorParams(cursor="30", page_size=10)
-        result = await list_users_with_cursor_params(ctx=mock_context, cursor_params=params)
+        result = await list_users_with_cursor_params.fn(ctx=mock_context, cursor_params=params)
 
         assert len(result.items) == 10
         assert result.items[0].id == 31  # Starting from cursor position
@@ -480,8 +521,10 @@ class TestRealWorldScenarios:
 
         @app.retrieve
         async def list_large_dataset(
-            ctx: EnrichContext, page: int = 1, page_size: int = 100
-        ) -> PageResult[user_cls]:
+            ctx: Context,
+            page: int = 1,
+            page_size: int = 100,
+        ) -> PageResult[Any]:
             """List from large dataset."""
             start_idx = (page - 1) * page_size
             end_idx = start_idx + page_size
@@ -498,7 +541,7 @@ class TestRealWorldScenarios:
             )
 
         # Test pagination through large dataset
-        result = await list_large_dataset(ctx=mock_context, page=50, page_size=100)
+        result = await list_large_dataset.fn(ctx=mock_context, page=50, page_size=100)
 
         assert len(result.items) == 100
         assert result.page == 50
@@ -524,8 +567,10 @@ class TestRealWorldScenarios:
 
         @app.retrieve
         async def list_single_page(
-            ctx: EnrichContext, page: int = 1, page_size: int = 10
-        ) -> PageResult[user_cls]:
+            ctx: Context,
+            page: int = 1,
+            page_size: int = 10,
+        ) -> PageResult[Any]:
             """List single page dataset."""
             start_idx = (page - 1) * page_size
             end_idx = start_idx + page_size
@@ -542,7 +587,7 @@ class TestRealWorldScenarios:
             )
 
         # Test single page
-        result = await list_single_page(ctx=mock_context, page=1, page_size=10)
+        result = await list_single_page.fn(ctx=mock_context, page=1, page_size=10)
 
         assert len(result.items) == 5
         assert result.page == 1
@@ -551,7 +596,7 @@ class TestRealWorldScenarios:
         assert result.total_pages == 1
 
         # Test requesting page beyond available data
-        result = await list_single_page(ctx=mock_context, page=2, page_size=10)
+        result = await list_single_page.fn(ctx=mock_context, page=2, page_size=10)
 
         assert len(result.items) == 0
         assert result.page == 2

@@ -1,12 +1,13 @@
-"""
-Shop API Example for EnrichMCP
+"""Shop API Example for EnrichMCP.
 
 This example demonstrates the EnrichMCP framework with a simple e-commerce API
 that includes fraud detection patterns. It showcases entity relationships,
 data modeling, and how AI agents can navigate structured data.
 """
 
-from datetime import datetime
+from __future__ import annotations
+
+from datetime import UTC, datetime
 
 from pydantic import Field
 
@@ -22,7 +23,7 @@ app = EnrichMCP(
 
 
 # Define entities
-@app.entity
+@app.entity()
 class User(EnrichModel):
     """Customer account in the e-commerce system.
 
@@ -45,10 +46,10 @@ class User(EnrichModel):
     account_status: str = Field(description="Status: active, suspended, or flagged")
 
     # Relationships
-    orders: list["Order"] = Relationship(description="All orders placed by this user")
+    orders: list[Order] = Relationship(description="All orders placed by this user")
 
 
-@app.entity
+@app.entity()
 class Product(EnrichModel):
     """Product available for purchase in the store.
 
@@ -70,7 +71,7 @@ class Product(EnrichModel):
     fraud_risk: str = Field(description="Fraud risk level: low, medium, or high")
 
 
-@app.entity
+@app.entity()
 class Order(EnrichModel):
     """Customer order containing one or more products.
 
@@ -84,7 +85,7 @@ class Order(EnrichModel):
     user_id: int = Field(description="Customer who placed the order")
     created_at: datetime = Field(description="Order placement timestamp")
     status: str = Field(
-        description="Order status: pending, shipped, delivered, cancelled, or flagged"
+        description="Order status: pending, shipped, delivered, cancelled, or flagged",
     )
     payment_method: str = Field(description="Payment type: credit_card, paypal, etc")
     total_amount: float = Field(description="Total order value in USD")
@@ -102,7 +103,7 @@ class Order(EnrichModel):
     expedited_shipping: bool = Field(description="Whether rush shipping was requested")
     high_value_order: bool = Field(description="Whether order exceeds $1000")
     flagged_reason: str | None = Field(
-        description="Detailed reason if order was flagged for review"
+        description="Detailed reason if order was flagged for review",
     )
     customer_ip: str = Field(description="IP address of order placement")
 
@@ -326,7 +327,7 @@ ORDERS = [
 
 # Define relationship resolvers
 @User.orders.resolver
-async def by_user_id(user_id: int) -> list["Order"]:
+async def by_user_id(user_id: int) -> list[Order]:
     """Get all orders for a specific user.
 
     Returns a list of orders placed by the user, including
@@ -338,6 +339,7 @@ async def by_user_id(user_id: int) -> list["Order"]:
 
     Returns:
         List of Order objects for the specified user
+
     """
     user_orders = []
     for order_data in ORDERS:
@@ -349,7 +351,7 @@ async def by_user_id(user_id: int) -> list["Order"]:
 
 
 @Order.user.resolver
-async def by_order_id(order_id: int) -> "User":
+async def by_order_id(order_id: int) -> User:
     """Get the user who placed a specific order.
 
     Returns the complete user object for the customer who
@@ -361,6 +363,7 @@ async def by_order_id(order_id: int) -> "User":
 
     Returns:
         User object who placed the order
+
     """
     # Find the order
     order = next((o for o in ORDERS if o["id"] == order_id), None)
@@ -371,8 +374,8 @@ async def by_order_id(order_id: int) -> "User":
             email="unknown@example.com",
             full_name="Unknown User",
             phone="+1-000-0000",
-            created_at=datetime.now(),
-            last_login=datetime.now(),
+            created_at=datetime.now(UTC),
+            last_login=datetime.now(UTC),
             is_verified=False,
             total_spent=0.0,
             billing_address="Unknown",
@@ -390,8 +393,8 @@ async def by_order_id(order_id: int) -> "User":
             email="deleted@example.com",
             full_name="Deleted User",
             phone="+1-000-0000",
-            created_at=datetime.now(),
-            last_login=datetime.now(),
+            created_at=datetime.now(UTC),
+            last_login=datetime.now(UTC),
             is_verified=False,
             total_spent=0.0,
             billing_address="Unknown",
@@ -416,6 +419,7 @@ async def by_order_id_products(order_id: int) -> list[Product]:
 
     Returns:
         List of Product objects in the order
+
     """
     # Find the order
     order = next((o for o in ORDERS if o["id"] == order_id), None)
@@ -433,7 +437,7 @@ async def by_order_id_products(order_id: int) -> list[Product]:
 
 
 # Define root resources
-@app.retrieve
+@app.retrieve()
 async def list_users() -> list[User]:
     """List all users in the system.
 
@@ -443,11 +447,12 @@ async def list_users() -> list[User]:
 
     Returns:
         List of all User objects in the system
+
     """
     return [User(**user_data) for user_data in USERS]
 
 
-@app.retrieve
+@app.retrieve()
 async def get_user(user_id: int) -> User:
     """Get a specific user by ID.
 
@@ -460,6 +465,7 @@ async def get_user(user_id: int) -> User:
 
     Returns:
         User object if found, otherwise a not-found user object
+
     """
     user_data = next((u for u in USERS if u["id"] == user_id), None)
     if not user_data:
@@ -469,8 +475,8 @@ async def get_user(user_id: int) -> User:
             email="notfound@example.com",
             full_name="User Not Found",
             phone="+1-000-0000",
-            created_at=datetime.now(),
-            last_login=datetime.now(),
+            created_at=datetime.now(UTC),
+            last_login=datetime.now(UTC),
             is_verified=False,
             total_spent=0.0,
             billing_address="N/A",
@@ -481,7 +487,7 @@ async def get_user(user_id: int) -> User:
     return User(**user_data)
 
 
-@app.retrieve
+@app.retrieve()
 async def list_products() -> list[Product]:
     """List all products in the catalog.
 
@@ -491,13 +497,16 @@ async def list_products() -> list[Product]:
 
     Returns:
         List of all Product objects in the catalog
+
     """
     return [Product(**product_data) for product_data in PRODUCTS]
 
 
-@app.retrieve
+@app.retrieve()
 async def list_orders(
-    status: str | None = None, page: int = 1, page_size: int = 10
+    status: str | None = None,
+    page: int = 1,
+    page_size: int = 10,
 ) -> PageResult[Order]:
     """List orders, optionally filtered by status.
 
@@ -512,6 +521,7 @@ async def list_orders(
 
     Returns:
         PageResult with Order objects matching the criteria
+
     """
     # Filter by status first
     filtered_orders = []

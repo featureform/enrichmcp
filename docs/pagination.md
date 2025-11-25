@@ -200,33 +200,33 @@ async def list_events(
 You can also paginate relationship resolvers:
 
 ```python
-@app.entity
+from fastmcp import Context
+
+
+@app.entity()
 class User(EnrichModel):
     id: int = Field(description="User ID")
     orders: list["Order"] = Relationship(description="User orders")
 
+
 @User.orders.resolver
 async def get_user_orders(
     user_id: int,
+    ctx: Context,
     page: int = 1,
     page_size: int = 10,
 ) -> PageResult[Order]:
-    ctx = app.get_context()
     """Get user orders with pagination."""
     db = ctx.request_context.lifespan_context["db"]
 
-    orders, total = await db.get_user_orders(
-        user_id=user_id,
-        page=page,
-        page_size=page_size
-    )
+    orders, total = await db.get_user_orders(user_id=user_id, page=page, page_size=page_size)
 
     return PageResult.create(
         items=orders,
         page=page,
         page_size=page_size,
         has_next=page * page_size < total,
-        total_items=total
+        total_items=total,
     )
 ```
 

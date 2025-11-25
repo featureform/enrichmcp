@@ -14,8 +14,8 @@ async def test_mcp_client_hello_world():
             "hello": {
                 "command": sys.executable,
                 "args": [str(example_path)],
-            }
-        }
+            },
+        },
     }
     client = MCPClient(config=config)
     session = await client.create_session("hello")

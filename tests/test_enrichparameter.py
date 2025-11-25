@@ -1,8 +1,9 @@
 from unittest.mock import patch
 
 import pytest
+from fastmcp import Context
 
-from enrichmcp import EnrichContext, EnrichMCP, EnrichParameter
+from enrichmcp import EnrichMCP, EnrichParameter
 
 
 @pytest.mark.asyncio
@@ -12,7 +13,7 @@ async def test_enrichparameter_hints_appended():
 
         @app.retrieve(description="Base desc")
         async def my_resource(
-            ctx: EnrichContext,
+            ctx: Context,
             name: str = EnrichParameter(description="user name", examples=["bob"]),
         ) -> dict:
             return {}

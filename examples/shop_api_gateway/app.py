@@ -5,15 +5,20 @@ and expose an agent-friendly API. All resolvers make HTTP requests to the
 backend, acting as a lightweight API gateway.
 """
 
-from collections.abc import AsyncIterator
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import Any
+from datetime import datetime  # noqa: TC003
+from typing import TYPE_CHECKING, Any
 
 import httpx
+from fastmcp import Context  # noqa: TC002
 from pydantic import Field
 
 from enrichmcp import EnrichMCP, EnrichModel, Relationship
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 BACKEND_URL = "http://localhost:8001"
 
@@ -31,7 +36,7 @@ app = EnrichMCP(
 )
 
 
-@app.entity
+@app.entity()
 class User(EnrichModel):
     """Customer account."""
 
@@ -41,10 +46,10 @@ class User(EnrichModel):
     full_name: str = Field(description="Full name")
     created_at: datetime = Field(description="Account created")
 
-    orders: list["Order"] = Relationship(description="Orders for the user")
+    orders: list[Order] = Relationship(description="Orders for the user")
 
 
-@app.entity
+@app.entity()
 class Product(EnrichModel):
     """Product for sale."""
 
@@ -54,7 +59,7 @@ class Product(EnrichModel):
     price: float = Field(description="Price in USD")
 
 
-@app.entity
+@app.entity()
 class Order(EnrichModel):
     """Customer order."""
 
@@ -69,82 +74,77 @@ class Order(EnrichModel):
     products: list[Product] = Relationship(description="Products in the order")
 
 
-async def _client() -> httpx.AsyncClient:
-    """Helper to get the shared HTTP client."""
-    ctx = app.get_context()
-    return ctx.request_context.lifespan_context["client"]
-
-
-@app.retrieve
-async def list_users() -> list[User]:
+@app.retrieve()
+async def list_users(ctx: Context) -> list[User]:
     """Fetch all users from the backend service."""
-    client = await _client()
+    client = ctx.request_context.lifespan_context["client"]
     resp = await client.get("/users")
     resp.raise_for_status()
     return [User(**u) for u in resp.json()]
 
 
-@app.retrieve
-async def get_user(user_id: int) -> User:
+@app.retrieve()
+async def get_user(user_id: int, ctx: Context) -> User:
     """Return a single user by ID."""
-    client = await _client()
+    client = ctx.request_context.lifespan_context["client"]
     resp = await client.get(f"/users/{user_id}")
     resp.raise_for_status()
     return User(**resp.json())
 
 
-@app.retrieve
-async def list_products() -> list[Product]:
+@app.retrieve()
+async def list_products(ctx: Context) -> list[Product]:
     """Retrieve all products available for sale."""
-    client = await _client()
+    client = ctx.request_context.lifespan_context["client"]
     resp = await client.get("/products")
     resp.raise_for_status()
     return [Product(**p) for p in resp.json()]
 
 
-@app.retrieve
-async def get_product(product_id: int) -> Product:
+@app.retrieve()
+async def get_product(product_id: int, ctx: Context) -> Product:
     """Get a single product by ID."""
-    client = await _client()
+    client = ctx.request_context.lifespan_context["client"]
     resp = await client.get(f"/products/{product_id}")
     resp.raise_for_status()
     return Product(**resp.json())
 
 
-@app.retrieve
+@app.retrieve()
 async def list_orders(
+    ctx: Context,
     user_id: int | None = None,
 ) -> list[Order]:
     """List orders optionally filtered by user."""
-    client = await _client()
+    client = ctx.request_context.lifespan_context["client"]
     params = {"user_id": user_id} if user_id is not None else None
     resp = await client.get("/orders", params=params)
     resp.raise_for_status()
     return [Order(**o) for o in resp.json()]
 
 
-@app.retrieve
-async def get_order(order_id: int) -> Order:
+@app.retrieve()
+async def get_order(order_id: int, ctx: Context) -> Order:
     """Retrieve a specific order."""
-    client = await _client()
+    client = ctx.request_context.lifespan_context["client"]
     resp = await client.get(f"/orders/{order_id}")
     resp.raise_for_status()
     return Order(**resp.json())
 
 
 @User.orders.resolver
-async def get_orders_for_user(user_id: int) -> list["Order"]:
-    return await list_orders(user_id=user_id)
+async def get_orders_for_user(user_id: int, ctx: Context) -> list[Order]:
+    return await list_orders(ctx, user_id=user_id)
 
 
 @Order.user.resolver
-async def get_order_user(user_id: int) -> "User":
-    return await get_user(user_id=user_id)
+async def get_order_user(user_id: int, ctx: Context) -> User:
+    return await get_user(user_id=user_id, ctx=ctx)
 
 
 @Order.products.resolver
-async def get_order_products(order_id: int) -> list[Product]:
-    client = await _client()
+async def get_order_products(order_id: int, ctx: Context) -> list[Product]:
+    client = ctx.request_context.lifespan_context["client"]
     resp = await client.get(f"/orders/{order_id}")
     resp.raise_for_status()
     data = resp.json()

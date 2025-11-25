@@ -1,5 +1,4 @@
-"""
-SQLAlchemy mixin for EnrichMCP integration.
+"""SQLAlchemy mixin for EnrichMCP integration.
 
 Provides functionality to convert SQLAlchemy models to EnrichModel representations.
 """
@@ -15,8 +14,7 @@ from enrichmcp import EnrichModel, Relationship
 
 
 class EnrichSQLAlchemyMixin:
-    """
-    Mixin that enables SQLAlchemy models to be converted to EnrichModel representations.
+    """Mixin that enables SQLAlchemy models to be converted to EnrichModel representations.
 
     When a SQLAlchemy model inherits from this mixin and is registered with @app.entity,
     it will automatically generate an EnrichModel representation with proper field types
@@ -25,14 +23,14 @@ class EnrichSQLAlchemyMixin:
 
     @classmethod
     def __enrich_model__(cls) -> type[EnrichModel]:
-        """
-        Convert this SQLAlchemy model to an EnrichModel representation.
+        """Convert this SQLAlchemy model to an EnrichModel representation.
 
         This method introspects the SQLAlchemy model and creates a corresponding
         EnrichModel with fields and relationships based on the SQLAlchemy metadata.
 
         Returns:
             A dynamically created EnrichModel class
+
         """
         if not issubclass(cls, DeclarativeBase):
             raise TypeError(f"{cls.__name__} must inherit from SQLAlchemy DeclarativeBase")
@@ -81,7 +79,8 @@ class EnrichSQLAlchemyMixin:
 
             # Get description
             description = rel_info.get(
-                "description", f"Relationship to {rel_prop.mapper.class_.__name__}EnrichModel"
+                "description",
+                f"Relationship to {rel_prop.mapper.class_.__name__}EnrichModel",
             )
 
             # Determine relationship type
@@ -104,13 +103,36 @@ class EnrichSQLAlchemyMixin:
         # Get model documentation
         model_doc = cls.__doc__ or f"{cls.__name__} entity"
 
-        # Create the EnrichModel class dynamically
+        # Separate field definitions into data fields and relationships
+        data_fields = {}
+        relationships = {}
+
+        for field_name, field_def in field_definitions.items():
+            if isinstance(field_def[1], Relationship):
+                # This is a relationship - store it separately
+                relationships[field_name] = field_def[1]
+                # Store the annotation for later use
+                field_def[1]._annotation = field_def[0]
+            else:
+                # This is a data field
+                data_fields[field_name] = field_def
+
+        # Create the EnrichModel class dynamically with only data fields
         enrich_model_class = create_model(
             f"{cls.__name__}EnrichModel",
             __base__=EnrichModel,
             __doc__=model_doc,
-            **field_definitions,
+            **data_fields,
         )
+
+        # Manually add relationships as class metadata (like our metaclass does)
+        enrich_model_class._relationships = relationships
+
+        # Add relationship descriptors
+        from enrichmcp.entity import RelationshipDescriptor
+
+        for field_name, relationship in relationships.items():
+            setattr(enrich_model_class, field_name, RelationshipDescriptor(relationship))
 
         # Store reference to original SQLAlchemy model
         # Use setattr to ensure it's properly set on the class
@@ -120,14 +142,14 @@ class EnrichSQLAlchemyMixin:
 
 
 def _sqlalchemy_type_to_python(sa_type: TypeEngine) -> type[Any]:
-    """
-    Convert SQLAlchemy type to Python type.
+    """Convert SQLAlchemy type to Python type.
 
     Args:
         sa_type: SQLAlchemy TypeEngine instance
 
     Returns:
         Corresponding Python type
+
     """
     # Import here to avoid circular dependencies
     from datetime import date, datetime, time

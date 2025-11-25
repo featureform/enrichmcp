@@ -10,6 +10,7 @@ from mcp_use import MCPClient
 
 
 async def main() -> None:
+    """Test the hello world MCP server."""
     example_path = Path(__file__).parent / "app.py"
 
     config = {
@@ -17,8 +18,8 @@ async def main() -> None:
             "hello": {
                 "command": sys.executable,
                 "args": [str(example_path)],
-            }
-        }
+            },
+        },
     }
 
     client = MCPClient(config=config)

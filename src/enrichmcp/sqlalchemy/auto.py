@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from fastmcp import Context
 from sqlalchemy import func, inspect, select
 
 if TYPE_CHECKING:
@@ -11,7 +12,8 @@ if TYPE_CHECKING:
 
     from sqlalchemy.orm import DeclarativeBase
 
-from enrichmcp import EnrichContext, EnrichMCP, PageResult
+from enrichmcp import EnrichMCP, PageResult
+from enrichmcp.context import get_enrich_context
 
 from .mixin import EnrichSQLAlchemyMixin
 
@@ -43,13 +45,19 @@ def _register_default_resources(
     get_description = f"Get a single {sa_model.__name__} by ID"
 
     async def list_resource(
-        ctx: EnrichContext, page: int = 1, page_size: int = 20
+        ctx: Context | None = None,
+        page: int = 1,
+        page_size: int = 20,
     ) -> PageResult[enrich_model]:  # type: ignore[name-defined]
+        if ctx is None:
+            ctx = get_enrich_context()
+        if ctx.request_context is None:
+            raise RuntimeError("No request context available")
         session_factory = ctx.request_context.lifespan_context[session_key]
         async with session_factory() as session:
             total = await session.scalar(select(func.count()).select_from(sa_model))
             result = await session.execute(
-                select(sa_model).offset((page - 1) * page_size).limit(page_size)
+                select(sa_model).offset((page - 1) * page_size).limit(page_size),
             )
             items = [_sa_to_enrich(obj, enrich_model) for obj in result.scalars().all()]
             has_next = page * page_size < int(total or 0)
@@ -61,27 +69,42 @@ def _register_default_resources(
                 has_next=has_next,
             )
 
-    # Ensure ctx annotation is an actual class for FastMCP before decorating
-    list_resource.__annotations__["ctx"] = EnrichContext
+    # Set annotations
+    list_resource.__annotations__["ctx"] = Context | None
     list_resource.__annotations__["return"] = PageResult[enrich_model]
 
-    list_resource = app.retrieve(name=list_name, description=list_description)(list_resource)
+    app.retrieve(name=list_name, description=list_description)(list_resource)
 
-    async def get_resource(ctx: EnrichContext, **kwargs: Any) -> enrich_model | None:  # type: ignore[name-defined]
-        entity_id = kwargs.get(param_name)
-        if entity_id is None:
-            return None
+    # Create function dynamically with the correct parameter name
+    func_code = f"""
+async def {get_name}({param_name}: int, ctx: "Context | None" = None) -> enrich_model | None:
+    if ctx is None:
+        ctx = get_enrich_context()
+    if ctx.request_context is None:
+        raise RuntimeError("No request context available")
+    session_factory = ctx.request_context.lifespan_context[session_key]
+    async with session_factory() as session:
+        obj = await session.get(sa_model, {param_name})
+        return _sa_to_enrich(obj, enrich_model) if obj else None
+"""
 
-        session_factory = ctx.request_context.lifespan_context[session_key]
-        async with session_factory() as session:
-            obj = await session.get(sa_model, entity_id)
-            return _sa_to_enrich(obj, enrich_model) if obj else None
+    # Execute the function definition
+    namespace = {
+        "Context": Context,
+        "get_enrich_context": get_enrich_context,
+        "enrich_model": enrich_model,
+        "session_key": session_key,
+        "sa_model": sa_model,
+        "_sa_to_enrich": _sa_to_enrich,
+    }
+    exec(func_code, namespace)
+    get_resource = namespace[get_name]
 
-    # Ensure ctx annotation is an actual class for FastMCP before decorating
-    get_resource.__annotations__["ctx"] = EnrichContext
-    get_resource.__annotations__["return"] = enrich_model | None
-
-    get_resource = app.retrieve(name=get_name, description=get_description)(get_resource)
+    function_tool = app.mcp.tool(
+        name=get_name,
+        description=get_description,
+    )(get_resource)
+    app.resources[get_name] = function_tool
 
 
 def _register_relationship_resolvers(
@@ -98,9 +121,10 @@ def _register_relationship_resolvers(
             continue
         field_name = rel.key
         param_name = f"{sa_model.__name__.lower()}_id"
-        if field_name not in enrich_model.model_fields:
+        relationships = getattr(enrich_model, "_relationships", {})
+        if field_name not in relationships:
             continue
-        relationship = enrich_model.model_fields[field_name].default
+        relationship = relationships[field_name]
         target_model = models[rel.mapper.class_.__name__]
         description = rel.info.get(
             "description",
@@ -118,69 +142,76 @@ def _register_relationship_resolvers(
                 relation=rel,
                 target_sa: type = rel.mapper.class_,
             ) -> Callable[..., Awaitable[PageResult[Any]]]:
-                async def resolver_func(
-                    ctx: EnrichContext,
-                    page: int = 1,
-                    page_size: int = 20,
-                    **kwargs: Any,
-                ) -> PageResult[Any]:
-                    if page < 1 or page_size < 1:
-                        raise ValueError("page and page_size must be >= 1")
+                # Create function dynamically with the correct parameter name
+                func_code = f"""
+async def resolver_func(
+    {param}: int,
+    page: int = 1,
+    page_size: int = 20,
+    ctx: Context | None = None,
+) -> PageResult[target]:
+    if page < 1 or page_size < 1:
+        raise ValueError("page and page_size must be >= 1")
 
-                    entity_id = kwargs.get(param)
-                    if entity_id is None and "kwargs" in kwargs:
-                        entity_id = kwargs["kwargs"].get(param)
-                    if entity_id is None:
-                        return PageResult.create(
-                            items=[],
-                            page=page,
-                            page_size=page_size,
-                            has_next=False,
-                            total_items=None,
-                        )
+    if ctx is None:
+        ctx = get_enrich_context()
+    session_factory = ctx.request_context.lifespan_context[session_key]
+    async with session_factory() as session:
+        primary_col = inspect(model).primary_key[0]
+        back_attr = getattr(target_sa, relation.back_populates)
 
-                    session_factory = ctx.request_context.lifespan_context[session_key]
-                    async with session_factory() as session:
-                        primary_col = inspect(model).primary_key[0]
-                        back_attr = getattr(target_sa, relation.back_populates)
+        offset = (page - 1) * page_size
 
-                        offset = (page - 1) * page_size
+        stmt = (
+            select(target_sa)
+            .join(back_attr)
+            .where(primary_col == {param})
+            .offset(offset)
+            .limit(page_size + 1)
+        )
+        result = await session.execute(stmt)
+        values = result.scalars().all()
 
-                        stmt = (
-                            select(target_sa)
-                            .join(back_attr)
-                            .where(primary_col == entity_id)
-                            .offset(offset)
-                            .limit(page_size + 1)
-                        )
-                        result = await session.execute(stmt)
-                        values = result.scalars().all()
+        has_next = len(values) > page_size
+        items = values[:page_size]
 
-                        has_next = len(values) > page_size
-                        items = values[:page_size]
+        if not items and page > 1:
+            return PageResult.create(
+                items=[],
+                page=page,
+                page_size=page_size,
+                has_next=False,
+                total_items=None,
+            )
 
-                        if not items and page > 1:
-                            return PageResult.create(
-                                items=[],
-                                page=page,
-                                page_size=page_size,
-                                has_next=False,
-                                total_items=None,
-                            )
+        items = [_sa_to_enrich(v, target) for v in items]
+        return PageResult.create(
+            items=items,
+            page=page,
+            page_size=page_size,
+            has_next=has_next,
+            total_items=None,
+        )
+"""
 
-                        items = [_sa_to_enrich(v, target) for v in items]
-                        return PageResult.create(
-                            items=items,
-                            page=page,
-                            page_size=page_size,
-                            has_next=has_next,
-                            total_items=None,
-                        )
-
-                return resolver_func
+                # Execute the function definition
+                namespace = {
+                    "Context": Context,
+                    "get_enrich_context": get_enrich_context,
+                    "PageResult": PageResult,
+                    "target": target,
+                    "session_key": session_key,
+                    "inspect": inspect,
+                    "model": model,
+                    "target_sa": target_sa,
+                    "relation": relation,
+                    "select": select,
+                    "_sa_to_enrich": _sa_to_enrich,
+                }
+                exec(func_code, namespace)
+                return namespace["resolver_func"]
 
             resolver = _create_list_resolver()
-            resolver.__annotations__["ctx"] = EnrichContext
         else:
 
             def _create_single_resolver(
@@ -189,26 +220,35 @@ def _register_relationship_resolvers(
                 target: type = target_model,
                 param: str = param_name,
             ) -> Callable[..., Awaitable[Any | None]]:
-                async def func(ctx: EnrichContext, **kwargs: Any) -> Any | None:
-                    entity_id = kwargs.get(param)
-                    if entity_id is None and "kwargs" in kwargs:
-                        entity_id = kwargs["kwargs"].get(param)
-                    if entity_id is None:
-                        return None
+                # Create function dynamically with the correct parameter name
+                func_code = f"""
+async def resolver_func({param}: int, ctx: Context | None = None) -> target | None:
+    if ctx is None:
+        ctx = get_enrich_context()
+    session_factory = ctx.request_context.lifespan_context[session_key]
+    async with session_factory() as session:
+        obj = await session.get(model, {param})
+        if not obj:
+            return None
+        await session.refresh(obj, [f_name])
+        value = getattr(obj, f_name)
+        return _sa_to_enrich(value, target) if value else None
+"""
 
-                    session_factory = ctx.request_context.lifespan_context[session_key]
-                    async with session_factory() as session:
-                        obj = await session.get(model, entity_id)
-                        if not obj:
-                            return None
-                        await session.refresh(obj, [f_name])
-                        value = getattr(obj, f_name)
-                        return _sa_to_enrich(value, target) if value else None
-
-                return func
+                # Execute the function definition
+                namespace = {
+                    "Context": Context,
+                    "get_enrich_context": get_enrich_context,
+                    "target": target,
+                    "session_key": session_key,
+                    "model": model,
+                    "f_name": f_name,
+                    "_sa_to_enrich": _sa_to_enrich,
+                }
+                exec(func_code, namespace)
+                return namespace["resolver_func"]
 
             resolver = _create_single_resolver()
-            resolver.__annotations__["ctx"] = EnrichContext
 
         resolver.__name__ = f"get_{sa_model.__name__.lower()}_{field_name}"
         resolver.__doc__ = description
@@ -226,7 +266,6 @@ def include_sqlalchemy_models(
     The returned mapping contains both the original SQLAlchemy class names and
     the generated EnrichModel classes for easy lookup.
     """
-
     models: dict[str, type] = {}
     for mapper in base.registry.mappers:
         sa_model = mapper.class_
@@ -242,6 +281,15 @@ def include_sqlalchemy_models(
         models[sa_model.__name__] = model
         models[model.__name__] = model
 
+    # First, rebuild all models to resolve forward references
+    for mapper in base.registry.mappers:
+        sa_model = mapper.class_
+        if sa_model.__name__ not in models:
+            continue
+        enrich_model = models[sa_model.__name__]
+        enrich_model.model_rebuild(_types_namespace=models)
+
+    # Then register resources and resolvers
     for mapper in base.registry.mappers:
         sa_model = mapper.class_
         if sa_model.__name__ not in models:
@@ -249,6 +297,5 @@ def include_sqlalchemy_models(
         enrich_model = models[sa_model.__name__]
         _register_default_resources(app, sa_model, enrich_model, session_key)
         _register_relationship_resolvers(app, sa_model, enrich_model, models, session_key)
-        enrich_model.model_rebuild(_types_namespace=models)
 
     return models

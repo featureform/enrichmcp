@@ -27,17 +27,14 @@ class CacheBackend(ABC):
     @abstractmethod
     async def get(self, namespace: str, key: str) -> Any | None:
         """Retrieve a cached value or ``None`` if it does not exist."""
-        pass
 
     @abstractmethod
     async def set(self, namespace: str, key: str, value: Any, ttl: int | None = None) -> None:
         """Store ``value`` in ``namespace`` with optional ``ttl`` in seconds."""
-        pass
 
     @abstractmethod
     async def delete(self, namespace: str, key: str) -> bool:
         """Remove ``key`` from ``namespace``. Returns ``True`` if deleted."""
-        pass
 
 
 class MemoryCache(CacheBackend):
@@ -93,8 +90,8 @@ class RedisCache(CacheBackend):
         redis_client:
             Optional pre-configured redis client. Allows injecting a fake
             instance such as ``fakeredis`` for tests without monkeypatching.
-        """
 
+        """
         if redis_client is not None:
             self._redis = redis_client
             return
@@ -166,7 +163,11 @@ class ContextCache:
         return await self._backend.get(self._build_namespace(scope), key)
 
     async def set(
-        self, key: str, value: Any, scope: str = "request", ttl: int | None = None
+        self,
+        key: str,
+        value: Any,
+        scope: str = "request",
+        ttl: int | None = None,
     ) -> None:
         """Store ``value`` under ``key`` with an optional ``ttl``."""
         await self._backend.set(self._build_namespace(scope), key, value, self._ttl(scope, ttl))
@@ -176,7 +177,11 @@ class ContextCache:
         return await self._backend.delete(self._build_namespace(scope), key)
 
     async def get_or_set(
-        self, key: str, factory: Callable[[], Any], scope: str = "request", ttl: int | None = None
+        self,
+        key: str,
+        factory: Callable[[], Any],
+        scope: str = "request",
+        ttl: int | None = None,
     ) -> Any:
         """Return cached ``key`` or compute and store it using ``factory``."""
         cached = await self.get(key, scope)

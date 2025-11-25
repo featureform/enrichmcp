@@ -68,8 +68,8 @@ async def test_basic_memory_mcp_use(tmp_path: Path) -> None:
 
             if __name__ == "__main__":
                 app.run()
-            '''
-        )
+            ''',
+        ),
     )
 
     config = {"mcpServers": {"app": {"command": sys.executable, "args": [str(script)]}}}
@@ -77,7 +77,8 @@ async def test_basic_memory_mcp_use(tmp_path: Path) -> None:
     session = await client.create_session("app")
 
     create_result = await session.connector.call_tool(
-        "create_note", {"title": "First", "content": "Hello", "tags": []}
+        "create_note",
+        {"title": "First", "content": "Hello", "tags": []},
     )
     note = json.loads(create_result.content[0].text)
 

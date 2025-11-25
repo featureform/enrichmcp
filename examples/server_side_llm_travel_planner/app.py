@@ -3,6 +3,7 @@
 import json
 from typing import Annotated
 
+from fastmcp import Context
 from pydantic import Field
 
 from enrichmcp import EnrichMCP, EnrichModel, prefer_fast_model
@@ -50,19 +51,18 @@ DESTINATIONS = [
 ]
 
 
-@app.retrieve
+@app.retrieve()
 def list_destinations() -> list[Destination]:
     """Return the full list of available destinations."""
-
     return DESTINATIONS
 
 
-@app.retrieve
+@app.retrieve()
 async def plan_trip(
     preferences: Annotated[str, Field(description="Your travel preferences")],
+    ctx: Context,
 ) -> list[Destination]:
     """Return three destinations that best match the given preferences."""
-    ctx = app.get_context()
     bullet_list = "\n".join(f"- {d.name}: {d.summary}" for d in DESTINATIONS)
     prompt = (
         "Select the three best destinations from the list below based on the "

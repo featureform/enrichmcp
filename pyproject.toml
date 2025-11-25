@@ -43,8 +43,9 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.0.0,<3.0.0",
-    "mcp-python>=0.1.0",
+    "fastmcp>=2.13.1",
     "typing-extensions>=4.5.0,<5.0.0",
+    "packaging>=21.0",
 ]
 dynamic = ["version"]
 
@@ -70,7 +71,7 @@ dev = [
     "aiosqlite>=0.19.0",
     "sqlalchemy>=2.0.0",
     "sqlalchemy2-stubs>=0.0.2a5",
-    "mcp_use>=1.0.0",
+    "mcp_use>=1.4.0",
 ]
 sqlalchemy = [
     "sqlalchemy>=2.0.0",
@@ -81,7 +82,7 @@ all = [
     "sqlalchemy>=2.0.0",
     "sqlalchemy2-stubs>=0.0.2a5",
     "aiosqlite>=0.19.0",
-    "mcp_use>=1.0.0",
+    "mcp_use>=1.4.0",
 ]
 
 [tool.setuptools.packages.find]

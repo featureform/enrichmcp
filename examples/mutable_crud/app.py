@@ -1,4 +1,10 @@
-from datetime import datetime
+"""Mutable CRUD example for EnrichMCP.
+
+This example demonstrates how to create, update, and delete entities
+with mutable fields using EnrichMCP.
+"""
+
+from datetime import UTC, datetime
 
 from pydantic import Field
 
@@ -10,22 +16,26 @@ app = EnrichMCP(
 )
 
 
-@app.entity
+@app.entity()
 class Customer(EnrichModel):
     """Simple customer record."""
 
     id: int = Field(description="Customer ID")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC), description="Creation timestamp"
+    )
     email: str = Field(json_schema_extra={"mutable": True}, description="Email address")
     tier: str = Field(
-        json_schema_extra={"mutable": True}, description="Subscription tier", default="free"
+        json_schema_extra={"mutable": True},
+        description="Subscription tier",
+        default="free",
     )
 
 
 CUSTOMERS: dict[int, Customer] = {}
 
 
-@app.create
+@app.create()
 async def create_customer(email: str, tier: str = "free") -> Customer:
     """Create a new customer."""
     cid = len(CUSTOMERS) + 1
@@ -34,7 +44,7 @@ async def create_customer(email: str, tier: str = "free") -> Customer:
     return customer
 
 
-@app.update
+@app.update()
 async def update_customer(customer_id: int, patch: Customer.PatchModel) -> Customer:
     """Update an existing customer."""
     customer = CUSTOMERS[customer_id]
@@ -44,13 +54,14 @@ async def update_customer(customer_id: int, patch: Customer.PatchModel) -> Custo
     return updated
 
 
-@app.delete
+@app.delete()
 async def delete_customer(customer_id: int) -> bool:
     """Delete a customer."""
     return CUSTOMERS.pop(customer_id, None) is not None
 
 
 def main() -> None:
+    """Run the mutable CRUD API server."""
     app.run()
 
 

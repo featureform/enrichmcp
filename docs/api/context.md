@@ -1,83 +1,94 @@
 # Context
 
-::: enrichmcp.context.EnrichContext
-    options:
-        show_source: true
-        show_bases: true
-        show_root_heading: true
+EnrichMCP uses FastMCP's Context system for request-scoped utilities including logging, progress reporting, and lifespan context access.
 
 ## Overview
 
-The `EnrichContext` class provides request-scoped utilities such as the cache system.
-It can be extended for additional dependencies as needed.
+FastMCP's `Context` provides comprehensive request-scoped functionality:
+- **Logging**: Send debug, info, warning, and error messages to clients
+- **Progress Reporting**: Update clients on long-running operations
+- **Lifespan Context**: Access shared resources like database connections
+- **LLM Sampling**: Request completions from client-side LLMs
+- **User Elicitation**: Request structured input from users
 
-## Current State
+## Usage Patterns
 
+**Recommended: Dependency Injection**
 ```python
-from enrichmcp import EnrichContext
+from fastmcp import Context
 
-# Current implementation is minimal
-context = EnrichContext()
+
+@app.retrieve()
+async def my_resource(ctx: Context) -> dict:
+    # Access lifespan context (database, etc.)
+    db = ctx.request_context.lifespan_context["db"]
+
+    # Use built-in logging
+    await ctx.info("Processing request")
+
+    return {"result": "success"}
 ```
 
-## Capabilities
+**Alternative: Helper Function**
+```python
+from enrichmcp import get_enrich_context
 
-The context exposes a `cache` attribute for storing values across the request,
-user, or global scopes.
+
+def helper_function():
+    ctx = get_enrich_context()
+    db = ctx.request_context.lifespan_context["db"]
+```
+
+## Core Capabilities
+
+### Logging
+```python
+@app.retrieve()
+async def my_tool(ctx: Context) -> dict:
+    await ctx.debug("Debug message")
+    await ctx.info("Info message")
+    await ctx.warning("Warning message")
+    await ctx.error("Error message")
+    return {"status": "logged"}
+```
+
+### Progress Reporting
+```python
+@app.retrieve()
+async def long_task(ctx: Context) -> dict:
+    await ctx.report_progress(progress=25, total=100)
+    # ... do work ...
+    await ctx.report_progress(progress=100, total=100)
+    return {"status": "complete"}
+```
+
+### Lifespan Context Access
+```python
+@app.retrieve()
+async def database_query(ctx: Context) -> list[dict]:
+    # Access shared resources from lifespan context
+    db = ctx.request_context.lifespan_context["db"]
+    cache = ctx.request_context.lifespan_context.get("cache")
+
+    return await db.fetch_all("SELECT * FROM users")
+```
 
 ## LLM Integration
 
-Use `ask_llm()` (or the `sampling()` alias) to request completions from the client-side LLM. See the [Server-Side LLM guide](../server_side_llm.md) for more details:
+Use `sample()` to request completions from the client-side LLM:
 
 ```python
-from enrichmcp import prefer_fast_model, prefer_medium_model, prefer_smart_model
+from enrichmcp import prefer_fast_model
 
-result = await ctx.ask_llm(
-    "Summarize our latest sales numbers",
-    model_preferences=prefer_fast_model(),
-    max_tokens=200,
-)
-print(result.content.text)
+
+@app.retrieve()
+async def analyze_data(ctx: Context) -> dict:
+    result = await ctx.sample(
+        "Summarize our latest sales numbers",
+        model_preferences=prefer_fast_model(),
+        max_tokens=200,
+    )
+    return {"analysis": result.content.text}
 ```
 
-## User Elicitation
-
-Call `ask_user()` when you need additional input from the client. It wraps the
-underlying MCP `elicit()` API:
-
-```python
-class BookingPreferences(BaseModel):
-    alternativeDate: str | None
-    checkAlternative: bool = False
-
-result = await ctx.ask_user(
-    message="No tables available. Try another date?",
-    schema=BookingPreferences,
-)
-```
-
-## Extending Context
-
-For now, if you need context functionality, you can extend the base class:
-
-```python
-from enrichmcp import EnrichContext
-
-
-class MyContext(EnrichContext):
-    """Custom context with database."""
-
-    def __init__(self, db):
-        super().__init__()
-        self.db = db
-
-
-# Use in resources
-@app.retrieve
-async def get_data() -> dict:
-    ctx = app.get_context()
-    # Use your custom context
-    return await ctx.db.fetch_data()
-```
-
-Note: Dependency injection is no longer supported; always call ``app.get_context()`` to access the current request context.
+For more details, see the [FastMCP Context documentation](https://gofastmcp.com/servers/context).

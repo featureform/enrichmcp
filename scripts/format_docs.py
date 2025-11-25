@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Format Python code blocks in markdown files using ruff.
+"""Format Python code blocks in markdown files using ruff.
 
 This script extracts Python code blocks from markdown files,
 formats them with ruff, and writes them back.
@@ -40,6 +39,7 @@ def format_code_with_ruff(code: str) -> str:
             [sys.executable, "-m", "ruff", "format", temp_path, "--quiet"],
             capture_output=True,
             text=True,
+            check=False,
         )
 
         # Read formatted code
@@ -50,8 +50,7 @@ def format_code_with_ruff(code: str) -> str:
         Path(temp_path).unlink()
 
         # Remove trailing newline that ruff adds
-        if formatted.endswith("\n"):
-            formatted = formatted[:-1]
+        formatted = formatted.removesuffix("\n")
 
         return formatted
 

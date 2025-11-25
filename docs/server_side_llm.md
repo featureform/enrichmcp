@@ -4,9 +4,7 @@ MCP includes a **sampling** feature that lets the server ask the client to run a
 This keeps API keys and billing on the client side while giving your EnrichMCP
 application the ability to generate text or run tool-aware prompts.
 
-`EnrichContext.ask_llm()` (and its alias `sampling()`) is the helper used to make
-these requests. The method mirrors the MCP sampling API and supports a number of
-tuning parameters.
+`Context.sample()` is the method used to make these requests. It mirrors the MCP sampling API and supports a number of tuning parameters.
 
 ## Parameters
 
@@ -42,9 +40,11 @@ other resources.
 ## Example
 
 ```python
-@app.retrieve
-async def summarize(text: str) -> str:
-    ctx = app.get_context()
+from fastmcp import Context
+
+
+@app.retrieve()
+async def summarize(text: str, ctx: Context) -> str:
     result = await ctx.ask_llm(
         f"Summarize this: {text}",
         model_preferences=prefer_fast_model(),
@@ -55,5 +55,5 @@ async def summarize(text: str) -> str:
 ```
 
 MCP sampling gives your server lightweight LLM features without storing API
-credentials. See the [travel planner example](../examples/server_side_llm_travel_planner) for a complete
+credentials. See the [travel planner example](https://github.com/featureform/enrichmcp/tree/main/examples/server_side_llm_travel_planner) for a complete
 implementation.

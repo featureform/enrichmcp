@@ -49,12 +49,13 @@ async def lifespan(app: EnrichMCP) -> AsyncIterator[dict[str, Any]]:
 
 ### Accessing Context
 
-Call `app.get_context()` inside your resources or resolvers to work with the current request:
+Access the database through context injection in your resources or resolvers:
 
 ```python
+from fastmcp import Context
+
 @app.retrieve
-async def get_user(user_id: int) -> User:
-    ctx = app.get_context()
+async def get_user(user_id: int, ctx: Context) -> User:
     # Access database from lifespan context
     db = ctx.request_context.lifespan_context["db"]
 

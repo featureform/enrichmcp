@@ -15,7 +15,7 @@ app = EnrichMCP("Customer API", "Customer data for AI agents")
 
 
 # Define your data model
-@app.entity
+@app.entity()
 class Customer(EnrichModel):
     """A customer in our system."""
 
@@ -26,7 +26,7 @@ class Customer(EnrichModel):
     orders: list["Order"] = Relationship(description="Orders placed by this customer")
 
 
-@app.entity
+@app.entity()
 class Order(EnrichModel):
     """A customer order."""
 
@@ -45,7 +45,7 @@ async def get_customer_orders(customer_id: int) -> list[Order]:
 
 
 # Create entry points for AI
-@app.retrieve
+@app.retrieve()
 async def get_customer(customer_id: int) -> Customer:
     """Get a customer by ID."""
     return await db.get_customer(customer_id)
@@ -90,7 +90,7 @@ Focus on your data model, not protocol details:
 
 ## How It Works
 
-1. **Define Your Model**: Use Pydantic models with the `@app.entity` decorator
+1. **Define Your Model**: Use Pydantic models with the `@app.entity()` decorator
 2. **Add Relationships**: Connect entities with typed relationships
 3. **Implement Resolvers**: Define how relationships load data
 4. **Create Resources**: Add entry points for AI agents
@@ -115,7 +115,7 @@ pip install enrichmcp
 - Explore the [API Reference](api.md)
 - Check out [Examples](https://github.com/featureform/enrichmcp/tree/main/examples)
 - Learn about [SQLAlchemy integration](sqlalchemy.md)
-- Read the [Development Setup](../README.md#development-setup) guide if you want to contribute
+- Read the [Development Setup](https://github.com/featureform/enrichmcp#development-setup) guide if you want to contribute
 
 ## Support
 

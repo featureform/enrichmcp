@@ -1,6 +1,4 @@
-"""
-Tests for relationship resolver type validation.
-"""
+"""Tests for relationship resolver type validation."""
 
 import pytest
 from pydantic import Field
@@ -12,7 +10,6 @@ from enrichmcp.relationship import Relationship
 
 def test_relationship_resolver_type_validation():
     """Test that relationship resolver type validation works correctly."""
-
     app = EnrichMCP(title="Test API", instructions="Test API for type validation")
 
     @app.entity
@@ -61,7 +58,6 @@ def test_relationship_resolver_type_validation():
 
 def test_unresolved_relationship_validation():
     """Test that app.run() fails if a relationship is missing a resolver."""
-
     app = EnrichMCP(title="Test API", instructions="Test API for relationship validation")
 
     @app.entity

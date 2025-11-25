@@ -1,6 +1,4 @@
-"""
-Tests for SQLAlchemy integration with EnrichMCP.
-"""
+"""Tests for SQLAlchemy integration with EnrichMCP."""
 
 # ruff: noqa: N806,E721
 
@@ -44,7 +42,8 @@ class TestBasicModel:
             username: Mapped[str] = mapped_column(info={"description": "Username"})
             email: Mapped[str] = mapped_column(info={"description": "Email address"})
             is_active: Mapped[bool] = mapped_column(
-                default=True, info={"description": "Active status"}
+                default=True,
+                info={"description": "Active status"},
             )
 
         # Convert to EnrichModel
@@ -84,7 +83,8 @@ class TestBasicModel:
             id: Mapped[int] = mapped_column(primary_key=True)
             name: Mapped[str] = mapped_column(nullable=False)
             description: Mapped[str | None] = mapped_column(
-                nullable=True, info={"description": "Product description"}
+                nullable=True,
+                info={"description": "Product description"},
             )
             price: Mapped[float | None] = mapped_column(nullable=True)
 
@@ -122,7 +122,7 @@ class TestBasicModel:
             username: Mapped[str] = mapped_column()
             password_hash: Mapped[str] = mapped_column(info={"exclude": True})
             secret_token: Mapped[str] = mapped_column(
-                info={"exclude": True, "description": "Should not appear"}
+                info={"exclude": True, "description": "Should not appear"},
             )
 
         UserEnrichModel = User.__enrich_model__()
@@ -218,7 +218,8 @@ class TestRelationships:
             id: Mapped[int] = mapped_column(primary_key=True)
             username: Mapped[str] = mapped_column()
             orders: Mapped[list["Order"]] = relationship(
-                back_populates="user", info={"description": "User's orders"}
+                back_populates="user",
+                info={"description": "User's orders"},
             )
 
         class Order(Base, EnrichSQLAlchemyMixin):
@@ -227,22 +228,27 @@ class TestRelationships:
             id: Mapped[int] = mapped_column(primary_key=True)
             user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
             user: Mapped[User] = relationship(
-                back_populates="orders", info={"description": "Order's user"}
+                back_populates="orders",
+                info={"description": "Order's user"},
             )
 
         # Convert to EnrichModel
         UserEnrichModel = User.__enrich_model__()
         fields = UserEnrichModel.model_fields
+        relationships = getattr(UserEnrichModel, "_relationships", {})
 
-        # Check that orders field exists and is a Relationship
-        assert "orders" in fields
-        assert isinstance(fields["orders"].default, Relationship)
-        assert fields["orders"].default.description == "User's orders"
+        # Check that orders field exists as a relationship (not in model_fields)
+        assert "orders" not in fields  # Should not be in data fields
+        assert "orders" in relationships
+        assert isinstance(relationships["orders"], Relationship)
+        assert relationships["orders"].description == "User's orders"
 
         # Check the type annotation (should be list["OrderEnrichModel"])
-        # The annotation will be a string forward reference
-        assert "list" in str(fields["orders"].annotation)
-        assert "OrderEnrichModel" in str(fields["orders"].annotation)
+        # The annotation will be stored in the relationship's _annotation
+        orders_rel = relationships["orders"]
+        assert hasattr(orders_rel, "_annotation")
+        assert "list" in str(orders_rel._annotation)
+        assert "OrderEnrichModel" in str(orders_rel._annotation)
 
     def test_many_to_one_relationship(self):
         """Test many-to-one relationship conversion."""
@@ -256,7 +262,7 @@ class TestRelationships:
             id: Mapped[int] = mapped_column(primary_key=True)
             user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
             user: Mapped["User"] = relationship(
-                info={"description": "Customer who placed the order"}
+                info={"description": "Customer who placed the order"},
             )
 
         class User(Base, EnrichSQLAlchemyMixin):
@@ -267,15 +273,19 @@ class TestRelationships:
 
         OrderEnrichModel = Order.__enrich_model__()
         fields = OrderEnrichModel.model_fields
+        relationships = getattr(OrderEnrichModel, "_relationships", {})
 
-        # Check that user field exists and is a Relationship
-        assert "user" in fields
-        assert isinstance(fields["user"].default, Relationship)
-        assert fields["user"].default.description == "Customer who placed the order"
+        # Check that user field exists as a relationship (not in model_fields)
+        assert "user" not in fields  # Should not be in data fields
+        assert "user" in relationships
+        assert isinstance(relationships["user"], Relationship)
+        assert relationships["user"].description == "Customer who placed the order"
 
         # Type should be just "UserEnrichModel" (not List)
-        assert "UserEnrichModel" in str(fields["user"].annotation)
-        assert "List" not in str(fields["user"].annotation)
+        user_rel = relationships["user"]
+        assert hasattr(user_rel, "_annotation")
+        assert "UserEnrichModel" in str(user_rel._annotation)
+        assert "List" not in str(user_rel._annotation)
 
     def test_excluded_relationship(self):
         """Test that relationships marked with exclude=True are not included."""
@@ -289,10 +299,12 @@ class TestRelationships:
             id: Mapped[int] = mapped_column(primary_key=True)
             username: Mapped[str] = mapped_column()
             secret_orders: Mapped[list["Order"]] = relationship(
-                info={"exclude": True}, overlaps="public_orders"
+                info={"exclude": True},
+                overlaps="public_orders",
             )
             public_orders: Mapped[list["Order"]] = relationship(
-                info={"description": "Public orders"}, overlaps="secret_orders"
+                info={"description": "Public orders"},
+                overlaps="secret_orders",
             )
 
         class Order(Base, EnrichSQLAlchemyMixin):
@@ -302,10 +314,13 @@ class TestRelationships:
 
         UserEnrichModel = User.__enrich_model__()
         fields = UserEnrichModel.model_fields
+        relationships = getattr(UserEnrichModel, "_relationships", {})
 
         # Check that excluded relationship is not included
         assert "secret_orders" not in fields
-        assert "public_orders" in fields
+        assert "secret_orders" not in relationships  # Should be excluded
+        assert "public_orders" not in fields  # Should not be in data fields
+        assert "public_orders" in relationships  # Should be in relationships
 
     def test_relationship_without_description(self):
         """Test relationship with no description gets a default one."""
@@ -327,10 +342,12 @@ class TestRelationships:
 
         UserEnrichModel = User.__enrich_model__()
         fields = UserEnrichModel.model_fields
+        relationships = getattr(UserEnrichModel, "_relationships", {})
 
-        assert "posts" in fields
-        assert isinstance(fields["posts"].default, Relationship)
-        assert fields["posts"].default.description == "Relationship to PostEnrichModel"
+        assert "posts" not in fields  # Should not be in data fields
+        assert "posts" in relationships
+        assert isinstance(relationships["posts"], Relationship)
+        assert relationships["posts"].description == "Relationship to PostEnrichModel"
 
 
 class TestEdgeCases:
@@ -341,8 +358,6 @@ class TestEdgeCases:
 
         class NotSQLAlchemy(EnrichSQLAlchemyMixin):
             """This is not a SQLAlchemy model."""
-
-            pass
 
         with pytest.raises(TypeError) as exc_info:
             NotSQLAlchemy.__enrich_model__()
@@ -448,17 +463,20 @@ class TestComplexScenarios:
             username: Mapped[str] = mapped_column(info={"description": "Display name"})
             password_hash: Mapped[str] = mapped_column(info={"exclude": True})
             created_at: Mapped[datetime] = mapped_column(
-                info={"description": "Account creation time"}
+                info={"description": "Account creation time"},
             )
             is_active: Mapped[bool] = mapped_column(
-                default=True, info={"description": "Account status"}
+                default=True,
+                info={"description": "Account status"},
             )
 
             orders: Mapped[list["Order"]] = relationship(
-                back_populates="user", info={"description": "Orders placed by this user"}
+                back_populates="user",
+                info={"description": "Orders placed by this user"},
             )
             reviews: Mapped[list["Review"]] = relationship(
-                back_populates="user", info={"description": "Product reviews by this user"}
+                back_populates="user",
+                info={"description": "Product reviews by this user"},
             )
 
         class Product(Base, EnrichSQLAlchemyMixin):
@@ -469,13 +487,16 @@ class TestComplexScenarios:
             id: Mapped[int] = mapped_column(primary_key=True, info={"description": "Product ID"})
             name: Mapped[str] = mapped_column(info={"description": "Product name"})
             description: Mapped[str | None] = mapped_column(
-                Text, nullable=True, info={"description": "Product description"}
+                Text,
+                nullable=True,
+                info={"description": "Product description"},
             )
             price: Mapped[float] = mapped_column(info={"description": "Product price"})
             stock_quantity: Mapped[int] = mapped_column(info={"description": "Available stock"})
 
             reviews: Mapped[list["Review"]] = relationship(
-                back_populates="product", info={"description": "Customer reviews"}
+                back_populates="product",
+                info={"description": "Customer reviews"},
             )
 
         class Order(Base, EnrichSQLAlchemyMixin):
@@ -490,7 +511,8 @@ class TestComplexScenarios:
             created_at: Mapped[datetime] = mapped_column(info={"description": "Order date"})
 
             user: Mapped[User] = relationship(
-                back_populates="orders", info={"description": "Customer who placed the order"}
+                back_populates="orders",
+                info={"description": "Customer who placed the order"},
             )
 
         class Review(Base, EnrichSQLAlchemyMixin):
@@ -503,7 +525,9 @@ class TestComplexScenarios:
             product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
             rating: Mapped[int] = mapped_column(info={"description": "Rating 1-5"})
             comment: Mapped[str | None] = mapped_column(
-                Text, nullable=True, info={"description": "Review text"}
+                Text,
+                nullable=True,
+                info={"description": "Review text"},
             )
 
             user: Mapped[User] = relationship(back_populates="reviews")
@@ -517,23 +541,28 @@ class TestComplexScenarios:
 
         # Verify User model
         user_fields = UserEnrichModel.model_fields
+        user_relationships = getattr(UserEnrichModel, "_relationships", {})
         assert "id" in user_fields
         assert "email" in user_fields
         assert "username" in user_fields
         assert "password_hash" not in user_fields  # Should be excluded
         assert "created_at" in user_fields
         assert "is_active" in user_fields
-        assert "orders" in user_fields
-        assert "reviews" in user_fields
+        assert "orders" not in user_fields  # Should not be in data fields
+        assert "reviews" not in user_fields  # Should not be in data fields
+        assert "orders" in user_relationships  # Should be in relationships
+        assert "reviews" in user_relationships  # Should be in relationships
 
         # Verify relationships are properly typed
-        assert isinstance(user_fields["orders"].default, Relationship)
-        assert isinstance(user_fields["reviews"].default, Relationship)
+        assert isinstance(user_relationships["orders"], Relationship)
+        assert isinstance(user_relationships["reviews"], Relationship)
 
         # Verify Order model
         order_fields = OrderEnrichModel.model_fields
-        assert "user" in order_fields
-        assert isinstance(order_fields["user"].default, Relationship)
+        order_relationships = getattr(OrderEnrichModel, "_relationships", {})
+        assert "user" not in order_fields  # Should not be in data fields
+        assert "user" in order_relationships  # Should be in relationships
+        assert isinstance(order_relationships["user"], Relationship)
 
         # Verify all models are proper EnrichModels
         for model in [UserEnrichModel, ProductEnrichModel, OrderEnrichModel, ReviewEnrichModel]:
