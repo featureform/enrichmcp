@@ -6,6 +6,8 @@ Provides the base class for entity models.
 from collections.abc import Callable
 from typing import Any, Literal, cast, get_args, get_origin
 
+import pydantic
+from packaging import version
 from pydantic import BaseModel, ConfigDict
 from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.main import IncEx
@@ -98,12 +100,23 @@ class EnrichModel(BaseModel, metaclass=EnrichModelMeta):
     """
 
     # Allow arbitrary types for more flexibility
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        ignored_types=(Relationship,),
-        # Ensure datetime objects are serialized to ISO format for MCP compatibility
-        ser_json_temporal="iso8601",
-    )
+    _config_dict = {
+        "arbitrary_types_allowed": True,
+        "ignored_types": (Relationship,),
+    }
+
+    # Add ser_json_temporal configuration if supported by the Pydantic version.
+    # This parameter was introduced in Pydantic 2.12.0 and controls how temporal types
+    # (datetime, date, time, timedelta) are serialized to JSON. Setting it to "iso8601"
+    # ensures consistent ISO 8601 formatting (e.g., "2023-12-25T10:30:00Z") across all
+    # temporal fields, which is important for MCP compatibility and API consistency.
+    # Without this setting, Pydantic uses default serialization which may vary.
+    # We conditionally apply this to maintain compatibility with older Pydantic versions
+    # that don't recognize this parameter (like 2.11.x used by some dependencies).
+    if version.parse(pydantic.__version__) >= version.parse("2.12.0"):
+        _config_dict["ser_json_temporal"] = "iso8601"
+
+    model_config = ConfigDict(**_config_dict)
 
     @classmethod
     def relationship_fields(cls) -> set[str]:
