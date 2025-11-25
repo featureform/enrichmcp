@@ -121,7 +121,6 @@ class EnrichModel(BaseModel, metaclass=EnrichModelMeta):
     @classmethod
     def relationship_fields(cls) -> set[str]:
         """Return names of fields that represent relationships."""
-        # Use the new _relationships metadata instead of checking model_fields
         return set(getattr(cls, "_relationships", {}).keys())
 
     @classmethod
@@ -144,7 +143,6 @@ class EnrichModel(BaseModel, metaclass=EnrichModelMeta):
     @classmethod
     def relationships(cls) -> set[Relationship]:
         """Return ``Relationship`` objects declared on the model."""
-        # Use the new _relationships metadata
         return set(getattr(cls, "_relationships", {}).values())
 
     @classmethod
