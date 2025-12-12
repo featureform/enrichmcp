@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  redis-test:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_ARGS=--save ""  # Disable persistence for tests
+    tmpfs:
+      - /data  # In-memory storage for speed
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s

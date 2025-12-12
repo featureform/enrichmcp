@@ -2,12 +2,13 @@
 
 This directory contains examples demonstrating how to use EnrichMCP.
 
--Available examples:
+Available examples:
 
 - [hello_world](hello_world) - minimal "Hello, World" API
 - [hello_world_http](hello_world_http) - HTTP version using streamable HTTP
 - [shop_api](shop_api) - in-memory shop with relationships
 - [shop_api_sqlite](shop_api_sqlite) - SQLite-backed shop
+- [redis_shop](redis_shop) - Redis-powered shop with search capabilities
 - [sqlalchemy_shop](sqlalchemy_shop) - SQLAlchemy ORM version
 - [shop_api_gateway](shop_api_gateway) - gateway in front of FastAPI
 - [mutable_crud](mutable_crud) - mutable fields and CRUD decorators
@@ -73,7 +74,31 @@ This example demonstrates:
 - Dynamic sample data generation
 - Real database queries with relationships
 
-Both shop examples provide the same functionality but showcase different pagination strategies.
+## Redis Shop API
+
+A Redis-powered e-commerce API with advanced search capabilities.
+
+```bash
+cd redis_shop
+docker-compose up -d  # Start Redis Stack
+python app.py
+```
+
+This example demonstrates:
+- **Redis Search Integration**: Full-text search, tag filtering, numeric ranges
+- **Auto-Generated Resources**: MCP tools created from field metadata
+- **Minimal Indexing**: Only index fields you actually search
+- **Docker Setup**: Redis Stack with RedisInsight web UI
+- **Real-time Search**: Text search, category filtering, price ranges
+- **Document Storage**: JSON documents with relationship handling
+
+The Redis integration automatically creates search resources like:
+- `search_user_by_text()` - Search users by name/username/email
+- `filter_product_by_category()` - Filter products by category
+- `find_products_by_price_range()` - Find products in price range
+- `get_user_by_id()` - Primary key lookups
+
+All shop examples provide similar functionality but showcase different data storage and query strategies.
 
 ## SQLAlchemy Shop API
 

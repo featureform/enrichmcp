@@ -1,0 +1,41 @@
+name: Redis Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  redis-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis/redis-stack:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,redis]"
+
+      - name: Run Redis integration tests
+        run: |
+          pytest tests/redis/ -v
+        env:
+          CI: true

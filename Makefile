@@ -1,4 +1,4 @@
-.PHONY: setup format lint test examples-test build clean docs docs-format install dev venv ci-setup ci-lint ci-test
+.PHONY: setup format lint test examples-test build clean docs docs-format install dev venv ci-setup ci-lint ci-test redis-up redis-down redis-test
 
 # Local development (uses uv)
 VENV_PYTHON = .venv/bin/python
@@ -49,6 +49,22 @@ test:
 examples-test:
 	$(PYTHON_CMD) -m pytest -o addopts='' -p no:cov tests/test_examples.py -m examples
 
+# Run Redis-specific tests
+redis-test:
+	$(PYTHON_CMD) -m pytest tests/redis/ -v
+
+# Run Redis tests with Docker container
+redis-integration-test:
+	docker-compose -f docker-compose.test.yml up -d --wait
+	$(PYTHON_CMD) -m pytest tests/redis/ -v
+	docker-compose -f docker-compose.test.yml down -v
+
+# Run Redis shop example tests specifically
+redis-shop-test:
+	docker-compose -f docker-compose.test.yml up -d --wait
+	$(PYTHON_CMD) -m pytest tests/redis/test_redis_shop_example.py -v
+	docker-compose -f docker-compose.test.yml down -v
+
 build:
 	$(PYTHON_CMD) -m build --no-isolation
 
@@ -82,6 +98,35 @@ install:
 dev:
 	$(PYTHON_CMD) -m pip install -e .
 
+# Redis testing commands
+redis-up:
+	@echo "Starting Redis test container..."
+	@if command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose -f docker-compose.test.yml up -d --wait; \
+	elif command -v docker >/dev/null 2>&1; then \
+		docker compose -f docker-compose.test.yml up -d --wait; \
+	else \
+		echo "Error: Docker not found. Please install Docker to run Redis tests."; \
+		exit 1; \
+	fi
+	@echo "✅ Redis test container is running on localhost:6379"
+
+redis-down:
+	@echo "Stopping Redis test container..."
+	@if command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose -f docker-compose.test.yml down -v; \
+	elif command -v docker >/dev/null 2>&1; then \
+		docker compose -f docker-compose.test.yml down -v; \
+	else \
+		echo "Warning: Docker not found. Cannot stop containers."; \
+	fi
+	@echo "✅ Redis test container stopped and cleaned up"
+
+redis-test: redis-up
+	@echo "Running Redis tests..."
+	$(PYTHON_CMD) -m pytest tests/redis/ -v
+	@$(MAKE) redis-down
+
 .DEFAULT_GOAL := help
 help:
 	@echo "Available commands:"
@@ -100,6 +145,10 @@ help:
 	@echo "  docs-build  - Build documentation for production"
 	@echo "  install     - Install the package"
 	@echo "  dev         - Install the package in development mode"
+	@echo "Redis testing:"
+	@echo "  redis-up    - Start Redis test container"
+	@echo "  redis-down  - Stop Redis test container"
+	@echo "  redis-test  - Run Redis tests (starts/stops container automatically)"
 	@echo "CI/Production:"
 	@echo "  ci-setup    - Install dependencies (system python)"
 	@echo "  ci-lint     - Run linters (system python)"
