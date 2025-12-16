@@ -42,7 +42,9 @@ class FakeDataGenerator:
             fields = {}
             for j in range(field_count):
                 field_types = ["str", "int", "float", "bool", "datetime", "list[str]"]
-                field_name = f"field_{j+1}" if j > 3 else ["id", "name", "created_at", "status"][j]
+                field_name = (
+                    f"field_{j + 1}" if j > 3 else ["id", "name", "created_at", "status"][j]
+                )
                 fields[field_name] = random.choice(field_types)
 
             # Generate fake relationships

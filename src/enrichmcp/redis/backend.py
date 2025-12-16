@@ -178,7 +178,8 @@ class RedisBackend:
         escaped_value = value.replace(":", "\\:")
 
         # Tag fields require curly braces syntax: @field:{value}
-        q = Query(f"@{field}:{{{escaped_value}}}").paging(offset, limit)
+        query_str = f"@{field}:{{{escaped_value}}}"
+        q = Query(query_str).paging(offset, limit)
 
         try:
             results = await self.client.ft(index).search(q)

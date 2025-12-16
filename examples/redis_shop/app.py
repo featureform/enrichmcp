@@ -6,9 +6,17 @@ Demonstrates practical indexing with minimal complexity - only search what you n
 
 from __future__ import annotations
 
+import sys
 from datetime import datetime
+from pathlib import Path
 
 from pydantic import Field as PydanticField
+
+# Add src directory to path for imports when running as standalone script
+if __name__ == "__main__":
+    src_path = Path(__file__).resolve().parents[2] / "src"
+    if str(src_path) not in sys.path:
+        sys.path.insert(0, str(src_path))
 
 # Import the Redis integration
 from enrichmcp.redis import EnrichMCP, EnrichModel, Field, Relationship
@@ -40,11 +48,6 @@ class User(EnrichModel):
     created_at: datetime | None = Field(description="Account creation timestamp", default=None)
     total_spent: float = Field(description="Lifetime purchase amount")
     billing_address: str = Field(description="Default billing address")
-
-    # Relationships
-    orders: list[Order] = Relationship(
-        description="Orders placed by this user", reverse_of="user_id"
-    )
 
 
 @app.entity()
@@ -224,56 +227,31 @@ SAMPLE_ORDERS = [
 # - get_order_by_id(id: int) -> Order
 
 
-async def setup_redis_data():
-    """Initialize Redis with indices and sample data."""
-    # Create indices for all models
+async def setup_sample_data():
+    """Set up Redis indices and populate sample data."""
+    print("🚀 Starting Redis E-Commerce Shop API...")
+    redis_url = app.redis_backend.redis_url
+    print(f"📡 Connecting to Redis at {redis_url}")
+    print("💡 Make sure Redis Stack is running: docker-compose up -d")
+    print()
+
+    # Create indices for all registered models
     for model_name, model_class in app._redis_models.items():
         await app._create_model_index(model_name, model_class)
 
     # Populate sample data
-    await app._populate_sample_data(
+    await app.redis_backend.populate_sample_data(
         {"users": SAMPLE_USERS, "products": SAMPLE_PRODUCTS, "orders": SAMPLE_ORDERS}
     )
 
-    # Generate search resources
-    for model_name, model_class in app._redis_models.items():
-        await app._generate_search_resources(model_name, model_class)
-
-    # Generate relationship resolvers
-    await app._generate_relationship_resolvers()
-
-    print("🔍 Auto-generated search resources available!")
-    print("   Text Search:")
-    print("   - search_user_by_text(query: str)")
-    print("   - search_product_by_text(query: str)")
-    print("   Tag Filtering:")
-    print("   - filter_user_by_account_status(value: str)")
-    print("   - filter_product_by_category(value: str)")
-    print("   - filter_order_by_user_id(value: str)")
-    print("   - filter_order_by_status(value: str)")
-    print("   Numeric Ranges:")
-    print("   - find_user_by_risk_score_range(min_value: float, max_value: float)")
-    print("   - find_product_by_price_range(min_value: float, max_value: float)")
-    print("   - find_order_by_total_amount_range(min_value: float, max_value: float)")
-    print("   Primary Key Lookup:")
-    print("   - get_user_by_id(id: int)")
-    print("   - get_product_by_id(id: int)")
-    print("   - get_order_by_id(id: int)")
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    print("🚀 Starting Redis E-Commerce Shop API...")
-    print("📡 Connecting to Redis at redis://localhost:6379")
-    print("💡 Make sure Redis Stack is running: docker-compose up -d")
-    print()
-
-    # Setup Redis first
-    asyncio.run(setup_redis_data())
-
+    print("💾 Sample data loaded successfully!")
     print()
     print("🎯 MCP server ready! Connect your AI agent to start searching.")
 
-    # Then start the MCP server
+
+# Set up startup lifespan to handle sample data
+app.lifespan = setup_sample_data
+
+if __name__ == "__main__":
+    # Start the MCP server (data setup happens automatically via lifespan)
     app.run()

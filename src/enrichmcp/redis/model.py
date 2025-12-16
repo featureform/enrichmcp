@@ -95,10 +95,10 @@ class EnrichModel(BaseEnrichModel):
         return f"{self.get_redis_key_prefix()}{self.id}"
 
     def redis_document(self) -> dict[str, Any]:
-        """Convert to Redis document (exclude relationships).
+        """Convert to Redis document (exclude relationships, handle field types).
 
         Returns:
-            Dictionary suitable for Redis JSON storage
+            Dictionary suitable for Redis JSON storage with proper field type conversion
         """
         # Use mode="json" to ensure datetime objects are serialized as ISO strings
         doc = self.model_dump(mode="json")
@@ -109,5 +109,19 @@ class EnrichModel(BaseEnrichModel):
                 attr = getattr(self.__class__, field_name)
                 if hasattr(attr, "__class__") and "Relationship" in str(attr.__class__):
                     doc.pop(field_name, None)
+
+        # Convert field types for Redis indexing compatibility
+        redis_fields = self.get_redis_fields()
+        for field_def in redis_fields:
+            field_name = field_def["name"]
+            field_type = field_def["type"]
+
+            if field_name in doc and field_type == "tag":
+                # TAG fields require string values, convert integers to strings
+                value = doc[field_name]
+                if isinstance(value, int | float) or (
+                    value is not None and not isinstance(value, str)
+                ):
+                    doc[field_name] = str(value)
 
         return doc

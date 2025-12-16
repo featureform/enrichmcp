@@ -150,3 +150,6 @@ Thumbs.db
 lint.output
 test_*.py
 !tests/test_*.py
+
+# Go binaries
+hello-world-http-server

@@ -106,7 +106,7 @@ async def test_redis_example_runs(example, redis_container):
         )
 
         async with ClientSessionGroup() as group:
-            session = await group.create_session(params)
+            session = await group.connect_to_server(params)
 
             # Test basic functionality
             tools_result = await session.list_tools()
@@ -120,7 +120,7 @@ async def test_redis_example_runs(example, redis_container):
                 "search_user_by_text",
                 "filter_user_by_account_status",
                 "get_user_by_id",
-                "get_user_orders",
+                # Note: get_user_orders removed due to reverse relationship removal
             ]
 
             for tool_name in expected_redis_tools:

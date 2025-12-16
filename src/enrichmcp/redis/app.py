@@ -298,6 +298,64 @@ class EnrichMCP(BaseEnrichMCP):
         if resolver_count > 0:
             print(f"   ✓ Generated {resolver_count} relationship resolvers")
 
+    def run(
+        self,
+        *,
+        transport: str | None = None,
+        mount_path: str | None = None,
+        **options: Any,
+    ) -> Any:
+        """Start the Redis MCP server with automatic tool generation.
+
+        Args:
+            transport: Transport protocol to use when starting the server.
+            mount_path: Optional mount path for SSE transport.
+            **options: Additional options forwarded to ``FastMCP.run``.
+
+        Returns:
+            Result from FastMCP.run()
+        """
+        import asyncio
+
+        # Auto-generate tools (search resources and relationship resolvers) before starting
+        if self._redis_models:
+            print("🔧 Auto-generating Redis tools...")
+
+            # Create a new event loop for setup if needed
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If we're in an async context, we need a new loop
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    should_close = True
+                else:
+                    should_close = False
+            except RuntimeError:
+                # No event loop exists
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                should_close = True
+
+            try:
+                # Only generate tools, not sample data
+                # 1. Generate search resources for all models
+                for model_name, model_class in self._redis_models.items():
+                    loop.run_until_complete(
+                        self._generate_search_resources(model_name, model_class)
+                    )
+
+                # 2. Generate relationship resolvers
+                loop.run_until_complete(self._generate_relationship_resolvers())
+
+                print("   ✓ Auto-generated Redis search and relationship tools")
+            finally:
+                if should_close:
+                    loop.close()
+
+        # Call parent run method
+        return super().run(transport=transport, mount_path=mount_path, **options)
+
     async def _generate_entity_relationship_resolvers(self, entity_class: type[Any]) -> int:
         """Generate relationship resolvers for a specific entity.
 
@@ -400,13 +458,8 @@ class EnrichMCP(BaseEnrichMCP):
                 entity_class, field_name, relationship, target_class, is_list
             )
             return True
-        elif hasattr(relationship, "reverse_of") and relationship.reverse_of:
-            # Reverse relationship: find records that reference this entity
-            await self._create_reverse_resolver(
-                entity_class, field_name, relationship, target_class, is_list
-            )
-            return True
         else:
+            # No supported relationship type found
             return False
 
     async def _create_forward_resolver(
@@ -423,7 +476,7 @@ class EnrichMCP(BaseEnrichMCP):
 
         if is_list:
             # One-to-many: source_field contains list of IDs
-            async def forward_list_resolver(instance) -> list[Any]:
+            async def forward_list_resolver(instance):
                 # Handle both dict (from MCP) and model instance
                 if isinstance(instance, dict):
                     source_value = instance.get(source_field)
@@ -458,9 +511,10 @@ class EnrichMCP(BaseEnrichMCP):
                 return results
 
             forward_list_resolver.__name__ = f"resolve_{entity_class.__name__.lower()}_{field_name}"
+            # Skip setting return type annotation to avoid forward reference issues
         else:
             # One-to-one: source_field contains single ID
-            async def forward_single_resolver(instance) -> Any | None:
+            async def forward_single_resolver(instance):
                 # Handle both dict (from MCP) and model instance
                 if isinstance(instance, dict):
                     source_value = instance.get(source_field)
@@ -489,65 +543,10 @@ class EnrichMCP(BaseEnrichMCP):
             forward_single_resolver.__name__ = (
                 f"resolve_{entity_class.__name__.lower()}_{field_name}"
             )
+            # Skip setting return type annotation to avoid forward reference issues
 
         # Register the resolver
         resolver_func = forward_list_resolver if is_list else forward_single_resolver
         relationship_attr = getattr(entity_class, field_name)
         if hasattr(relationship_attr, "resolver"):
             relationship_attr.resolver(name="get")(resolver_func)
-
-    async def _create_reverse_resolver(
-        self,
-        entity_class: type[Any],
-        field_name: str,
-        relationship,
-        target_class: type[Any],
-        is_list: bool,
-    ):
-        """Create reverse relationship resolver (using reverse_of)."""
-        reverse_field = relationship.reverse_of
-        target_model_name = target_class.__name__.lower()
-
-        # Reverse relationships are typically one-to-many
-        async def reverse_resolver(instance) -> list[Any]:
-            # Handle both dict (from MCP) and model instance
-            if isinstance(instance, dict):
-                instance_id = instance.get("id")
-            else:
-                instance_id = getattr(instance, "id", None)
-
-            if not instance_id:
-                return []
-
-            # Search for records where reverse_field equals this instance's ID
-            if target_model_name in self._redis_models:
-                # Use Redis search if target is a Redis model
-                index_name = f"{target_model_name}_idx"
-                results = await self.redis_backend.search_by_field(
-                    index_name, reverse_field, str(instance_id)
-                )
-                models = []
-                for doc in results:
-                    try:
-                        if isinstance(doc, dict):
-                            models.append(target_class(**doc))
-                        else:
-                            doc_dict = self.redis_backend._doc_to_dict(doc)
-                            if doc_dict:
-                                models.append(target_class(**doc_dict))
-                    except Exception as e:
-                        print(
-                            f"Warning: Failed to create {target_class.__name__} from document: {e}"
-                        )
-                        continue
-                return models
-            else:
-                # Fallback: would need to implement non-Redis search
-                return []
-
-        reverse_resolver.__name__ = f"resolve_{entity_class.__name__.lower()}_{field_name}"
-
-        # Register the resolver
-        relationship_attr = getattr(entity_class, field_name)
-        if hasattr(relationship_attr, "resolver"):
-            relationship_attr.resolver(name="get")(reverse_resolver)
