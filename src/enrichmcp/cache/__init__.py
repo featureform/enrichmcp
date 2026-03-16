@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import pickle
+import json
 import re
 import time
 import warnings
@@ -102,11 +102,11 @@ class RedisCache(CacheBackend):
     async def get(self, namespace: str, key: str) -> Any | None:
         """Return the cached value stored under ``namespace`` and ``key``."""
         raw = await self._redis.get(f"{namespace}:{key}")
-        return pickle.loads(raw) if raw is not None else None
+        return json.loads(raw) if raw is not None else None
 
     async def set(self, namespace: str, key: str, value: Any, ttl: int | None = None) -> None:
         """Store ``value`` in Redis with an optional TTL."""
-        await self._redis.set(f"{namespace}:{key}", pickle.dumps(value), ex=ttl)
+        await self._redis.set(f"{namespace}:{key}", json.dumps(value), ex=ttl)
 
     async def delete(self, namespace: str, key: str) -> bool:
         """Delete a key from Redis and return ``True`` if removed."""
